@@ -1,0 +1,9 @@
+.idea/
+public/
+target/
+.venv/
+*.zip
+*.7z
+*.tar.gz
+__pycache__/
+
