@@ -1,4 +1,16 @@
-# Structure of the Project
+# Project Ideas
+## Structure
+The project consists of three parts:
+- Webserver
+    - Retrieving data from the database and building/updating the website
+- Database
+    - Single source of truth that keeps all data
+- Collector
+    - collects data from the internet and updates the database with it
+
+Each part serves a unique purpose and communicates with the others via a http api.
+The only callable end points are provided by the database part of the project, the others merely call it.
+
 ## Webserver
 ## Collector
 ### General Remarks
@@ -23,10 +35,14 @@
         3. receive ressources from the collector
 - supports reading api processes in some way
 ### Data in the Database
+- Metainformation
+    - list of hashes and associated collector's sources
+    - list of associated data file's locations, nullable (meaning no file present)
 - Gesetzesvorgang
-    - [meta] list of source hashes from collector sources
-    - [meta] associated data files' locators
-    - "Entwurf"
-    - "Beratung"
-    - "Beschlossen"
+    - Parlament
+    - Name des Gesetzesvorhabens
+    - Kurzbeschreibung
+    - Zustand
+    - weitere Informationen
+
 - Tagesordnungen
