@@ -5,13 +5,15 @@ The project consists of three parts:
     - Retrieving data from the database and building/updating the website
 - Database
     - Single source of truth that keeps all data
-- Collector
+-Einspruchsgesetz Collector
     - collects data from the internet and updates the database with it
 
 Each part serves a unique purpose and communicates with the others via a http api.
 The only callable end points are provided by the database part of the project, the others merely call it.
 
 ## Webserver
+- first idea: use ssg to template the site, with the webserver generating .md files and regenerating
+the site as well as deploy it
 ## Collector
 ### General Remarks
 - collects data from the internet via 
@@ -19,6 +21,7 @@ The only callable end points are provided by the database part of the project, t
     - web scraping
 - updates the database regularly about new files
 - receives updated ressource locators from the database
+- parses data for the db
 
 ## Database
 ### General Remarks
@@ -34,6 +37,9 @@ The only callable end points are provided by the database part of the project, t
         2. compare internally and return unknown hashes
         3. receive ressources from the collector
 - supports reading api processes in some way
+- ensures data is well-formed
+- rate limits the calls to avoid congestion/ddos
+
 ### Data in the Database
 - Metainformation
     - list of hashes and associated collector's sources
