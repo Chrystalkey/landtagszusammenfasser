@@ -46,3 +46,105 @@ The only callable end points are provided by the database part of the project, t
     - weitere Informationen
 
 - Tagesordnungen
+
+#### Gesetzesvorgänge und ihre Tabellen
+Folgende Tabellen für Gesetztesvorhaben in allen Bundesländern sowie dem Bundestag
+
+Gesetzesvorhaben:
+    - id
+    - titel
+    - off Titel
+    - initiator (s. initiatoren)
+    - parlament (s. Parlamente)
+    - url_gesblatt
+    - id_gesetzesblatt
+    - federf_ausschuss (s. Ausschüsse)
+    - 
+    - trojaner (y/n/-)
+    - verfassungsändernd (y/n)
+
+Gesetzeseigenschaft
+    - id 
+    - title (verfassungsändernd, zustimmungsgesetz, einspruchgesetz, volksbegehren)
+
+gesetzeseigenschaften_gesetze:
+    - ges_id (s. Gesetzesvorhaben)
+    - eig_id (s. Eigenschafts)
+
+Schlagworte:
+    - id
+    - schlagwort
+    - beschreibung
+
+schlagworte_gesetze:
+    - ges_id (s. Gesetzesvorhaben)
+    - schlagwort_id (s. Schlagworte)
+
+Sonstige_bezeichner:
+    - gesetzes_id
+    - typ
+    - textfeld
+
+Dokumente:
+    - id
+    - off. id (str)
+    - typ (s. dokumententypen, z.B.: Drucksache, Änderungsantrag, Beschlussempfehlung)
+    - url
+    - file
+    - hash
+    - collector-url
+
+Initiatoren:
+    - id
+    - name
+    - organisation
+    - url
+    Bsp: (0/Marco Buschmann/BMJ/https://bmj.de)
+
+status_gesetze:
+    - ges_id (s. Gesetzesvorhaben)
+    - status_id (s. status)
+    - datum
+    - id_abstimmung (s. Abstimmungen)
+    - active: bool (ist das der letzte Zustand?)
+    BsP:(0/1/12.04.2024/yes)
+
+Abstimmungen:
+    - id
+    - typ (volksbegehren/parlamentsabst)
+    - namentlich (y/n)
+    - url
+
+abst_ergebnisse:
+    - fraktion (dafür/dagegen/CDU/FDP/Grünen/Regierungsfraktionen)
+    - id_abstimmung
+    - anteil
+
+Status:
+    - id
+    - name
+    - Parlament (s. Parlamente)
+    Bsp: (0/Referentenentwurf/BT)
+    Bsp: (1/Erster Durchgang/BR)
+    Bsp: (2/Erste Lesung/BY)
+    Bsp: (3/Zweite Lesung/BW)
+
+Ausschussberatung:
+    - id_gesetz
+    - id_ausschuss (s. Ausschüsse)
+    - datum
+    - id_dokument
+
+TOPs:
+    - id
+    - datum
+    - parlament
+    - url
+
+top_gesetze:
+    - ges_id (s. Gesetzesvorgang)
+    - tops_id (s. TOPs)
+    - TOP (=die tatsächliche Nummer auf den Tagesordnungspunkte)
+    - titel: Text
+    - id_abstimmung (s. Abstimmungen)
+    - id_dokument (s.Dokumente)
