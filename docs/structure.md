@@ -50,6 +50,7 @@ the site as well as deploy it
     - Kurzbeschreibung
     - Zustand
     - weitere Informationen
+    - relevante Dokumente und historie dieser
 
 - Tagesordnungen
 
@@ -65,7 +66,6 @@ Gesetzesvorhaben:
     - url_gesblatt
     - id_gesetzesblatt
     - federf_ausschuss (s. Ausschüsse)
-    - 
     - trojaner (y/n/-)
     - verfassungsändernd (y/n)
 
@@ -99,6 +99,7 @@ Dokumente:
     - file
     - hash
     - collector-url
+    - relevantes Datum (zumeist Veröffentlichungsdatum. Zur Identifizierung des neuesten Dokumentes)
 
 Initiatoren:
     - id
