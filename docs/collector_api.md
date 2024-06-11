@@ -5,12 +5,14 @@ All API Endpoints follow this schematic:
 Where the version of the api is used to discern wether old or newer versions of the protocol are used if any additions are made in the future.
 
 The collector MUST be authenticated to the database (but not necessarily vice versa), since malicious updates can corrupt the internal state of the database. However, the API is rate-limited to prevent abuse.
-The Authentication is still a TODO.
+
+
 
 DISCUSSION: Which part of the system handles and checks the addition of new documents / new Gesetzesvorhaben and the change of document URLS? Should the crawler take this job, we will not only need a content update protocol but also something that updates other entries in the database, which that directly contradicts when is written below. 
 
 ## Protocols
 ### Content Update Protocol
+#### The protocol
 The CUP-Protocol is used to update the database with newly collected information, whatever they may be.
 The Collector can only update, not delete or modify any existing entries directly, this task is performed by the database if necessary.
 The CUP follows this schematic:
@@ -34,6 +36,30 @@ The data is then being uploaded like this:
 | hash | string | contains the hash of the current data point, equivalent to the hash sent beforehand |
 /*TODO: Structure that can contain any updated parameters. maybe just a Key/value store */
 
+#### Authentication
+The following security properties are relevant
+  - Authentication
+  - Replay protection
+The following general properties are relevant
+  - Speed
+    Cryptography is expensive and thus, cryptographic operations should be as few as possible. 
+    -> Share symmetric key
+  - An open secure sesion should be usable for multiple writes, minimizing overhead due to session initialization
+
+1. Collector sends request to DB server to open a secure write session
+  - **Message:** Request, Nonce_Request
+  - This is not reply protected, however, that is not a problem as it only leads to the DB server calculating a new key, nothing else
+  - Needs to be DoS protected, ideally by API endpoint
+2. Server computes "ephemeral key" using Key Derivation Function, authenticates the message using shared long term key
+  - **Message:** K_Ephemeral, HMAC (Nonce_Request, K_Ephemeral, K_LongTerm)
+3. Collector sends messages, authenticated with ephemeral key, and a fresh IV and long term symmetric key
+  - **Message:** Text, MessageNumber, HMAC (Text, MessageNumber, K_Ephemeral, K_LongTerm)
+4. (Collector sends more write updates)
+5. Collector closes session
+  - **Message:** Close Command, HMAC (Close Command, K_Ephemeral, K_LongTerm)
+6. Collector and DB Server trash K_Ephemeral
+
+This way, replay attacks are not possible because the 
 
  ### Source Locator Update
 
