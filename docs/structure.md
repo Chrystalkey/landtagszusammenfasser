@@ -62,7 +62,6 @@ Gesetzesvorhaben:
     - titel
     - off Titel
     - initiator (s. initiatoren)
-    - parlament (s. Parlamente)
     - url_gesblatt
     - id_gesetzesblatt
     - federf_ausschuss (s. Ausschüsse)
@@ -71,7 +70,7 @@ Gesetzesvorhaben:
 
 Gesetzeseigenschaft
     - id 
-    - title (verfassungsändernd, zustimmungsgesetz, einspruchgesetz, volksbegehren)
+    - title (zustimmungsgesetz, einspruchgesetz, volksbegehren)
 
 gesetzeseigenschaften_gesetze:
     - ges_id (s. Gesetzesvorhaben)
@@ -93,6 +92,7 @@ Sonstige_bezeichner:
 
 Dokumente:
     - id
+    - gesetz_id
     - off. id (str)
     - typ (s. dokumententypen, z.B.: Drucksache, Änderungsantrag, Beschlussempfehlung)
     - url
