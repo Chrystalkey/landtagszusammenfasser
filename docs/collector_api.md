@@ -37,29 +37,21 @@ The data is then being uploaded like this:
 /*TODO: Structure that can contain any updated parameters. maybe just a Key/value store */
 
 #### Authentication
-The following security properties are relevant
+The following security properties are relevant:
   - Authentication
   - Replay protection
-The following general properties are relevant
+
+The following general properties are relevant:
   - Speed
-    Cryptography is expensive and thus, cryptographic operations should be as few as possible. 
-    -> Share symmetric key
-  - An open secure sesion should be usable for multiple writes, minimizing overhead due to session initialization
-
-1. Collector sends request to DB server to open a secure write session
-  - **Message:** Request, Nonce_Request
-  - This is not reply protected, however, that is not a problem as it only leads to the DB server calculating a new key, nothing else
-  - Needs to be DoS protected, ideally by API endpoint
-2. Server computes "ephemeral key" using Key Derivation Function, authenticates the message using shared long term key
-  - **Message:** K_Ephemeral, HMAC (Nonce_Request, K_Ephemeral, K_LongTerm)
-3. Collector sends messages, authenticated with ephemeral key, and a fresh IV and long term symmetric key
-  - **Message:** Text, MessageNumber, HMAC (Text, MessageNumber, K_Ephemeral, K_LongTerm)
-4. (Collector sends more write updates)
-5. Collector closes session
-  - **Message:** Close Command, HMAC (Close Command, K_Ephemeral, K_LongTerm)
-6. Collector and DB Server trash K_Ephemeral
-
-This way, replay attacks are not possible because the 
+  - An open secure session should be usable for multiple writes, minimizing overhead due to session initialization
+##### The protocol (Secure Write)
+ | Step | Collector                                  | Database                                                           | Method |
+ | ---- | ------------------------------------------ | ------------------------------------------------------------------ | ------ |
+ | 1    | Request to open Session, InitNonce         | -                                                                  | GET    |
+ | 2    | -                                          | 401 Unauthorized: Random Session ID (Challenge), InitNonce, MessageNumber (0), Message Signature (Enc_KeyPrivServer (Hash (Session Identifier)))                                                                           | ?      |
+ | 3    | Write Data, MessageNumber (1), Session Identifier, Signature (Enc_KeyPrivCollector (Hash (Message))) |-  | PUT?
+ | (4)  | (Collector sends more write updates, signed with its private key, message number and Session ID)  | -                                                                  | (PUT?)   |
+ | 5    | Collector closes session                   | -                                                                   | PUT?            
 
  ### Source Locator Update
 
