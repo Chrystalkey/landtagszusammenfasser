@@ -7,9 +7,6 @@ Where the version of the api is used to discern wether old or newer versions of 
 The collector MUST be authenticated to the database (but not necessarily vice versa), since malicious updates can corrupt the internal state of the database. However, the API is rate-limited to prevent abuse.
 
 
-
-DISCUSSION: Which part of the system handles and checks the addition of new documents / new Gesetzesvorhaben and the change of document URLS? Should the crawler take this job, we will not only need a content update protocol but also something that updates other entries in the database, which that directly contradicts when is written below. 
-
 ## Protocols
 ### Content Update Protocol
 #### The protocol

@@ -15,6 +15,9 @@ The only callable end points are provided by the database part of the project, t
 - first idea: use ssg to template the site, with the webserver generating .md files and regenerating
 the site as well as deploy it
 ## Collector
+- Collectors should be somewhat smart. They should check the database for updates on Gesetzesvorhaben. When the Gesetzesvorhaben transitions from the Ministerium to the Landtag for example, it should now only get the updates from the Landtag
+- There should be one collector running for each Bundesland
+- Add Fehlerbehandlung for the case of "Collector doesn't know what to do or where to look" (Log?)
 ### General Remarks
 - collects data from the internet via 
     - api calls
