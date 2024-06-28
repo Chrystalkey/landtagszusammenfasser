@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Any
 
 '''
 The abstract base class for the implementation of a scraper. It will make sure the scrapers all 

@@ -1,6 +1,9 @@
+from scraper_interface import Scraper
+from database_connector import DatabaseConnector
+
 class BMJScraper(Scraper):
 
-    def __init__(self, db_connector: Any, llm_connector: Any):
+    def __init__(self, db_connector, llm_connector):
         """
         Initialize the Scraper with a database connector and an llm connector.
 
@@ -15,7 +18,7 @@ class BMJScraper(Scraper):
         self.llm_connector = llm_connector
 
     def fetch_content(self) -> str:
-        return ""
+        return "Fetch fetch..."
 
     def parse_content(self):
         return
