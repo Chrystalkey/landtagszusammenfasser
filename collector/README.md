@@ -1,0 +1,2 @@
+- How to deal with scraping main and sub pages
+- Include run method into scrapers
