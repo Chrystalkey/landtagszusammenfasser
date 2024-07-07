@@ -6,12 +6,13 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::config::config;
 use crate::router::app_router;
-
 mod config;
 mod domain;
 mod error;
 mod handlers;
 mod router;
+mod infra;
+mod util;
 
 // Define embedded database migrations
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations/");

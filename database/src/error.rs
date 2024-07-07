@@ -19,10 +19,13 @@ pub enum ServerError {
 // errors happening in the database part of the application
 #[derive(Error, Debug)]
 pub enum DatabaseError {
-    #[error("Database error: {0}")]
+    #[error("Database Operation Error: {0}")]
     DatabaseError(#[from] diesel::result::Error),
     #[error("Connection error: {0}")]
     ConnectionError(#[from] deadpool_diesel::PoolError),
+    #[error("Interact Error: {0}")]
+    InteractError(#[from] deadpool_diesel::InteractError),
+    
     #[error("Migrations error: {0}")]
     MigrationsError(#[from] diesel_migrations::MigrationError),
 }

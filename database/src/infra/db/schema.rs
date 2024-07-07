@@ -97,9 +97,9 @@ diesel::table! {
         #[max_length = 255]
         off_titel -> Varchar,
         #[max_length = 255]
-        url_gesblatt -> Varchar,
+        url_gesblatt -> Nullable<Varchar>,
         #[max_length = 255]
-        id_gesblatt -> Varchar,
+        id_gesblatt -> Nullable<Varchar>,
         verfassungsaendernd -> Bool,
         trojaner -> Nullable<Bool>,
         federfuehrung -> Int4,

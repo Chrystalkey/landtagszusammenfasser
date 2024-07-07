@@ -3,9 +3,10 @@ name = "ltzusfas-db"
 version = "0.1.0"
 edition = "2021"
 authors = ["Benedikt Schäfer", "Noah Lokocz", "Liv Märtens"]
+recursion_limit = 256
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
+#![recursion_limit = "256"]
 [dependencies]
 axum = { version = "0.7", features = ["macros"] }
 axum-macros = "0.4"
@@ -21,3 +22,4 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 uuid = { version = "1.4", features = ["fast-rng", "v4", "serde"] }
 thiserror = "1.0.61"
+ulid = { version = "1.1.2", features = ["uuid", "serde"] }
