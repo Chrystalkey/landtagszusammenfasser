@@ -1,8 +1,8 @@
 use crate::{error::DatabaseError, infra::db::schema::gesetzesvorhaben};
-use diesel::expression_methods::ExpressionMethods;
-use diesel::query_dsl::QueryDsl;
-use diesel::{Insertable, Queryable, RunQueryDsl, Selectable, SelectableHelper};
+use diesel::{Insertable, Queryable, RunQueryDsl, Selectable};
+use ulid::Ulid;
 use uuid::Uuid;
+use crate::util::from_ulid;
 
 use super::EntityDBInteraction;
 
@@ -24,7 +24,7 @@ pub struct Gesetzesvorhaben {
 impl Gesetzesvorhaben {
     pub fn new(verf_aend: bool, title: String) -> Self {
         Self {
-            id: Uuid::new_v4(),
+            id: from_ulid(Ulid::new()),
             ..Default::default()
         }
     }
