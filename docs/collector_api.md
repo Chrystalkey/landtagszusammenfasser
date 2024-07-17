@@ -9,9 +9,41 @@ The collector MUST be authenticated to the database (but not necessarily vice ve
 
 ## Protocols
 ### Content Update Protocol
-#### The protocol
+#### Protocol Overview
 The CUP-Protocol is used to update the database with newly collected information, whatever they may be.
-The Collector can only update, not delete or modify any existing entries directly, this task is performed by the database if necessary.
+The Collector can only update, not delete or modify any existing entries directly, this task is performed by the database if necessary based on data provided by the collector(s). All Messages sent from the collector to the database MUST contain: A numeric UUID of the message, a timestamp, a human-readable ID for the collector. This makes logging and error recovery easier.  
+
+There are, naively, two purposes to the CUP:
+1. creation of a new "Gesetzesvorhaben", including all documents and informations associated with it
+2. update of a "Gesetzesvorhaben" with new data - be it documents or any other entity or relation
+Both stages rely on the "Gesetzesvorhaben" as the central reference point. Without it, they are useless.
+
+**However, there is another consideration to be taken into account: That of shared data points.**  
+All things that reference or are referenced by only one "Gesetzesvorhaben" are easily placed, but things like "Schlagworte" may be shared by many
+"Gesetzesvorhaben" and may be created or removed in the future, making the database system unable to pre-fill all such data.
+This necessitates some mechanism on how to create or update such shared data. These requirements are to be derived from this prompt:
+- there must be a way to add another point of data (e.g some Ausschuss was mentioned for the first time, a Schlagwort was used for the first time)
+  - No Shared data point MUST NOT be added twice
+  - No New Data point MUST be rejected because it is confused with an existing one
+- there must be a way to _reliably_ reference an already created point of data (e.g. how do I know some Ausschuss was mentioned a second time)
+
+**From this, I propose that the CUP contains this second "Stage":**  
+1. Collector sends the Data with it's knowledge of a new shared data point of which it knows to be shared
+   1. this contains either the unique identifier
+   2. or enough criteria to identify this entity(e.g. name)
+2. The Database finds out if there is an entry close enough to be considered the same
+   1. If such an entry is found, the database ??
+   2. if No such entry is found, the database ??
+
+
+Of course there are some entities, which are to be considered under "special protection", e.g. "Abstimmungstyp" or "Parlamente" which should not be changed without human review. If there is no match to be found, some robust way has to be found to notify the developers of that circumstance. In this case these steps should be taken:
+1. the collectors sends something to the database which it cannot fit into the schema
+2. The Database...
+   1. sends the error back to the collector, where it can be examined in full, including all raw material
+   2. as well as logs a brief version of it, containing the message id & collector id
+3. The Database notifies the developers over some channel (email/slack messages/signal messages/github issues/...)
+4. These things must be changed manually from the outside. A way MUST be specified to gracefully handle this case.
+
 The CUP follows this schematic:
  | Step | Collector                                  | Database                                       | Method | Endpoint |
  | ---- | ------------------------------------------ | ---------------------------------------------- | ------ | -------- |
