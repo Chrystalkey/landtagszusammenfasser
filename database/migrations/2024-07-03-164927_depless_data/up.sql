@@ -50,8 +50,6 @@ CREATE TABLE
         url VARCHAR(255) NOT NULL
     );
 
-
-
 CREATE TABLE
     schlagworte (
         id SERIAL PRIMARY KEY,

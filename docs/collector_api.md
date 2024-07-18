@@ -31,14 +31,6 @@ This necessitates some mechanism on how to create or update such shared data. Th
   - There MUST be a way to merge two data points within the database
 - there must be a way to _reliably_ reference an already created point of data (e.g. how do I know some Ausschuss was mentioned a second time?)
 
-**From this, I propose that the CUP contains this second "Stage":** 
-1. Collector sends the Data with it's knowledge of a new shared data point of which it knows to be shared
-   1. this contains either the unique identifier
-   2. or enough criteria to identify this entity(e.g. name)
-2. The Database finds out if there is an entry close enough to be considered the same
-   1. If such an entry is found, the database ??
-   2. if No such entry is found, the database ??
-
 
 Of course there are some entities, which are to be considered under "special protection", e.g. "Abstimmungstyp" or "Parlamente" which should not be changed without human review. If there is no match to be found, some robust way has to be found to notify the developers of that circumstance. In this case these steps should be taken:
 1. the collectors sends something to the database which it cannot fit into the schema
@@ -48,26 +40,60 @@ Of course there are some entities, which are to be considered under "special pro
 3. The Database notifies the developers over some channel (email/slack messages/signal messages/github issues/...)
 4. These things must be changed manually from the outside. A way MUST be specified to gracefully handle this case.
 
-The CUP follows this schematic:
- | Step | Collector                                  | Database                                       | Method | Endpoint |
- | ---- | ------------------------------------------ | ---------------------------------------------- | ------ | -------- |
- | 1    | Sends Hashes of new Entries                | -                                              | PUT    | /hashes  |
- | 2    | -                                          | Compares hashes internally with stored entries | -      | -        |
- | 3    | -                                          | Sends unknown hashes back                      |
- | 4    | Sends Data associated with returned hashes after processing | -                                              | PUT    | /data    |
+#### Protocol Proposal
+The CUP should be sending as little data as possible. For that purpose, apart from the ID for information interchange I propose this data format:
 
-The Data for the hashes is shown in the table below and exchanged (there and back) in JSON format :
+```Rust
+struct CUPDoc{
+  docid: String,
+  datum: Datetime,
+  url: Url,
+  filename: String,
+  hash: String,
+  typ: String,
+}
+struct CUPAusschussberatung{
+  datum: Datetime,
+  ausschuss: String,
+  dokumente: Vec<CUPDoc>,
+  parlament: String,
+  tops: Vec<String>,
+}
+struct CUPStatus{
+  statusname: String,
+  parlament: String,
+}
+struct CUPTransfer{
+  msg_id: Uuid,
+  timestamp: Datetime,
+  gesvh_id : Uuid,
+  titel: String,
+  off_titel: String,
+  verf_aenderung: bool,
+  url_gesblatt: Url,
+  id_gesblatt: String,
+  trojaner: bool,
+  federfuehrung: String,
+  initiator: String,
+  documents: Vec<CUPDoc>,
+  ausschussberatungen: Vec<Ausschussberatung>,
+  sonstige_ids: Vec<String>,
+  status: Vec<CUPStatus>,
+  eigenschaften: Vec<String>,
+  schlagworte: Vec<String>,
+}
+```
 
-| name   | type           | description                                                                |
-| ------ | -------------- | -------------------------------------------------------------------------- |
-| hashes | list of hashes | contains a list of hashes as strings in hex encoding (base64? DISCUSSSION) |
+While `CUPTransfer` is the main structure being transferred.
+All data which is not different to a known state, apart from the `gesvh_id` MUST be empty. All data apart from it is presumed different.
 
-The data is then being uploaded like this:
-
-| name | type   | description                                                                         |
-| ---- | ------ | ----------------------------------------------------------------------------------- |
-| hash | string | contains the hash of the current data point, equivalent to the hash sent beforehand |
-/*TODO: Structure that can contain any updated parameters. maybe just a Key/value store */
+```Rust
+// 
+ struct CUPDBResponse{
+  responding_to: Uuid, // message id this is a response to
+  errors: CUPTransfer, // mirrored struct with all data which was rejected
+ }
+```
 
 #### Authentication
 The following security properties are relevant:
@@ -78,13 +104,13 @@ The following general properties are relevant:
   - Speed
   - An open secure session should be usable for multiple writes, minimizing overhead due to session initialization
 ##### The protocol (Secure Write)
- | Step | Collector                                  | Database                                                           | Method |
- | ---- | ------------------------------------------ | ------------------------------------------------------------------ | ------ |
- | 1    | Request to open Session, InitNonce         | -                                                                  | GET    |
- | 2    | -                                          | 401 Unauthorized: Random Session ID (Challenge), InitNonce, MessageNumber (0), Message Signature (Enc_KeyPrivServer (Hash (Session Identifier)))                                                                           | ?      |
- | 3    | Write Data, MessageNumber (1), Session Identifier, Signature (Enc_KeyPrivCollector (Hash (Message))) |-  | PUT?
- | (4)  | (Collector sends more write updates, signed with its private key, message number and Session ID)  | -                                                                  | (PUT?)   |
- | 5    | Collector closes session                   | -                                                                   | PUT?            
+ | Step | Collector                                                                                            | Database                                                                                                                                         | Method |
+ | ---- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
+ | 1    | Request to open Session, InitNonce                                                                   | -                                                                                                                                                | GET    |
+ | 2    | -                                                                                                    | 401 Unauthorized: Random Session ID (Challenge), InitNonce, MessageNumber (0), Message Signature (Enc_KeyPrivServer (Hash (Session Identifier))) | ?      |
+ | 3    | Write Data, MessageNumber (1), Session Identifier, Signature (Enc_KeyPrivCollector (Hash (Message))) | -                                                                                                                                                | PUT?   |
+ | (4)  | (Collector sends more write updates, signed with its private key, message number and Session ID)     | -                                                                                                                                                | (PUT?) |
+ | 5    | Collector closes session                                                                             | -                                                                                                                                                | PUT?   |
 
  ### Source Locator Update
 
