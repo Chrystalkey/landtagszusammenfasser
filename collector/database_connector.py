@@ -1,3 +1,19 @@
+class CUPGesVH:
+    uuid = None
+    titel = None
+    off_titel = None
+    url_gesetzesblatt = None
+    verf_aendernd = False
+    trojaner = False
+    federfuehrung = None
+    initiator = None
+    schlagworte = []
+    status = None
+    eigenschaften = []
+    parlamente = []
+
+
+
 class DatabaseConnector:
 
     """
