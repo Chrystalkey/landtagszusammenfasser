@@ -50,6 +50,8 @@ CREATE TABLE
         url VARCHAR(255) NOT NULL
     );
 
+
+
 CREATE TABLE
     schlagworte (
         id SERIAL PRIMARY KEY,
@@ -74,4 +76,5 @@ VALUES
     (2, 'Referentenentwurf'),
     (3, 'Beschlussempfehlung'),
     (4, 'Finale Fassung'),
-    (5, 'Gesetzesentwurf');
+    (5, 'Gesetzesentwurf'),
+    (6, "Kabinettsbeschluss");

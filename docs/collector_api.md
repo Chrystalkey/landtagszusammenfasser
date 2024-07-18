@@ -1,8 +1,11 @@
 # Collector (Write-Enabled) API for the database
 ## Layout
 All API Endpoints follow this schematic:
-`/api/v{version}/collector/{end point}` 
+`/api/v{version}/collector/{collector id}/{end point}` 
 Where the version of the api is used to discern wether old or newer versions of the protocol are used if any additions are made in the future.
+- `version`: version of the api is used to discern wether old or newer versions of the protocol are used if any additions are made in the future.
+- `collector id`: human-readable, unique id of the collector
+- `end point`: the remainder of the url, as specified below
 
 The collector MUST be authenticated to the database (but not necessarily vice versa), since malicious updates can corrupt the internal state of the database. However, the API is rate-limited to prevent abuse.
 
@@ -23,11 +26,12 @@ All things that reference or are referenced by only one "Gesetzesvorhaben" are e
 "Gesetzesvorhaben" and may be created or removed in the future, making the database system unable to pre-fill all such data.
 This necessitates some mechanism on how to create or update such shared data. These requirements are to be derived from this prompt:
 - there must be a way to add another point of data (e.g some Ausschuss was mentioned for the first time, a Schlagwort was used for the first time)
-  - No Shared data point MUST NOT be added twice
-  - No New Data point MUST be rejected because it is confused with an existing one
-- there must be a way to _reliably_ reference an already created point of data (e.g. how do I know some Ausschuss was mentioned a second time)
+  - Any Shared data point SHOULD NOT be added twice
+  - Any New Data point MUST be rejected when it is confused with an existing one
+  - There MUST be a way to merge two data points within the database
+- there must be a way to _reliably_ reference an already created point of data (e.g. how do I know some Ausschuss was mentioned a second time?)
 
-**From this, I propose that the CUP contains this second "Stage":**  
+**From this, I propose that the CUP contains this second "Stage":** 
 1. Collector sends the Data with it's knowledge of a new shared data point of which it knows to be shared
    1. this contains either the unique identifier
    2. or enough criteria to identify this entity(e.g. name)
