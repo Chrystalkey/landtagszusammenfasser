@@ -15,6 +15,15 @@ CREATE TABLE
     );
 
 CREATE TABLE
+    tagesordnungspunkt (
+        id SERIAL PRIMARY KEY,
+        titel VARCHAR(255) NOT NULL,
+        tops_id SERIAL REFERENCES tops (id) ON DELETE CASCADE,
+        document SERIAL REFERENCES dokumente (id) ON DELETE SET NULL,
+        abstimmung SERIAL REFERENCES abstimmungen (id) ON DELETE SET NULL
+    );
+
+CREATE TABLE
     abstimmungen (
         id SERIAL PRIMARY KEY,
         namentlich BOOLEAN NOT NULL,
@@ -37,6 +46,7 @@ CREATE TABLE
         url_gesblatt VARCHAR(255),
         id_gesblatt VARCHAR(255),
         verfassungsaendernd BOOLEAN NOT NULL,
+        aktuelles_dokument SERIAL REFERENCES dokumente (id) ON DELETE SET NULL,
         trojaner BOOLEAN,
         federfuehrung SERIAL REFERENCES ausschuesse (id) ON DELETE SET NULL,
         initiator SERIAL REFERENCES initiatoren (id) ON DELETE SET NULL

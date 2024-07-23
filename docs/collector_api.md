@@ -41,22 +41,26 @@ Of course there are some entities, which are to be considered under "special pro
 4. These things must be changed manually from the outside. A way MUST be specified to gracefully handle this case.
 
 #### Protocol Proposal
-The CUP should be sending as little data as possible. For that purpose, apart from the ID for information interchange I propose this data format:
+The CUP should be sending as little data as possible. For that purpose, apart from the ID for information interchange I propose this data format, which is wholly representative of the underlying data structures:
 
 ```Rust
 struct CUPDoc{
-  docid: String,
+  docid: String, // off_id
   datum: Datetime,
   url: Url,
-  filename: String,
+  collector_url: Url,
+  filename: String, 
   hash: String,
   typ: String,
 }
+struct CUPAusschuss{
+  name: String,
+  parlament: String,
+}
 struct CUPAusschussberatung{
   datum: Datetime,
-  ausschuss: String,
-  dokumente: Vec<CUPDoc>,
-  parlament: String,
+  ausschuss: CUPAusschuss,
+  dokument: CUPDoc,
   tops: Vec<String>,
 }
 struct CUPStatus{
@@ -89,10 +93,10 @@ All data which is not different to a known state, apart from the `gesvh_id` MUST
 
 ```Rust
 // 
- struct CUPDBResponse{
-  responding_to: Uuid, // message id this is a response to
-  errors: CUPTransfer, // mirrored struct with all data which was rejected
- }
+struct CUPDBResponse{
+responding_to: Uuid, // message id this is a response to
+errors: CUPTransfer, // mirrored struct with all data which was rejected
+}
 ```
 
 #### Authentication
