@@ -1,0 +1,571 @@
+openapi: 3.0.0
+info:
+  title: Gesetzesvorhaben API
+  description: API for managing German legislative processes and related entities
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+paths:
+  /gesetzeseigenschaften:
+    get:
+      summary: List all gesetzeseigenschaften
+      responses:
+        '200':
+          description: A list of gesetzeseigenschaften
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Gesetzeseigenschaft'
+    post:
+      summary: Create a new gesetzeseigenschaft
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Gesetzeseigenschaft'
+      responses:
+        '201':
+          description: Created
+  /gesetzeseigenschaften/{id}:
+    get:
+      summary: Get a gesetzeseigenschaft by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A gesetzeseigenschaft object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Gesetzeseigenschaft'
+        '404':
+          description: Not Found
+    put:
+      summary: Update a gesetzeseigenschaft by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Gesetzeseigenschaft'
+      responses:
+        '200':
+          description: Updated
+        '404':
+          description: Not Found
+    delete:
+      summary: Delete a gesetzeseigenschaft by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          description: Not Found
+
+  /parlamente:
+    get:
+      summary: List all parlamente
+      responses:
+        '200':
+          description: A list of parlamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Parlament'
+    post:
+      summary: Create a new parlament
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Parlament'
+      responses:
+        '201':
+          description: Created
+  /parlamente/{id}:
+    get:
+      summary: Get a parlament by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A parlament object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Parlament'
+        '404':
+          description: Not Found
+    put:
+      summary: Update a parlament by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Parlament'
+      responses:
+        '200':
+          description: Updated
+        '404':
+          description: Not Found
+    delete:
+      summary: Delete a parlament by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          description: Not Found
+
+  /initiatoren:
+    get:
+      summary: List all initiatoren
+      responses:
+        '200':
+          description: A list of initiatoren
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Initiator'
+    post:
+      summary: Create a new initiator
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Initiator'
+      responses:
+        '201':
+          description: Created
+  /initiatoren/{id}:
+    get:
+      summary: Get an initiator by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: An initiator object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Initiator'
+        '404':
+          description: Not Found
+    put:
+      summary: Update an initiator by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Initiator'
+      responses:
+        '200':
+          description: Updated
+        '404':
+          description: Not Found
+    delete:
+      summary: Delete an initiator by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          description: Not Found
+
+  /schlagworte:
+    get:
+      summary: List all schlagworte
+      responses:
+        '200':
+          description: A list of schlagworte
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Schlagwort'
+    post:
+      summary: Create a new schlagwort
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Schlagwort'
+      responses:
+        '201':
+          description: Created
+  /schlagworte/{id}:
+    get:
+      summary: Get a schlagwort by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A schlagwort object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schlagwort'
+        '404':
+          description: Not Found
+    put:
+      summary: Update a schlagwort by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Schlagwort'
+      responses:
+        '200':
+          description: Updated
+        '404':
+          description: Not Found
+    delete:
+      summary: Delete a schlagwort by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          description: Not Found
+
+  /abstimmungstyp:
+    get:
+      summary: List all abstimmungstyp
+      responses:
+        '200':
+          description: A list of abstimmungstyp
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Abstimmungstyp'
+    post:
+      summary: Create a new abstimmungstyp
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Abstimmungstyp'
+      responses:
+        '201':
+          description: Created
+  /abstimmungstyp/{id}:
+    get:
+      summary: Get an abstimmungstyp by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: An abstimmungstyp object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Abstimmungstyp'
+        '404':
+          description: Not Found
+    put:
+      summary: Update an abstimmungstyp by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Abstimmungstyp'
+      responses:
+        '200':
+          description: Updated
+        '404':
+          description: Not Found
+    delete:
+      summary: Delete an abstimmungstyp by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          description: Not Found
+
+  /fraktionen:
+    get:
+      summary: List all fraktionen
+      responses:
+        '200':
+          description: A list of fraktionen
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Fraktion'
+    post:
+      summary: Create a new fraktion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Fraktion'
+      responses:
+        '201':
+          description: Created
+  /fraktionen/{id}:
+    get:
+      summary: Get a fraktion by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A fraktion object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fraktion'
+        '404':
+          description: Not Found
+    put:
+      summary: Update a fraktion by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Fraktion'
+      responses:
+        '200':
+          description: Updated
+        '404':
+          description: Not Found
+    delete:
+      summary: Delete a fraktion by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          description: Not Found
+
+  /dokumenttypen:
+    get:
+      summary: List all dokumenttypen
+      responses:
+        '200':
+          description: A list of dokumenttypen
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Dokumenttyp'
+    post:
+      summary: Create a new dokumenttyp
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Dokumenttyp'
+      responses:
+        '201':
+          description: Created
+  /dokumenttypen/{id}:
+    get:
+      summary: Get a dokumenttyp by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A dokumenttyp object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dokumenttyp'
+        '404':
+          description: Not Found
+    put:
+      summary: Update a dokumenttyp by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Dokumenttyp'
+      responses:
+        '200':
+          description: Updated
+        '404':
+          description: Not Found
+    delete:
+      summary: Delete a dokumenttyp by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          description: Not Found
+
+components:
+  schemas:
+    Gesetzeseigenschaft:
+      type: object
+      properties:
+        id:
+          type: integer
+        eigenschaft:
+          type: string
+    Parlament:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        kurzname:
+          type: string
+    Initiator:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        organisation:
+          type: string
+        url:
+          type: string
+    Schlagwort:
+      type: object
+      properties:
+        id:
+          type: integer
+        schlagwort:
+          type: string
+        beschreibung:
+          type: string
+    Abstimmungstyp:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+    Fraktion:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+    Dokumenttyp:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
