@@ -1,571 +1,261 @@
-openapi: 3.0.0
+# flavour:
+# - all component objects are NOT NULL unless marked nullable
+# - format: database_key is NOT NULL UNIQUE and if singular and not in $ref, a primary key
+# - length: length of a string
+# - max-length: maximal length of a string
+# - `has-id: bool` contains a field named id with the default primary key settings, namely:
+# - id:
+#      type: integer
+#      format: database_key
+
+openapi: 3.1.0
 info:
-  title: Gesetzesvorhaben API
-  description: API for managing German legislative processes and related entities
-  version: 1.0.0
-servers:
-  - url: http://localhost:3000
+  title: "Specification for the Landtagszusammenfasser Project"
+  version: "0.1.0"
 paths:
-  /gesetzeseigenschaften:
+  /gesetzesvorhaben:
     get:
-      summary: List all gesetzeseigenschaften
+      description: "Returns a Gesetzesvorhaben by id"
       responses:
-        '200':
-          description: A list of gesetzeseigenschaften
+        "200":
+          description: "successful operation"
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Gesetzeseigenschaft'
-    post:
-      summary: Create a new gesetzeseigenschaft
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Gesetzeseigenschaft'
-      responses:
-        '201':
-          description: Created
-  /gesetzeseigenschaften/{id}:
-    get:
-      summary: Get a gesetzeseigenschaft by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: A gesetzeseigenschaft object
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Gesetzeseigenschaft'
-        '404':
-          description: Not Found
-    put:
-      summary: Update a gesetzeseigenschaft by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Gesetzeseigenschaft'
-      responses:
-        '200':
-          description: Updated
-        '404':
-          description: Not Found
-    delete:
-      summary: Delete a gesetzeseigenschaft by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '204':
-          description: Deleted
-        '404':
-          description: Not Found
-
-  /parlamente:
-    get:
-      summary: List all parlamente
-      responses:
-        '200':
-          description: A list of parlamente
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Parlament'
-    post:
-      summary: Create a new parlament
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Parlament'
-      responses:
-        '201':
-          description: Created
-  /parlamente/{id}:
-    get:
-      summary: Get a parlament by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: A parlament object
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Parlament'
-        '404':
-          description: Not Found
-    put:
-      summary: Update a parlament by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Parlament'
-      responses:
-        '200':
-          description: Updated
-        '404':
-          description: Not Found
-    delete:
-      summary: Delete a parlament by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '204':
-          description: Deleted
-        '404':
-          description: Not Found
-
-  /initiatoren:
-    get:
-      summary: List all initiatoren
-      responses:
-        '200':
-          description: A list of initiatoren
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Initiator'
-    post:
-      summary: Create a new initiator
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Initiator'
-      responses:
-        '201':
-          description: Created
-  /initiatoren/{id}:
-    get:
-      summary: Get an initiator by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: An initiator object
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Initiator'
-        '404':
-          description: Not Found
-    put:
-      summary: Update an initiator by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Initiator'
-      responses:
-        '200':
-          description: Updated
-        '404':
-          description: Not Found
-    delete:
-      summary: Delete an initiator by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '204':
-          description: Deleted
-        '404':
-          description: Not Found
-
-  /schlagworte:
-    get:
-      summary: List all schlagworte
-      responses:
-        '200':
-          description: A list of schlagworte
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Schlagwort'
-    post:
-      summary: Create a new schlagwort
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Schlagwort'
-      responses:
-        '201':
-          description: Created
-  /schlagworte/{id}:
-    get:
-      summary: Get a schlagwort by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: A schlagwort object
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Schlagwort'
-        '404':
-          description: Not Found
-    put:
-      summary: Update a schlagwort by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Schlagwort'
-      responses:
-        '200':
-          description: Updated
-        '404':
-          description: Not Found
-    delete:
-      summary: Delete a schlagwort by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '204':
-          description: Deleted
-        '404':
-          description: Not Found
-
-  /abstimmungstyp:
-    get:
-      summary: List all abstimmungstyp
-      responses:
-        '200':
-          description: A list of abstimmungstyp
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Abstimmungstyp'
-    post:
-      summary: Create a new abstimmungstyp
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Abstimmungstyp'
-      responses:
-        '201':
-          description: Created
-  /abstimmungstyp/{id}:
-    get:
-      summary: Get an abstimmungstyp by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: An abstimmungstyp object
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Abstimmungstyp'
-        '404':
-          description: Not Found
-    put:
-      summary: Update an abstimmungstyp by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Abstimmungstyp'
-      responses:
-        '200':
-          description: Updated
-        '404':
-          description: Not Found
-    delete:
-      summary: Delete an abstimmungstyp by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '204':
-          description: Deleted
-        '404':
-          description: Not Found
-
-  /fraktionen:
-    get:
-      summary: List all fraktionen
-      responses:
-        '200':
-          description: A list of fraktionen
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Fraktion'
-    post:
-      summary: Create a new fraktion
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Fraktion'
-      responses:
-        '201':
-          description: Created
-  /fraktionen/{id}:
-    get:
-      summary: Get a fraktion by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: A fraktion object
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Fraktion'
-        '404':
-          description: Not Found
-    put:
-      summary: Update a fraktion by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Fraktion'
-      responses:
-        '200':
-          description: Updated
-        '404':
-          description: Not Found
-    delete:
-      summary: Delete a fraktion by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '204':
-          description: Deleted
-        '404':
-          description: Not Found
-
-  /dokumenttypen:
-    get:
-      summary: List all dokumenttypen
-      responses:
-        '200':
-          description: A list of dokumenttypen
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Dokumenttyp'
-    post:
-      summary: Create a new dokumenttyp
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Dokumenttyp'
-      responses:
-        '201':
-          description: Created
-  /dokumenttypen/{id}:
-    get:
-      summary: Get a dokumenttyp by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: A dokumenttyp object
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Dokumenttyp'
-        '404':
-          description: Not Found
-    put:
-      summary: Update a dokumenttyp by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Dokumenttyp'
-      responses:
-        '200':
-          description: Updated
-        '404':
-          description: Not Found
-    delete:
-      summary: Delete a dokumenttyp by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '204':
-          description: Deleted
-        '404':
-          description: Not Found
-
+                $ref: "#/components/schemas/gesetzesvorhaben"
 components:
   schemas:
-    Gesetzeseigenschaft:
+    gesetzeseigenschaften:
       type: object
+      has-id: true
       properties:
-        id:
-          type: integer
         eigenschaft:
           type: string
-    Parlament:
+          max-length: 255
+
+    parlamente:
       type: object
+      has-id: true
       properties:
-        id:
-          type: integer
         name:
           type: string
         kurzname:
           type: string
-    Initiator:
+          length: 2
+    initiatoren:
       type: object
+      has-id: true
       properties:
-        id:
-          type: integer
         name:
           type: string
+          nullable: true
         organisation:
           type: string
         url:
           type: string
-    Schlagwort:
+          nullable: true
+          format: url
+    dokumententyp:
       type: object
+      has-id: true
       properties:
-        id:
-          type: integer
-        schlagwort:
+        dokumententyp:
           type: string
-        beschreibung:
-          type: string
-    Abstimmungstyp:
+
+    # dinge mit referenzen
+    ausschuesse:
       type: object
+      has-id: true
       properties:
-        id:
-          type: integer
         name:
           type: string
-    Fraktion:
+        parlament:
+          $ref: "#/components/schemas/parlamente"
+    top-liste-ausschuss:
+      type: object
+      has-id: true
+      properties:
+        datum:
+          type: string
+          format: date-time
+        url:
+          type: string
+          format: url
+        ausschuss:
+          $ref: "#/components/schemas/ausschuesse"
+    top-liste-parlament:
+      type: object
+      has-id: true
+      properties:
+        datum:
+          type: string
+          format: date-time
+        url:
+          type: string
+          format: url
+        parlament:
+          type: integer
+          $ref: "#/components/schemas/parlamente"
+
+    top-parlament:
+      type: object
+      has-id: true
+      properties:
+        titel:
+          type: string
+        top-liste:
+          type: integer
+          $ref: "#/components/schemas/top-liste-parlamente"
+
+    top-ausschuss:
+      type: object
+      has-id: true
+      properties:
+        titel:
+          type: string
+        top-liste:
+          type: integer
+          $ref: "#/components/schemas/top-liste-ausschuesse"
+    abstimmungen:
+      type: object
+      has-id: true
+      properties:
+        namentlich:
+          type: boolean
+        url:
+          type: string
+          format: url
+        typ:
+          type: integer
+          $ref: "#/components/schemas/abstimmungstyp"
+        gesetzesvorhaben:
+          $ref: "#/components/schemas/gesetzesvorhaben"
+    gesetzesstatus:
+      type: object
+      has-id: true
+      properties:
+        gesetz_status:
+          type: string
+          max-length: 255
+        parlament:
+          $ref: "#/components/schemas/parlamente"
+    gesetzesvorhaben:
+      type: object
+      has-id: true
+      properties:
+        external_id:
+          type: integer
+          format: uuid
+        titel:
+          type: string
+        offi_titel:
+          type: string
+        url_gesblatz:
+          type: string
+          format: url
+          nullable: true
+        id_gesblatt:
+          type: string
+          nullable: true
+        verfassungsaendernd:
+          type: boolean
+        trojaner:
+          type: boolean
+        federfuehrung:
+          $ref: "#/components/schemas/ausschuesse"
+          nullable: true
+        initiator:
+          $ref: "#/components/schemas/initiatoren"
+          nullable: true
+        schlagworte:
+          type: array
+          items:
+            $ref: "#/components/schemas/schlagworte"
+        eigenschaften:
+          type: array
+          items:
+            $ref: "#/components/schemas/gesetzeseigenschaften"
+        status:
+          type: array
+          items:
+            $ref: "#/components/schemas/rel_gesetzesvorhaben_status"
+        tops-ausschuss:
+          type: array
+          items:
+            $ref: "#/components/schemas/top-ausschuss"
+        tops-parlament:
+          type: array
+          items:
+            $ref: "#/components/schemas/top-parlament"
+        
+    dokumente:
+      type: object
+      has-id: true
+      properties:
+        off_id:
+          type: string
+        datum:
+          type: string
+          format: date-time
+        url:
+          type: string
+          format: url
+        file:
+          type: string
+        hash:
+          type: string
+          format: base64
+        dokumententyp:
+          $ref: "#/components/schemas/dokumententyp"
+        gesetzesvorhaben:
+          $ref: "#/components/schemas/gesetzesvorhaben"
+    ausschussberatung:
+      type: object
+      has-id: true
+      properties:
+        datum:
+          type: string
+          format: date-time
+        url:
+          type: string
+          format: url
+        ausschuss:
+          $ref: "#/components/schemas/ausschuesse"
+        dokument:
+          $ref: "#/components/schemas/dokumente"
+    gesetzesids:
+      type: object
+      has-id: true
+      properties:
+        gesetzesvorhaben:
+          $ref: "#/components/schemas/gesetzesvorhaben"
+        typ:
+          type: string
+        inhalt:
+          type: string
+    abstimmungsergebnisse:
+      type: object
+      has-id: true
+      properties:
+        abstimmung:
+          $ref: "#/components/schemas/abstimmungen"
+        fraktion:
+          $ref: "#/components/schemas/fraktionen"
+        anteil:
+          type: integer
+          format: int32
+    rel_gesetzesvorhaben_status:
       type: object
       properties:
-        id:
-          type: integer
-        name:
+        gesetzesvorhaben:
+          $ref: "#/components/schemas/gesetzesvorhaben"
+          format: database_key
+        status:
+          $ref: "#/components/schemas/gesetzesstatus"
+          format: database_key
+        abstimmung:
+          $ref: "#/components/schemas/abstimmungen"
+          format: database_key
+        datum:
           type: string
-    Dokumenttyp:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
+          format: date-time
