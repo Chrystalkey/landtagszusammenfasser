@@ -23,13 +23,7 @@ CREATE TABLE
         abstimmung SERIAL REFERENCES abstimmungen (id) ON DELETE SET NULL
     );
 
-CREATE TABLE
-    abstimmungen (
-        id SERIAL PRIMARY KEY,
-        namentlich BOOLEAN NOT NULL,
-        url VARCHAR(255) NOT NULL,
-        typ SERIAL REFERENCES abstimmungstyp (id) ON DELETE SET NULL
-    );
+
 
 CREATE TABLE
     status (
@@ -46,7 +40,6 @@ CREATE TABLE
         url_gesblatt VARCHAR(255),
         id_gesblatt VARCHAR(255),
         verfassungsaendernd BOOLEAN NOT NULL,
-        aktuelles_dokument SERIAL REFERENCES dokumente (id) ON DELETE SET NULL,
         trojaner BOOLEAN,
         federfuehrung SERIAL REFERENCES ausschuesse (id) ON DELETE SET NULL,
         initiator SERIAL REFERENCES initiatoren (id) ON DELETE SET NULL
@@ -81,7 +74,14 @@ CREATE TABLE
         typ VARCHAR(255) NOT NULL,
         inhalt VARCHAR(255) NOT NULL
     );
-
+CREATE TABLE
+    abstimmungen (
+        id SERIAL PRIMARY KEY,
+        namentlich BOOLEAN NOT NULL,
+        url VARCHAR(255) NOT NULL,
+        typ SERIAL REFERENCES abstimmungstyp (id) ON DELETE SET NULL
+        gesetzesvorhabe UUID REFERENCES gesetzesvorhaben (id) ON DELETE CASCADE
+    );
 CREATE TABLE
     abstimmungsergebnisse (
         id SERIAL PRIMARY KEY,

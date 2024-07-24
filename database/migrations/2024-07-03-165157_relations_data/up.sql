@@ -7,13 +7,6 @@ CREATE TABLE
     );
 
 CREATE TABLE
-    rel_ges_abstimmungen (
-        gesetzesvorhaben UUID REFERENCES gesetzesvorhaben (id) ON DELETE CASCADE,
-        abstimmung SERIAL REFERENCES abstimmungen (id) ON DELETE CASCADE,
-        PRIMARY KEY (gesetzesvorhaben, abstimmung)
-    );
-
-CREATE TABLE
     rel_ges_eigenschaft (
         gesetzesvorhaben UUID REFERENCES gesetzesvorhaben (id) ON DELETE CASCADE,
         eigenschaft SERIAL REFERENCES gesetzeseigenschaften (id) ON DELETE CASCADE,
@@ -25,8 +18,7 @@ CREATE TABLE
         gesetzesvorhaben UUID REFERENCES gesetzesvorhaben (id) ON DELETE CASCADE,
         status SERIAL REFERENCES status (id) ON DELETE CASCADE,
         abstimmung SERIAL REFERENCES abstimmungen (id) ON DELETE CASCADE,
-        datum DATE NOT NULL,
-        active BOOLEAN NOT NULL,
+        datum DATE NOT NULL, -- the last timestamp is the current status
         PRIMARY KEY (gesetzesvorhaben, status, abstimmung)
     );
 
