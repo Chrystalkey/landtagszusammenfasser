@@ -1,0 +1,13 @@
+.openapi-generator-ignore
+Model/Abstimmungstyp.sql
+Model/Ausschuesse.sql
+Model/Dokumententyp.sql
+Model/Fraktionen.sql
+Model/Gesetzeseigenschaft.sql
+Model/Initiatoren.sql
+Model/Parlamente.sql
+Model/Schlagworte.sql
+Model/TopListeAusschuss.sql
+Model/TopListeParlament.sql
+README.md
+mysql_schema.sql
