@@ -9,7 +9,7 @@ authors = ["Benedikt Schäfer", "Noah Lokocz", "Liv Märtens"]
 axum = { version = "0.7", features = ["macros"] }
 axum-macros = "0.4"
 chrono = { version = "0.4", features = ["serde"] }
-diesel = { version = "2.1", features = ["postgres", "uuid", "serde_json"] }
+diesel = { version = "2.1", features = ["postgres", "uuid", "serde_json", "r2d2", "chrono", "numeric"] }
 diesel_migrations = "2"
 deadpool-diesel = { version = "0.6", features = ["postgres"] }
 dotenvy = "0.15"
@@ -21,3 +21,4 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 uuid = { version = "1.4", features = ["fast-rng", "v7", "serde"] }
 thiserror = "1.0.61"
 ulid = { version = "1.1.2", features = ["uuid", "serde"] }
+derive_builder = "0.20.0"

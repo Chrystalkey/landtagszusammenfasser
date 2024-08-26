@@ -41,6 +41,8 @@ VALUES
     (17, 'Sachsen-Anhalt', 'ST'),
     (18, 'Schleswig-Holstein', 'SH'),
     (19, 'Thüringen', 'TH');
+REVOKE ALL ON TABLE parlamente FROM public;
+GRANT SELECT ON TABLE parlamente TO public;
 
 CREATE TABLE
     initiatoren (
@@ -75,4 +77,4 @@ VALUES
     (3, 'Beschlussempfehlung'),
     (4, 'Finale Fassung'),
     (5, 'Gesetzesentwurf'),
-    (6, "Kabinettsbeschluss");
+    (6, 'Kabinettsbeschluss');

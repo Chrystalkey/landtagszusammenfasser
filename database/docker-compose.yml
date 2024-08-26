@@ -1,0 +1,11 @@
+version: "3.7"
+
+services:
+  postgres-test:
+    image: postgres:latest
+    container_name: pg-server
+    restart: unless-stopped
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust

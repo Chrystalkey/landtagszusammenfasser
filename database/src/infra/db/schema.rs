@@ -6,16 +6,17 @@ diesel::table! {
         namentlich -> Bool,
         #[max_length = 255]
         url -> Varchar,
-        typ -> Int4,
+        typ -> Nullable<Int4>,
+        gesetzesvorhaben -> Nullable<Int4>,
     }
 }
 
 diesel::table! {
     abstimmungsergebnisse (id) {
         id -> Int4,
-        abstimmung -> Int4,
-        fraktion -> Int4,
-        anteil -> Numeric,
+        abstimmung -> Nullable<Int4>,
+        fraktion -> Nullable<Int4>,
+        anteil -> Float8,
     }
 }
 
@@ -32,7 +33,7 @@ diesel::table! {
         id -> Int4,
         #[max_length = 255]
         name -> Varchar,
-        parlament -> Int4,
+        parlament -> Nullable<Int4>,
     }
 }
 
@@ -40,9 +41,9 @@ diesel::table! {
     ausschussberatungen (id) {
         id -> Int4,
         datum -> Date,
-        gesetzesvorhaben -> Nullable<Uuid>,
-        ausschuss -> Int4,
-        dokument -> Int4,
+        gesetzesvorhaben -> Nullable<Int4>,
+        ausschuss -> Nullable<Int4>,
+        dokument -> Nullable<Int4>,
     }
 }
 
@@ -60,8 +61,8 @@ diesel::table! {
         file -> Nullable<Varchar>,
         #[max_length = 64]
         hash -> Bpchar,
-        gesetzesvorhaben -> Nullable<Uuid>,
-        typ -> Int4,
+        gesetzesvorhaben -> Nullable<Int4>,
+        typ -> Nullable<Int4>,
     }
 }
 
@@ -91,7 +92,8 @@ diesel::table! {
 
 diesel::table! {
     gesetzesvorhaben (id) {
-        id -> Uuid,
+        id -> Int4,
+        ext_id -> Uuid,
         #[max_length = 255]
         titel -> Varchar,
         #[max_length = 255]
@@ -102,8 +104,8 @@ diesel::table! {
         id_gesblatt -> Nullable<Varchar>,
         verfassungsaendernd -> Bool,
         trojaner -> Nullable<Bool>,
-        federfuehrung -> Int4,
-        initiator -> Int4,
+        federfuehrung -> Nullable<Int4>,
+        initiator -> Nullable<Int4>,
     }
 }
 
@@ -130,40 +132,32 @@ diesel::table! {
 }
 
 diesel::table! {
-    rel_ges_abstimmungen (gesetzesvorhaben, abstimmung) {
-        gesetzesvorhaben -> Uuid,
-        abstimmung -> Int4,
-    }
-}
-
-diesel::table! {
     rel_ges_eigenschaft (gesetzesvorhaben, eigenschaft) {
-        gesetzesvorhaben -> Uuid,
+        gesetzesvorhaben -> Int4,
         eigenschaft -> Int4,
     }
 }
 
 diesel::table! {
     rel_ges_schlagworte (gesetzesvorhaben, schlagwort) {
-        gesetzesvorhaben -> Uuid,
+        gesetzesvorhaben -> Int4,
         schlagwort -> Int4,
     }
 }
 
 diesel::table! {
     rel_ges_status (gesetzesvorhaben, status, abstimmung) {
-        gesetzesvorhaben -> Uuid,
+        gesetzesvorhaben -> Int4,
         status -> Int4,
         abstimmung -> Int4,
-        datum -> Date,
-        active -> Bool,
+        datum -> Timestamp,
     }
 }
 
 diesel::table! {
     rel_ges_tops (top, gesetzesvorhaben, dokument, abstimmung) {
         top -> Int4,
-        gesetzesvorhaben -> Uuid,
+        gesetzesvorhaben -> Int4,
         abstimmung -> Int4,
         dokument -> Int4,
         #[max_length = 255]
@@ -184,7 +178,7 @@ diesel::table! {
 diesel::table! {
     sonstige_ids (id) {
         id -> Int4,
-        gesetzesvorhaben -> Nullable<Uuid>,
+        gesetzesvorhaben -> Nullable<Int4>,
         #[max_length = 255]
         typ -> Varchar,
         #[max_length = 255]
@@ -197,7 +191,18 @@ diesel::table! {
         id -> Int4,
         #[max_length = 255]
         name -> Varchar,
-        parlament -> Int4,
+        parlament -> Nullable<Int4>,
+    }
+}
+
+diesel::table! {
+    tagesordnungspunkt (id) {
+        id -> Int4,
+        #[max_length = 255]
+        titel -> Varchar,
+        tops_id -> Nullable<Int4>,
+        document -> Nullable<Int4>,
+        abstimmung -> Nullable<Int4>,
     }
 }
 
@@ -207,11 +212,12 @@ diesel::table! {
         datum -> Date,
         #[max_length = 255]
         url -> Varchar,
-        parlament -> Int4,
+        parlament -> Nullable<Int4>,
     }
 }
 
 diesel::joinable!(abstimmungen -> abstimmungstyp (typ));
+diesel::joinable!(abstimmungen -> gesetzesvorhaben (gesetzesvorhaben));
 diesel::joinable!(abstimmungsergebnisse -> abstimmungen (abstimmung));
 diesel::joinable!(abstimmungsergebnisse -> fraktionen (fraktion));
 diesel::joinable!(ausschuesse -> parlamente (parlament));
@@ -222,8 +228,6 @@ diesel::joinable!(dokumente -> dokumenttypen (typ));
 diesel::joinable!(dokumente -> gesetzesvorhaben (gesetzesvorhaben));
 diesel::joinable!(gesetzesvorhaben -> ausschuesse (federfuehrung));
 diesel::joinable!(gesetzesvorhaben -> initiatoren (initiator));
-diesel::joinable!(rel_ges_abstimmungen -> abstimmungen (abstimmung));
-diesel::joinable!(rel_ges_abstimmungen -> gesetzesvorhaben (gesetzesvorhaben));
 diesel::joinable!(rel_ges_eigenschaft -> gesetzeseigenschaften (eigenschaft));
 diesel::joinable!(rel_ges_eigenschaft -> gesetzesvorhaben (gesetzesvorhaben));
 diesel::joinable!(rel_ges_schlagworte -> gesetzesvorhaben (gesetzesvorhaben));
@@ -237,6 +241,9 @@ diesel::joinable!(rel_ges_tops -> gesetzesvorhaben (gesetzesvorhaben));
 diesel::joinable!(rel_ges_tops -> tops (top));
 diesel::joinable!(sonstige_ids -> gesetzesvorhaben (gesetzesvorhaben));
 diesel::joinable!(status -> parlamente (parlament));
+diesel::joinable!(tagesordnungspunkt -> abstimmungen (abstimmung));
+diesel::joinable!(tagesordnungspunkt -> dokumente (document));
+diesel::joinable!(tagesordnungspunkt -> tops (tops_id));
 diesel::joinable!(tops -> parlamente (parlament));
 
 diesel::allow_tables_to_appear_in_same_query!(
@@ -252,7 +259,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     gesetzesvorhaben,
     initiatoren,
     parlamente,
-    rel_ges_abstimmungen,
     rel_ges_eigenschaft,
     rel_ges_schlagworte,
     rel_ges_status,
@@ -260,5 +266,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     schlagworte,
     sonstige_ids,
     status,
+    tagesordnungspunkt,
     tops,
 );
