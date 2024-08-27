@@ -12,6 +12,7 @@ type Connection = diesel::r2d2::PooledConnection<diesel::r2d2::ConnectionManager
 #[diesel(table_name=tops, primary_key(id), belongs_to(Parlamente, foreign_key=parlament))]
 pub struct Top {
     pub id: i32,
+    pub ext_id: uuid::Uuid,
     pub datum: chrono::NaiveDate,
     pub url: String,
     pub parlament: Option<i32>,
@@ -21,6 +22,7 @@ pub struct Top {
 #[diesel(table_name=tops)]
 pub struct CreateTop {
     pub id: i32,
+    pub ext_id: uuid::Uuid,
     pub datum: chrono::NaiveDate,
     pub url: String,
     pub parlament: Option<i32>,
@@ -29,6 +31,7 @@ pub struct CreateTop {
 #[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset)]
 #[diesel(table_name=tops)]
 pub struct UpdateTop {
+    pub ext_id: Option<uuid::Uuid>,
     pub datum: Option<chrono::NaiveDate>,
     pub url: Option<String>,
     pub parlament: Option<Option<i32>>,

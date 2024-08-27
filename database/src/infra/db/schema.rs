@@ -3,6 +3,7 @@
 diesel::table! {
     abstimmungen (id) {
         id -> Int4,
+        ext_id -> Uuid,
         namentlich -> Bool,
         #[max_length = 255]
         url -> Varchar,
@@ -40,6 +41,7 @@ diesel::table! {
 diesel::table! {
     ausschussberatungen (id) {
         id -> Int4,
+        ext_id -> Uuid,
         datum -> Date,
         gesetzesvorhaben -> Nullable<Int4>,
         ausschuss -> Nullable<Int4>,
@@ -50,6 +52,7 @@ diesel::table! {
 diesel::table! {
     dokumente (id) {
         id -> Int4,
+        ext_id -> Uuid,
         #[max_length = 255]
         off_id -> Varchar,
         datum -> Date,
@@ -62,7 +65,7 @@ diesel::table! {
         #[max_length = 64]
         hash -> Bpchar,
         gesetzesvorhaben -> Nullable<Int4>,
-        typ -> Nullable<Int4>,
+        doktyp -> Nullable<Int4>,
     }
 }
 
@@ -104,8 +107,8 @@ diesel::table! {
         id_gesblatt -> Nullable<Varchar>,
         verfassungsaendernd -> Bool,
         trojaner -> Nullable<Bool>,
-        federfuehrung -> Nullable<Int4>,
-        initiator -> Nullable<Int4>,
+        feder -> Nullable<Int4>,
+        initiat -> Nullable<Int4>,
     }
 }
 
@@ -209,6 +212,7 @@ diesel::table! {
 diesel::table! {
     tops (id) {
         id -> Int4,
+        ext_id -> Uuid,
         datum -> Date,
         #[max_length = 255]
         url -> Varchar,
@@ -224,10 +228,10 @@ diesel::joinable!(ausschuesse -> parlamente (parlament));
 diesel::joinable!(ausschussberatungen -> ausschuesse (ausschuss));
 diesel::joinable!(ausschussberatungen -> dokumente (dokument));
 diesel::joinable!(ausschussberatungen -> gesetzesvorhaben (gesetzesvorhaben));
-diesel::joinable!(dokumente -> dokumenttypen (typ));
+diesel::joinable!(dokumente -> dokumenttypen (doktyp));
 diesel::joinable!(dokumente -> gesetzesvorhaben (gesetzesvorhaben));
-diesel::joinable!(gesetzesvorhaben -> ausschuesse (federfuehrung));
-diesel::joinable!(gesetzesvorhaben -> initiatoren (initiator));
+diesel::joinable!(gesetzesvorhaben -> ausschuesse (feder));
+diesel::joinable!(gesetzesvorhaben -> initiatoren (initiat));
 diesel::joinable!(rel_ges_eigenschaft -> gesetzeseigenschaften (eigenschaft));
 diesel::joinable!(rel_ges_eigenschaft -> gesetzesvorhaben (gesetzesvorhaben));
 diesel::joinable!(rel_ges_schlagworte -> gesetzesvorhaben (gesetzesvorhaben));

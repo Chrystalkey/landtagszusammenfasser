@@ -62,7 +62,7 @@ CREATE TABLE
 CREATE TABLE
     abstimmungstyp (id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL);
 
--- actual party factions, also 'dafür', 'dagegen', 'enthalten', 'nicht abgestimmt'
+-- actual party factions, and also 'dafür', 'dagegen', 'enthalten', 'nicht abgestimmt'
 CREATE TABLE
     fraktionen (id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL);
 

@@ -71,6 +71,7 @@ components:
           type: string
         parlament:
           $ref: "#/components/schemas/parlamente"
+
     top-liste-ausschuss:
       type: object
       has-id: true
@@ -187,7 +188,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/top-parlament"
-        
+
     dokumente:
       type: object
       has-id: true
@@ -209,6 +210,7 @@ components:
           $ref: "#/components/schemas/dokumententyp"
         gesetzesvorhaben:
           $ref: "#/components/schemas/gesetzesvorhaben"
+  
     ausschussberatung:
       type: object
       has-id: true

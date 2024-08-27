@@ -32,8 +32,8 @@ CREATE TABLE
         id_gesblatt VARCHAR(255),
         verfassungsaendernd BOOLEAN NOT NULL,
         trojaner BOOLEAN,
-        federfuehrung INTEGER REFERENCES ausschuesse (id) ON DELETE SET NULL,
-        initiator INTEGER REFERENCES initiatoren (id) ON DELETE SET NULL
+        feder INTEGER REFERENCES ausschuesse (id) ON DELETE SET NULL,
+        initiat INTEGER REFERENCES initiatoren (id) ON DELETE SET NULL
     );
 
 CREATE TABLE
@@ -47,7 +47,7 @@ CREATE TABLE
         file VARCHAR(255),
         hash CHAR(64) NOT NULL, -- TODO: check if this is the correct length
         gesetzesvorhaben INTEGER REFERENCES gesetzesvorhaben (id) ON DELETE CASCADE,
-        typ INTEGER REFERENCES dokumenttypen (id) ON DELETE SET NULL
+        doktyp INTEGER REFERENCES dokumenttypen (id) ON DELETE SET NULL
     );
 
 CREATE TABLE
@@ -67,6 +67,7 @@ CREATE TABLE
         typ VARCHAR(255) NOT NULL,
         inhalt VARCHAR(255) NOT NULL
     );
+
 CREATE TABLE
     abstimmungen (
         id SERIAL PRIMARY KEY, 

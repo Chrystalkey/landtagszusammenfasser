@@ -14,6 +14,7 @@ type Connection = diesel::r2d2::PooledConnection<diesel::r2d2::ConnectionManager
 #[diesel(table_name=ausschussberatungen, primary_key(id), belongs_to(Ausschuesse, foreign_key=ausschuss) , belongs_to(Dokumente, foreign_key=dokument) , belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben))]
 pub struct Ausschussberatungen {
     pub id: i32,
+    pub ext_id: uuid::Uuid,
     pub datum: chrono::NaiveDate,
     pub gesetzesvorhaben: Option<i32>,
     pub ausschuss: Option<i32>,
@@ -24,6 +25,7 @@ pub struct Ausschussberatungen {
 #[diesel(table_name=ausschussberatungen)]
 pub struct CreateAusschussberatungen {
     pub id: i32,
+    pub ext_id: uuid::Uuid,
     pub datum: chrono::NaiveDate,
     pub gesetzesvorhaben: Option<i32>,
     pub ausschuss: Option<i32>,
@@ -33,6 +35,7 @@ pub struct CreateAusschussberatungen {
 #[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset)]
 #[diesel(table_name=ausschussberatungen)]
 pub struct UpdateAusschussberatungen {
+    pub ext_id: Option<uuid::Uuid>,
     pub datum: Option<chrono::NaiveDate>,
     pub gesetzesvorhaben: Option<Option<i32>>,
     pub ausschuss: Option<Option<i32>>,

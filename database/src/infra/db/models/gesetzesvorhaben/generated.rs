@@ -10,7 +10,7 @@ use crate::models::initiatoren::Initiatoren;
 type Connection = diesel::r2d2::PooledConnection<diesel::r2d2::ConnectionManager<diesel::PgConnection>>;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Identifiable, Associations, Selectable)]
-#[diesel(table_name=gesetzesvorhaben, primary_key(id), belongs_to(Ausschuesse, foreign_key=federfuehrung) , belongs_to(Initiatoren, foreign_key=initiator))]
+#[diesel(table_name=gesetzesvorhaben, primary_key(id), belongs_to(Ausschuesse, foreign_key=feder) , belongs_to(Initiatoren, foreign_key=initiat))]
 pub struct Gesetzesvorhaben {
     pub id: i32,
     pub ext_id: uuid::Uuid,
@@ -20,8 +20,8 @@ pub struct Gesetzesvorhaben {
     pub id_gesblatt: Option<String>,
     pub verfassungsaendernd: bool,
     pub trojaner: Option<bool>,
-    pub federfuehrung: Option<i32>,
-    pub initiator: Option<i32>,
+    pub feder: Option<i32>,
+    pub initiat: Option<i32>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset)]
@@ -35,8 +35,8 @@ pub struct CreateGesetzesvorhaben {
     pub id_gesblatt: Option<String>,
     pub verfassungsaendernd: bool,
     pub trojaner: Option<bool>,
-    pub federfuehrung: Option<i32>,
-    pub initiator: Option<i32>,
+    pub feder: Option<i32>,
+    pub initiat: Option<i32>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset)]
@@ -49,8 +49,8 @@ pub struct UpdateGesetzesvorhaben {
     pub id_gesblatt: Option<Option<String>>,
     pub verfassungsaendernd: Option<bool>,
     pub trojaner: Option<Option<bool>>,
-    pub federfuehrung: Option<Option<i32>>,
-    pub initiator: Option<Option<i32>>,
+    pub feder: Option<Option<i32>>,
+    pub initiat: Option<Option<i32>>,
 }
 
 

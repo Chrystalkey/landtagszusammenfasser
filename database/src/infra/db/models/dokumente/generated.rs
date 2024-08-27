@@ -10,9 +10,10 @@ use crate::models::gesetzesvorhaben::Gesetzesvorhaben;
 type Connection = diesel::r2d2::PooledConnection<diesel::r2d2::ConnectionManager<diesel::PgConnection>>;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Identifiable, Associations, Selectable)]
-#[diesel(table_name=dokumente, primary_key(id), belongs_to(Dokumenttypen, foreign_key=typ) , belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben))]
+#[diesel(table_name=dokumente, primary_key(id), belongs_to(Dokumenttypen, foreign_key=doktyp) , belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben))]
 pub struct Dokumente {
     pub id: i32,
+    pub ext_id: uuid::Uuid,
     pub off_id: String,
     pub datum: chrono::NaiveDate,
     pub url: String,
@@ -20,13 +21,14 @@ pub struct Dokumente {
     pub file: Option<String>,
     pub hash: String,
     pub gesetzesvorhaben: Option<i32>,
-    pub typ: Option<i32>,
+    pub doktyp: Option<i32>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset)]
 #[diesel(table_name=dokumente)]
 pub struct CreateDokumente {
     pub id: i32,
+    pub ext_id: uuid::Uuid,
     pub off_id: String,
     pub datum: chrono::NaiveDate,
     pub url: String,
@@ -34,12 +36,13 @@ pub struct CreateDokumente {
     pub file: Option<String>,
     pub hash: String,
     pub gesetzesvorhaben: Option<i32>,
-    pub typ: Option<i32>,
+    pub doktyp: Option<i32>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset)]
 #[diesel(table_name=dokumente)]
 pub struct UpdateDokumente {
+    pub ext_id: Option<uuid::Uuid>,
     pub off_id: Option<String>,
     pub datum: Option<chrono::NaiveDate>,
     pub url: Option<String>,
@@ -47,7 +50,7 @@ pub struct UpdateDokumente {
     pub file: Option<Option<String>>,
     pub hash: Option<String>,
     pub gesetzesvorhaben: Option<Option<i32>>,
-    pub typ: Option<Option<i32>>,
+    pub doktyp: Option<Option<i32>>,
 }
 
 

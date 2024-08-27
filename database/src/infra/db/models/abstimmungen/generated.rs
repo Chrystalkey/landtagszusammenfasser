@@ -13,6 +13,7 @@ type Connection = diesel::r2d2::PooledConnection<diesel::r2d2::ConnectionManager
 #[diesel(table_name=abstimmungen, primary_key(id), belongs_to(Abstimmungstyp, foreign_key=typ) , belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben))]
 pub struct Abstimmungen {
     pub id: i32,
+    pub ext_id: uuid::Uuid,
     pub namentlich: bool,
     pub url: String,
     pub typ: Option<i32>,
@@ -23,6 +24,7 @@ pub struct Abstimmungen {
 #[diesel(table_name=abstimmungen)]
 pub struct CreateAbstimmungen {
     pub id: i32,
+    pub ext_id: uuid::Uuid,
     pub namentlich: bool,
     pub url: String,
     pub typ: Option<i32>,
@@ -32,6 +34,7 @@ pub struct CreateAbstimmungen {
 #[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset)]
 #[diesel(table_name=abstimmungen)]
 pub struct UpdateAbstimmungen {
+    pub ext_id: Option<uuid::Uuid>,
     pub namentlich: Option<bool>,
     pub url: Option<String>,
     pub typ: Option<Option<i32>>,
