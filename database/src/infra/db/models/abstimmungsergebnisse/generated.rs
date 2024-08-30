@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::models::abstimmungen::Abstimmungen;
 use crate::models::fraktionen::Fraktionen;
 
-type Connection = diesel::r2d2::PooledConnection<diesel::r2d2::ConnectionManager<diesel::PgConnection>>;
+type Connection = diesel::pg::PgConnection;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Identifiable, Associations, Selectable)]
 #[diesel(table_name=abstimmungsergebnisse, primary_key(id), belongs_to(Abstimmungen, foreign_key=abstimmung) , belongs_to(Fraktionen, foreign_key=fraktion))]

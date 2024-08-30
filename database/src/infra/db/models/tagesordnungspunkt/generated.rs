@@ -8,7 +8,7 @@ use crate::models::abstimmungen::Abstimmungen;
 use crate::models::dokumente::Dokumente;
 use crate::models::tops::Top;
 
-type Connection = diesel::r2d2::PooledConnection<diesel::r2d2::ConnectionManager<diesel::PgConnection>>;
+type Connection = diesel::pg::PgConnection;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Identifiable, Associations, Selectable)]
 #[diesel(table_name=tagesordnungspunkt, primary_key(id), belongs_to(Abstimmungen, foreign_key=abstimmung) , belongs_to(Dokumente, foreign_key=document) , belongs_to(Top, foreign_key=tops_id))]

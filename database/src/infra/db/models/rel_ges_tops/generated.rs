@@ -9,7 +9,7 @@ use crate::models::dokumente::Dokumente;
 use crate::models::gesetzesvorhaben::Gesetzesvorhaben;
 use crate::models::tops::Top;
 
-type Connection = diesel::r2d2::PooledConnection<diesel::r2d2::ConnectionManager<diesel::PgConnection>>;
+type Connection = diesel::pg::PgConnection;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Identifiable, Associations, Selectable)]
 #[diesel(table_name=rel_ges_tops, primary_key(top,gesetzesvorhaben,dokument,abstimmung), belongs_to(Abstimmungen, foreign_key=abstimmung) , belongs_to(Dokumente, foreign_key=dokument) , belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben) , belongs_to(Top, foreign_key=top))]

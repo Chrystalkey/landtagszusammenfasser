@@ -8,7 +8,7 @@ use crate::models::abstimmungen::Abstimmungen;
 use crate::models::gesetzesvorhaben::Gesetzesvorhaben;
 use crate::models::status::Statu;
 
-type Connection = diesel::r2d2::PooledConnection<diesel::r2d2::ConnectionManager<diesel::PgConnection>>;
+type Connection = diesel::pg::PgConnection;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Identifiable, Associations, Selectable)]
 #[diesel(table_name=rel_ges_status, primary_key(gesetzesvorhaben,status,abstimmung), belongs_to(Abstimmungen, foreign_key=abstimmung) , belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben) , belongs_to(Statu, foreign_key=status))]

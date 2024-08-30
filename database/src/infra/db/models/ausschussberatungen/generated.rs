@@ -8,7 +8,7 @@ use crate::models::ausschuesse::Ausschuesse;
 use crate::models::dokumente::Dokumente;
 use crate::models::gesetzesvorhaben::Gesetzesvorhaben;
 
-type Connection = diesel::r2d2::PooledConnection<diesel::r2d2::ConnectionManager<diesel::PgConnection>>;
+type Connection = diesel::pg::PgConnection;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Identifiable, Associations, Selectable)]
 #[diesel(table_name=ausschussberatungen, primary_key(id), belongs_to(Ausschuesse, foreign_key=ausschuss) , belongs_to(Dokumente, foreign_key=dokument) , belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben))]

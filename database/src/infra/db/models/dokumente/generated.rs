@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::models::dokumenttypen::Dokumenttypen;
 use crate::models::gesetzesvorhaben::Gesetzesvorhaben;
 
-type Connection = diesel::r2d2::PooledConnection<diesel::r2d2::ConnectionManager<diesel::PgConnection>>;
+type Connection = diesel::pg::PgConnection;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Identifiable, Associations, Selectable)]
 #[diesel(table_name=dokumente, primary_key(id), belongs_to(Dokumenttypen, foreign_key=doktyp) , belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben))]
@@ -15,11 +15,12 @@ pub struct Dokumente {
     pub id: i32,
     pub ext_id: uuid::Uuid,
     pub off_id: String,
-    pub datum: chrono::NaiveDate,
+    pub created_at: chrono::NaiveDateTime,
+    pub accessed_at: chrono::NaiveDateTime,
     pub url: String,
-    pub collector_url: String,
-    pub file: Option<String>,
+    pub path: Option<String>,
     pub hash: String,
+    pub filetype: String,
     pub gesetzesvorhaben: Option<i32>,
     pub doktyp: Option<i32>,
 }
@@ -30,11 +31,12 @@ pub struct CreateDokumente {
     pub id: i32,
     pub ext_id: uuid::Uuid,
     pub off_id: String,
-    pub datum: chrono::NaiveDate,
+    pub created_at: chrono::NaiveDateTime,
+    pub accessed_at: chrono::NaiveDateTime,
     pub url: String,
-    pub collector_url: String,
-    pub file: Option<String>,
+    pub path: Option<String>,
     pub hash: String,
+    pub filetype: String,
     pub gesetzesvorhaben: Option<i32>,
     pub doktyp: Option<i32>,
 }
@@ -44,11 +46,12 @@ pub struct CreateDokumente {
 pub struct UpdateDokumente {
     pub ext_id: Option<uuid::Uuid>,
     pub off_id: Option<String>,
-    pub datum: Option<chrono::NaiveDate>,
+    pub created_at: Option<chrono::NaiveDateTime>,
+    pub accessed_at: Option<chrono::NaiveDateTime>,
     pub url: Option<String>,
-    pub collector_url: Option<String>,
-    pub file: Option<Option<String>>,
+    pub path: Option<Option<String>>,
     pub hash: Option<String>,
+    pub filetype: Option<String>,
     pub gesetzesvorhaben: Option<Option<i32>>,
     pub doktyp: Option<Option<i32>>,
 }

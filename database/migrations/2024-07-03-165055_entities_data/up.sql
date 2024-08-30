@@ -41,11 +41,12 @@ CREATE TABLE
         id SERIAL PRIMARY KEY,
         ext_id UUID UNIQUE NOT NULL,
         off_id VARCHAR(255) NOT NULL,
-        datum DATE NOT NULL,
+        created_at TIMESTAMP NOT NULL,
+        accessed_at TIMESTAMP NOT NULL,
         url VARCHAR(255) NOT NULL,
-        collector_url VARCHAR(255) NOT NULL,
-        file VARCHAR(255),
+        path VARCHAR(255),
         hash CHAR(64) NOT NULL, -- TODO: check if this is the correct length
+        filetype VARCHAR(16) NOT NULL,
         gesetzesvorhaben INTEGER REFERENCES gesetzesvorhaben (id) ON DELETE CASCADE,
         doktyp INTEGER REFERENCES dokumenttypen (id) ON DELETE SET NULL
     );

@@ -55,15 +55,16 @@ diesel::table! {
         ext_id -> Uuid,
         #[max_length = 255]
         off_id -> Varchar,
-        datum -> Date,
+        created_at -> Timestamp,
+        accessed_at -> Timestamp,
         #[max_length = 255]
         url -> Varchar,
         #[max_length = 255]
-        collector_url -> Varchar,
-        #[max_length = 255]
-        file -> Nullable<Varchar>,
+        path -> Nullable<Varchar>,
         #[max_length = 64]
         hash -> Bpchar,
+        #[max_length = 16]
+        filetype -> Varchar,
         gesetzesvorhaben -> Nullable<Int4>,
         doktyp -> Nullable<Int4>,
     }

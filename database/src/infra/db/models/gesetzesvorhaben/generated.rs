@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::models::ausschuesse::Ausschuesse;
 use crate::models::initiatoren::Initiatoren;
 
-type Connection = diesel::r2d2::PooledConnection<diesel::r2d2::ConnectionManager<diesel::PgConnection>>;
+type Connection = diesel::pg::PgConnection;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Identifiable, Associations, Selectable)]
 #[diesel(table_name=gesetzesvorhaben, primary_key(id), belongs_to(Ausschuesse, foreign_key=feder) , belongs_to(Initiatoren, foreign_key=initiat))]

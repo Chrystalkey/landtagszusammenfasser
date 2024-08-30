@@ -1,0 +1,8 @@
+[package]
+name = "diesel_interaction"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+diesel = "2.2.3"
+serde = { version = "1.0.209", features = ["derive"] }

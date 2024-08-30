@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::models::gesetzeseigenschaften::Gesetzeseigenschaften;
 use crate::models::gesetzesvorhaben::Gesetzesvorhaben;
 
-type Connection = diesel::r2d2::PooledConnection<diesel::r2d2::ConnectionManager<diesel::PgConnection>>;
+type Connection = diesel::pg::PgConnection;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, Identifiable, Associations, Selectable)]
 #[diesel(table_name=rel_ges_eigenschaft, primary_key(gesetzesvorhaben,eigenschaft), belongs_to(Gesetzeseigenschaften, foreign_key=eigenschaft) , belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben))]

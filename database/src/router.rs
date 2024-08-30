@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::routing::{get};
@@ -6,7 +8,7 @@ use axum::Router;
 
 use crate::AppState;
 
-pub fn app_router(_state: AppState) -> Router<AppState> {
+pub fn app_router(_state: Arc<AppState>) -> Router<Arc<AppState>> {
     Router::new()
         .route("/", get(root))
         .fallback(handler_404)
