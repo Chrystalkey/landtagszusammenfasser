@@ -11,7 +11,7 @@ pub struct PaginationResult<T> {
     pub num_pages: i64,
 }
 
-pub trait DBInteraction<UpdateTable, ConnectionType, PaginationType>
+pub trait DieselInteraction<UpdateTable, ConnectionType, PaginationType>
 where 
 Self: Sized, 
 {

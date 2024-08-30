@@ -13,7 +13,6 @@ mod handlers;
 mod infra;
 mod router;
 
-pub use infra::db::models;
 pub use diesel;
 use infra::schema;
 

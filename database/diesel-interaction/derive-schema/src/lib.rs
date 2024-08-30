@@ -1,10 +1,26 @@
 extern crate proc_macro;
 
 use proc_macro::TokenStream;
-use quote::{format_ident, ToTokens};
-use syn::{spanned::Spanned, DeriveInput};
+use quote::format_ident;
+use syn::DeriveInput;
 
 ///
+/// This Macro generates Structures and Functions to
+/// enable interaction with diesel. Frankly, I do not know
+/// why diesel does not provide these themselves, but anyway.
+/// For a struct `Structure` corresponding to a `structure` in
+/// the schema.rs, the following syntax:
+/// ```
+/// #[derive(DieselInteraction)]
+/// #[schema_table="structure"]
+/// pub struct Structure{...}
+/// ```
+/// the macro generates the implementation of the 
+/// ```
+/// pub trait DieselInteraction
+/// ```
+/// Which only makes sense for entities with an id.
+/// Compounded primary keys are not supported.
 /// What I want in the end is this:
 /// ```
 /// #[derive(DieselInteraction)]
@@ -110,7 +126,7 @@ fn implement_macro(ast: &DeriveInput) -> TokenStream {
     let gen = quote! {
         #update_struct
 
-        impl DBInteraction<#update_struct_name #generics,
+        impl DieselInteraction<#update_struct_name #generics,
         Connection,
         PaginationResult<Self>> for #name #generics {
             fn create(it: &Self, conn: &mut Connection) -> QueryResult<Self> {
@@ -128,7 +144,7 @@ fn implement_macro(ast: &DeriveInput) -> TokenStream {
             fn matches(conn: &mut Connection, ut: &#update_struct_name #generics) -> QueryResult<Vec<Self>> {
                 use crate::schema::#schema_table::dsl as table;
                 let mut query = table::#schema_table.into_boxed();
-                #(#filter_query),*
+                #(#filter_query)*
                 query.load::<Self>(conn)
             }
             fn paginate(conn: &mut Connection, page: i64, page_size: i64) -> QueryResult<PaginationResult<Self>> {

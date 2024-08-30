@@ -5,115 +5,217 @@ use diesel_interaction_derive::DieselInteraction;
 use diesel::*;
 use super::schema::*;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 type Connection = PgConnection;
 
 #[derive(DieselInteraction, Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Selectable)]
-#[schema_table = "dokumenttypen"]
-#[diesel(table_name=dokumenttypen, primary_key(id))]
-pub struct Dokumenttypen {
+#[schema_table = "abstimmungen"]
+#[diesel(table_name=abstimmungen, primary_key(id), belongs_to(Abstimmungstyp, foreign_key=typ) , belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben))]
+struct Abstimmungen{
+    pub id: i32,
+    pub ext_id: Uuid,
+    pub namentlich: bool,
+    pub url: String,
+    pub typ: Option<i32>,
+    pub gesetzesvorhaben: Option<i32>,
+}
+
+#[derive(DieselInteraction, Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Selectable)]
+#[schema_table = "abstimmungsergebnisse"]
+#[diesel(table_name=abstimmungsergebnisse, primary_key(id), belongs_to(Abstimmungen, foreign_key=abstimmung) , belongs_to(Fraktionen, foreign_key=fraktion))]
+struct Abstimmungsergebnisse{
+    pub id: i32,
+    pub abstimmung: Option<i32>,
+    pub fraktion: Option<i32>,
+    pub anteil: f64
+}
+#[derive(DieselInteraction, Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Selectable)]
+#[schema_table = "abstimmungstyp"]
+#[diesel(table_name=abstimmungstyp, primary_key(id))]
+struct Abstimmungstyp{
     pub id: i32,
     pub name: String,
 }
 
+#[derive(DieselInteraction, Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Selectable)]
+#[schema_table = "ausschuesse"]
+#[diesel(table_name=ausschuesse, primary_key(id), belongs_to(Parlamente, foreign_key=parlament))]
+struct Ausschuesse{
+    pub id: i32,
+    pub name: String,
+    pub parlament: Option<i32>,
+}
+#[derive(DieselInteraction, Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Selectable)]
+#[schema_table = "ausschussberatungen"]
+#[diesel(table_name=ausschussberatungen, primary_key(id), belongs_to(Ausschuesse, foreign_key=ausschuss) , belongs_to(Dokumente, foreign_key=dokument) , belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben))]
+pub struct Ausschussberatungen {
+    pub id: i32,
+    pub ext_id: uuid::Uuid,
+    pub datum: chrono::NaiveDate,
+    pub gesetzesvorhaben: Option<i32>,
+    pub ausschuss: Option<i32>,
+    pub dokument: Option<i32>,
+}
 
+#[derive(DieselInteraction, Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Identifiable, Associations, Selectable)]
+#[schema_table = "dokumente"]
+#[diesel(table_name=dokumente, primary_key(id), belongs_to(Dokumenttypen, foreign_key=doktyp) , belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben))]
+pub struct Dokumente {
+    pub id: i32,
+    pub ext_id: uuid::Uuid,
+    pub off_id: String,
+    pub created_at: chrono::NaiveDateTime,
+    pub accessed_at: chrono::NaiveDateTime,
+    pub url: String,
+    pub path: Option<String>,
+    pub hash: String,
+    pub filetype: String,
+    pub gesetzesvorhaben: Option<i32>,
+    pub doktyp: Option<i32>,
+}
 
+#[derive(DieselInteraction, Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Selectable)]
+#[schema_table = "dokumenttypen"]
+#[diesel(table_name=dokumenttypen, primary_key(id))]
+struct Dokumenttypen{
+    pub id: i32,
+    pub name: String,
+}
 
-// #[derive(Debug, Serialize)]
-// pub struct PaginationResult<T> {
-//     pub items: Vec<T>,
-//     pub total_items: i64,
-//     /// 0-based index
-//     pub page: i64,
-//     pub page_size: i64,
-//     pub num_pages: i64,
-// }
+#[derive(DieselInteraction, Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Selectable)]
+#[schema_table = "fraktionen"]
+#[diesel(table_name=fraktionen, primary_key(id))]
+struct Fraktionen{
+    pub id: i32,
+    pub name: String,
+}
 
+#[derive(DieselInteraction, Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Selectable)]
+#[schema_table = "gesetzeseigenschaften"]
+#[diesel(table_name=gesetzeseigenschaften, primary_key(id))]
+struct Gesetzeseigenschaften{
+    pub id: i32,
+    pub eigenschaft: String,
+}
 
-// macro_rules! db_interactions{
-//     ($tablestruct:ident, $schema_table:ident, $update_table_type:ident) =>{
-//         impl DBInteraction<$update_table_type, 
-//         Connection, 
-//         PaginationResult<Self>> for $tablestruct {
-//             fn create(it: &Self, conn: &mut Connection) -> QueryResult<Self> {
-//                 use crate::schema::$schema_table::dsl::*;
-//                 insert_into($schema_table).values(it).get_result::<Self>(conn)
-//             }
-//             fn update(conn: &mut Connection, id: i32, ut: &$update_table_type) -> QueryResult<Self> {
-//                 use crate::schema::$schema_table::dsl::*;
-//                 diesel::update($schema_table.filter(id.eq(id))).set(ut).get_result(conn)
-//             }
-//             fn get(conn: &mut Connection, id: i32) -> QueryResult<Self> {
-//                 use crate::schema::$schema_table::dsl::*;
-//                 $schema_table.filter(id.eq(id)).first::<Self>(conn)
-//             }
-//             fn matches(conn: &mut Connection, ut: &$update_table_type) -> QueryResult<Self> {
-//                 todo!()
-//             }
-//             fn paginate(conn: &mut Connection, page: i64, page_size: i64) -> QueryResult<PaginationResult<Self>> {
-//                 use crate::schema::$schema_table::dsl::*;
-//                 let page_size = if page_size < 1 { 1 } else { page_size };
-//                 let total_items = $schema_table.count().get_result(conn)?;
-//                 let items = $schema_table.limit(page_size).offset(page * page_size).load::<Self>(conn)?;
-//                 Ok(PaginationResult {
-//                     items,
-//                     total_items,
-//                     page,
-//                     page_size,
-//                     num_pages: total_items / page_size + i64::from(total_items % page_size != 0)
-//                 })
-//             }
-//             fn delete(conn: &mut Connection, id: i32) -> QueryResult<usize> {
-//                 use crate::schema::$schema_table::dsl::*;
-//                 diesel::delete($schema_table.filter(id.eq(id))).execute(conn)
-//             }
-//         }
-//     }
-// }
+#[derive(DieselInteraction, Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Identifiable, Associations, Selectable)]
+#[schema_table = "gesetzesvorhaben"]
+#[diesel(table_name=gesetzesvorhaben, primary_key(id), belongs_to(Ausschuesse, foreign_key=feder) , belongs_to(Initiatoren, foreign_key=initiat))]
+pub struct Gesetzesvorhaben {
+    pub id: i32,
+    pub ext_id: uuid::Uuid,
+    pub titel: String,
+    pub off_titel: String,
+    pub url_gesblatt: Option<String>,
+    pub id_gesblatt: Option<String>,
+    pub verfassungsaendernd: bool,
+    pub trojaner: Option<bool>,
+    pub feder: Option<i32>,
+    pub initiat: Option<i32>,
+}
 
-// #[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset)]
-// #[diesel(table_name=dokumenttypen)]
-// pub struct UpdateDokumenttypen {
-//     pub name: Option<String>,
-// }
-// impl DBInteraction<UpdateDokumenttypen, 
-//     Connection, 
-//     PaginationResult<Self>> for Dokumenttypen {
-//         fn create(it: &Self, conn: &mut Connection) -> QueryResult<Self> {
-//             use crate::schema::dokumenttypen::dsl::*;
-//             insert_into(dokumenttypen).values(it).get_result::<Self>(conn)
-//         }
-//         fn update(conn: &mut Connection, id: i32, ut: &UpdateDokumenttypen) -> QueryResult<Self> {
-//             use crate::schema::dokumenttypen::dsl::*;
-//             diesel::update(dokumenttypen.filter(id.eq(id))).set(ut).get_result(conn)
-//         }
-//         fn get(conn: &mut Connection, id: i32) -> QueryResult<Self> {
-//             use crate::schema::dokumenttypen::dsl::*;
-//             dokumenttypen.filter(id.eq(id)).first::<Self>(conn)
-//         }
-//         fn matches(conn: &mut Connection, ut: &UpdateDokumenttypen) -> QueryResult<Vec<Self>> {
-//             use crate::schema::dokumenttypen::dsl as table;
-//             let mut query = table::dokumenttypen.into_boxed();
-//             if let Some(ut_val) = &ut.name {
-//                 query = query.filter(table::name.eq(ut_val));
-//             }
-//             query.load::<Self>(conn)
-//         }
-//         fn paginate(conn: &mut Connection, page: i64, page_size: i64) -> QueryResult<PaginationResult<Self>> {
-//             use crate::schema::dokumenttypen::dsl::*;
-//             let page_size = if page_size < 1 { 1 } else { page_size };
-//             let total_items = dokumenttypen.count().get_result(conn)?;
-//             let items = dokumenttypen.limit(page_size).offset(page * page_size).load::<Self>(conn)?;
-//             Ok(PaginationResult {
-//                 items,
-//                 total_items,
-//                 page,
-//                 page_size,
-//                 num_pages: total_items / page_size + i64::from(total_items % page_size != 0)
-//             })
-//         }
-//         fn delete(conn: &mut Connection, id: i32) -> QueryResult<usize> {
-//             use crate::schema::dokumenttypen::dsl::*;
-//             diesel::delete(dokumenttypen.filter(id.eq(id))).execute(conn)
-//         }
-//     }
+#[derive(DieselInteraction, Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Selectable)]
+#[schema_table = "initiatoren"]
+#[diesel(table_name=initiatoren, primary_key(id))]
+pub struct Initiatoren {
+    pub id: i32,
+    pub name: String,
+    pub organisation: String,
+    pub url: String,
+}
+#[derive(DieselInteraction, Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Selectable)]
+#[schema_table = "parlamente"]
+#[diesel(table_name=parlamente, primary_key(id))]
+pub struct Parlamente {
+    pub id: i32,
+    pub name: String,
+    pub kurzname: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, Identifiable, Associations, Selectable)]
+#[diesel(table_name=rel_ges_eigenschaft, primary_key(gesetzesvorhaben,eigenschaft), belongs_to(Gesetzeseigenschaften, foreign_key=eigenschaft) , belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben))]
+pub struct RelGesEigenschaft {
+    pub gesetzesvorhaben: i32,
+    pub eigenschaft: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset)]
+#[diesel(table_name=rel_ges_eigenschaft)]
+pub struct UpdateRelGesEigenschaft {
+    pub gesetzesvorhaben: Option<i32>,
+    pub eigenschaft: Option<i32>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, Identifiable, Associations, Selectable)]
+#[diesel(table_name=rel_ges_schlagworte, primary_key(gesetzesvorhaben,schlagwort), belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben) , belongs_to(Schlagworte, foreign_key=schlagwort))]
+pub struct RelGesSchlagworte {
+    pub gesetzesvorhaben: i32,
+    pub schlagwort: i32,
+}
+#[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Identifiable, Associations, Selectable)]
+#[diesel(table_name=rel_ges_status, primary_key(gesetzesvorhaben,status,abstimmung), belongs_to(Abstimmungen, foreign_key=abstimmung) , belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben) , belongs_to(Status, foreign_key=status))]
+pub struct RelGesStatus {
+    pub gesetzesvorhaben: i32,
+    pub status: i32,
+    pub abstimmung: i32,
+    pub datum: chrono::NaiveDateTime,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Identifiable, Associations, Selectable)]
+#[diesel(table_name=rel_ges_tops, primary_key(top,gesetzesvorhaben,dokument,abstimmung), belongs_to(Abstimmungen, foreign_key=abstimmung) , belongs_to(Dokumente, foreign_key=dokument) , belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben) , belongs_to(Top, foreign_key=top))]
+pub struct RelGesTop {
+    pub top: i32,
+    pub gesetzesvorhaben: i32,
+    pub abstimmung: i32,
+    pub dokument: i32,
+    pub titel: String,
+}
+
+#[derive(DieselInteraction, Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Selectable)]
+#[schema_table = "schlagworte"]
+#[diesel(table_name=schlagworte, primary_key(id))]
+pub struct Schlagworte {
+    pub id: i32,
+    pub schlagwort: String,
+    pub beschreibung: String,
+}
+
+#[derive(DieselInteraction, Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Identifiable, Associations, Selectable)]
+#[schema_table = "sonstige_ids"]
+#[diesel(table_name=sonstige_ids, primary_key(id), belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben))]
+pub struct SonstigeId {
+    pub id: i32,
+    pub gesetzesvorhaben: Option<i32>,
+    pub typ: String,
+    pub inhalt: String,
+}
+#[derive(DieselInteraction, Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Identifiable, Associations, Selectable)]
+#[schema_table = "status"]
+#[diesel(table_name=status, primary_key(id), belongs_to(Parlamente, foreign_key=parlament))]
+pub struct Status {
+    pub id: i32,
+    pub name: String,
+    pub parlament: Option<i32>,
+}
+
+#[derive(DieselInteraction, Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Identifiable, Associations, Selectable)]
+#[schema_table = "tagesordnungspunkt"]
+#[diesel(table_name=tagesordnungspunkt, primary_key(id), belongs_to(Abstimmungen, foreign_key=abstimmung) , belongs_to(Dokumente, foreign_key=document) , belongs_to(Top, foreign_key=tops_id))]
+pub struct Tagesordnungspunkt {
+    pub id: i32,
+    pub titel: String,
+    pub tops_id: Option<i32>,
+    pub document: Option<i32>,
+    pub abstimmung: Option<i32>,
+}
+#[derive(DieselInteraction, Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Identifiable, Associations, Selectable)]
+#[schema_table = "tops"]
+#[diesel(table_name=tops, primary_key(id), belongs_to(Parlamente, foreign_key=parlament))]
+pub struct Top {
+    pub id: i32,
+    pub ext_id: uuid::Uuid,
+    pub datum: chrono::NaiveDate,
+    pub url: String,
+    pub parlament: Option<i32>,
+}
