@@ -106,7 +106,7 @@ mod test {
     }
 }
 
-mod updateable_entities {
+pub mod updateable_entities {
     use chrono::Utc;
     use serde::{Deserialize, Serialize};
     use uuid::Uuid;

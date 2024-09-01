@@ -7,7 +7,8 @@ use super::schema::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-type Connection = PgConnection;
+type Connection = deadpool_diesel::postgres::Connection;
+type Result<T> = std::result::Result<T, diesel_interaction::DieselInteractionError>;
 
 #[derive(DieselInteraction, Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Selectable)]
 #[schema_table = "abstimmungen"]

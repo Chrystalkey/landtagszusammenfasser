@@ -111,7 +111,7 @@ fn implement_macro(ast: &DeriveInput) -> TokenStream {
 
     let schema_table = format_ident!("{}", schema_table_string);
     let update_struct = quote! {
-        #[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset)]
+        #[derive(Debug, Default, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset)]
         #[diesel(table_name=#schema_table)]
         pub struct #update_struct_name #generics {
             #(#optionized_fields),*
@@ -123,29 +123,48 @@ fn implement_macro(ast: &DeriveInput) -> TokenStream {
         impl DieselInteraction<#update_struct_name #generics,
         Connection,
         PaginationResult<Self>> for #name #generics {
-            fn create(it: &Self, conn: &mut Connection) -> QueryResult<Self> {
+            async fn create( conn: &mut Connection, it: &Self) -> Result<Self> {
                 use crate::schema::#schema_table::dsl::*;
-                insert_into(#schema_table).values(it).get_result::<Self>(conn)
+                let itcl = it.clone();
+                Ok(conn.interact(move|conn|{
+                    insert_into(#schema_table).values(itcl).get_result::<Self>(conn)
+                }).await??)
             }
-            fn update(conn: &mut Connection, id: i32, ut: &#update_struct_name #generics) -> QueryResult<Self> {
+            async fn update(conn: &mut Connection, id: i32, ut: &#update_struct_name #generics) -> Result<Self> {
                 use crate::schema::#schema_table::dsl::*;
+                
+                let utcl = ut;
+                let ut = utcl.clone();
+                Ok(conn.interact(move|conn|{
                 diesel::update(#schema_table.filter(id.eq(id))).set(ut).get_result(conn)
+                }).await??)
             }
-            fn get(conn: &mut Connection, id: i32) -> QueryResult<Self> {
+            async fn get(conn: &mut Connection, id: i32) -> Result<Self> {
                 use crate::schema::#schema_table::dsl::*;
+                
+                Ok(conn.interact(move|conn|{
                 #schema_table.filter(id.eq(id)).first::<Self>(conn)
+                }).await??)
             }
-            fn matches(conn: &mut Connection, ut: &#update_struct_name #generics) -> QueryResult<Vec<Self>> {
+            async fn matches(conn: &mut Connection, ut: &#update_struct_name #generics) -> Result<Vec<Self>> {
                 use crate::schema::#schema_table::dsl as table;
-                let mut query = table::#schema_table.into_boxed();
-                #(#filter_query)*
-                query.load::<Self>(conn)
+                let utcl = ut;
+                let ut = utcl.clone();
+                Ok(conn.interact(move|conn|{
+                    let mut query = table::#schema_table.into_boxed();
+                    #(#filter_query)*
+                    query.load::<Self>(conn)
+                }).await??)
             }
-            fn paginate(conn: &mut Connection, page: i64, page_size: i64) -> QueryResult<PaginationResult<Self>> {
+            async fn paginate(conn: &mut Connection, page: i64, page_size: i64) -> Result<PaginationResult<Self>> {
                 use crate::schema::#schema_table::dsl::*;
                 let page_size = if page_size < 1 { 1 } else { page_size };
-                let total_items = #schema_table.count().get_result(conn)?;
-                let items = #schema_table.limit(page_size).offset(page * page_size).load::<Self>(conn)?;
+                let total_items =  conn.interact(|conn|{
+                    #schema_table.count().get_result(conn)
+                }).await??;
+                let items = conn.interact(move|conn|{
+                    #schema_table.limit(page_size).offset(page * page_size).load::<Self>(conn)
+                }).await??;
                 Ok(PaginationResult {
                     items,
                     total_items,
@@ -154,9 +173,11 @@ fn implement_macro(ast: &DeriveInput) -> TokenStream {
                     num_pages: total_items / page_size + i64::from(total_items % page_size != 0)
                 })
             }
-            fn delete(conn: &mut Connection, id: i32) -> QueryResult<usize> {
+            async fn delete(conn: &mut Connection, id: i32) -> Result<usize> {
                 use crate::schema::#schema_table::dsl::*;
-                diesel::delete(#schema_table.filter(id.eq(id))).execute(conn)
+                Ok(conn.interact(move|conn|{
+                    diesel::delete(#schema_table.filter(id.eq(id))).execute(conn)
+                }).await??)
             }
         }
     };
