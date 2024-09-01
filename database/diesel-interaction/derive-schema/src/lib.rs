@@ -19,19 +19,13 @@ use syn::DeriveInput;
 /// ```
 /// pub trait DieselInteraction
 /// ```
-/// Which only makes sense for entities with an id.
+/// This trait only makes sense for entities with an id.
 /// Compounded primary keys are not supported.
-/// What I want in the end is this:
+/// 
+/// It also generates a struct call `Update{}`, containing all but the id field wrapped in a Option<>.
+/// So for this case, it would generate 
 /// ```
-/// #[derive(DieselInteraction)]
-/// #[schema_table=gesetzesvorhaben]
-/// pub struct Gesetzesvorhaben;
-///
-/// which then generates:
-///     1. the members of Gesetzesvorhaben
-///     2. the PaginationResult struct
-///     3. the struct UpdateGesetzesvorhaben with all members optional
-///     4. impl DieselInteraction for Gesetzesvorhaben
+/// pub struct UpdateStructure{...}
 /// ```
 
 #[proc_macro_derive(DieselInteraction, attributes(schema_table))]

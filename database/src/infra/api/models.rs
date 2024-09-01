@@ -37,16 +37,17 @@ use uuid::Uuid;
 /// the payload id is set to None (null) and the database checks entries for matches
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct CUPUpdate {
-    msg_id: Uuid,
-    timestamp: chrono::DateTime<Utc>,
-    payload: Vec<CUPPayload>,
+    pub msg_id: Uuid,
+    pub timestamp: chrono::DateTime<Utc>,
+    pub payload: CUPPayload
 }
 
 /// This is the enumeration of all top-level independent updateable entities.
 /// Currently only Gesetzesvorhaben are supported, but in the future other data structures
 /// may be added.
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
-enum CUPPayload {
+#[non_exhaustive]
+pub enum CUPPayload {
     GesVH(updateable_entities::Gesetzesvorhaben),
     // TODO: Abstimmungen, Ausschusssitzungen, TOPs, etc.
 }
@@ -54,18 +55,18 @@ enum CUPPayload {
 /// These are the response structures. A CUPResponse is sent to the collector to notify it of the state of data after the update.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CUPResponse {
-    msg_id: Uuid,
-    responding_to: Uuid,
-    timestamp: chrono::DateTime<Utc>,
-    payload: Vec<CUPResponsePayload>,
+    pub msg_id: Uuid,
+    pub responding_to: Uuid,
+    pub timestamp: chrono::DateTime<Utc>,
+    pub payload: Vec<CUPResponsePayload>,
 }
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CUPResponsePayload {
-    data: CUPPayload,
-    rs_state: CUPRessourceState,
+    pub data: CUPPayload,
+    pub rs_state: CUPRessourceState,
 }
 #[derive(Serialize, Deserialize, Debug)]
-enum CUPRessourceState {
+pub enum CUPRessourceState {
     Created,
     Updated,
     Exists,
@@ -93,7 +94,7 @@ mod test {
         let transfer_structure = CUPUpdate {
             msg_id: Uuid::now_v7(),
             timestamp: Utc::now(),
-            payload: vec![CUPPayload::GesVH(empty_gesvh)],
+            payload: CUPPayload::GesVH(empty_gesvh),
         };
         let serialized = serde_json::to_string_pretty(&transfer_structure).unwrap();
         println!(
