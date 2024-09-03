@@ -165,13 +165,13 @@ fn implement_macro(ast: &DeriveInput) -> TokenStream {
                     }
                 }
             }
-            async fn insert(conn: &mut Connection, it: Insert) -> Result<usize> {
+            pub async fn insert(conn: &mut Connection, it: Insert) -> Result<usize> {
                 let result = conn
                     .interact(move |conn| diesel::insert_into(table).values(&it).execute(conn))
                     .await??;
                 Ok(result)
             }
-            async fn update(conn: &mut Connection, id: i32, ut: &Update) -> Result<usize> {
+            pub async fn update(conn: &mut Connection, id: i32, ut: &Update) -> Result<usize> {
                 let utcl = ut.clone();
                 let result = conn
                     .interact(move |conn| {
@@ -182,7 +182,7 @@ fn implement_macro(ast: &DeriveInput) -> TokenStream {
                     .await??;
                 Ok(result)
             }
-            async fn select(conn: &mut Connection, id: i32) -> Result<super::#name> {
+            pub async fn select(conn: &mut Connection, id: i32) -> Result<super::#name> {
                 let result = conn
                     .interact(move |conn| {
                         table
@@ -193,7 +193,7 @@ fn implement_macro(ast: &DeriveInput) -> TokenStream {
                     .await??;
                 Ok(result)
             }
-            async fn select_matching(conn: &mut Connection, ut: Update) -> Result<Vec<super::#name>> {
+            pub async fn select_matching(conn: &mut Connection, ut: Update) -> Result<Vec<super::#name>> {
                 let result = conn
                     .interact(move |conn| {
                         let mut query = table.into_boxed();
@@ -203,7 +203,7 @@ fn implement_macro(ast: &DeriveInput) -> TokenStream {
                     .await??;
                 Ok(result)
             }
-            async fn paginate(
+            pub async fn paginate(
                 conn: &mut Connection,
                 page: i64,
                 page_size: i64,
@@ -228,7 +228,7 @@ fn implement_macro(ast: &DeriveInput) -> TokenStream {
                     num_pages: total_items / page_size + i64::from(total_items % page_size != 0),
                 })
             }
-            async fn delete(conn: &mut Connection, id: i32) -> Result<usize> {
+            pub async fn delete(conn: &mut Connection, id: i32) -> Result<usize> {
                 let result = conn
                     .interact(move |conn| diesel::delete(table.filter(module::id.eq(id))).execute(conn))
                     .await??;

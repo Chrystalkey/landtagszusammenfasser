@@ -1,10 +1,9 @@
 use std::sync::Arc;
 
-use crate::infra::api::{CUPPayload, CUPResponse};
+use crate::infra::api::{CUPPayload, CUPResponse, CUPResponsePayload};
 use crate::infra::db::connection as dbcon;
 use crate::{error::LTZFError, infra::api as ifapi, AppState};
 use axum::{extract::State, Json};
-use diesel_interaction::*;
 use uuid::Uuid;
 
 async fn handle_gesvh(
@@ -25,24 +24,55 @@ async fn handle_gesvh(
 
     // if no match at all can be found, a new entry is created
     if gesvh.ext_id.is_some() {
-        let mut update_gesvh = dbcon::UpdateGesetzesvorhaben {
+        let update_gesvh = dbcon::gesetzesvorhaben::Update {
             ext_id: gesvh.ext_id,
             ..Default::default()
         };
-        let mut matches = dbcon::Gesetzesvorhaben::matches(&mut conn, &update_gesvh).await?;
+        let matches = dbcon::gesetzesvorhaben::select_matching(&mut conn, update_gesvh).await?;
         // if one match: update
         if matches.is_empty() {
-            // do further matching
-        }
-        else{
             // create
             let gen_id = Uuid::now_v7();
+            let ins_gesvh = dbcon::gesetzesvorhaben::Insert {
+                ext_id: gen_id,
+                off_titel: gesvh
+                    .off_titel
+                    .expect("Offizieller Titel is a required field"),
+                titel: gesvh.titel.expect("Titel is a required field"),
+                verfassungsaendernd: gesvh
+                    .verfassungsaendernd
+                    .expect("Verfassungsändernd is a required field"),
+                id_gesblatt: gesvh.id_gesblatt,
+                url_gesblatt: gesvh.url_gesblatt,
+                trojaner: gesvh.trojaner,
+                feder: None, // TODO: implement search for associated fields
+                initiat: None,
+            };
             // construct the struct, check for validity
-            // if valid, insert else return error
+            let result = dbcon::gesetzesvorhaben::insert(&mut conn, ins_gesvh).await?;
+            if result == 0 {
+                return Err(LTZFError::DatabaseError("Insert failed".to_owned()));
+            } else {
+                let response = CUPResponse {
+                    msg_id: Uuid::now_v7(),
+                    timestamp: chrono::Utc::now(),
+                    responding_to: cupdate.msg_id,
+                    payload: CUPResponsePayload {
+                        data: CUPPayload::GesVH(ifapi::updateable_entities::Gesetzesvorhaben {
+                            ext_id: Some(gen_id),
+                            ..Default::default()
+                        }),
+                        state: ifapi::CUPRessourceState::Created,
+                    },
+                };
+                return Ok(Json(response));
+            };
+        } else {
+            // update
         }
-    }else{
-        // do further matching
+    } else {
+        // do extensive matching
     }
     // if more than one match: error on ambiguous data, let a human decide
-    todo!()
+    todo!();
 }

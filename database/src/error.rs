@@ -5,7 +5,10 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum LTZFError {
     #[error("Database Operation Error: {0}")]
-    DatabaseError(#[from] diesel::result::Error),
+    DieselError(#[from] diesel::result::Error),
+
+    #[error("Database Operation Error: {0}")]
+    DatabaseError(String),
 
     #[error("Database Interaction Error: {0}")]
     DBInteractionError(#[from] diesel_interaction::DieselInteractionError),

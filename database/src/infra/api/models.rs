@@ -58,12 +58,12 @@ pub struct CUPResponse {
     pub msg_id: Uuid,
     pub responding_to: Uuid,
     pub timestamp: chrono::DateTime<Utc>,
-    pub payload: Vec<CUPResponsePayload>,
+    pub payload: CUPResponsePayload,
 }
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CUPResponsePayload {
     pub data: CUPPayload,
-    pub rs_state: CUPRessourceState,
+    pub state: CUPRessourceState,
 }
 #[derive(Serialize, Deserialize, Debug)]
 pub enum CUPRessourceState {
