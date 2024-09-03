@@ -32,6 +32,7 @@ pub enum LTZFError {
     #[error("Unauthorized: {0}")]
     Unauthorized(String),
 }
+pub type Result<T> = std::result::Result<T, LTZFError>;
 
 impl IntoResponse for LTZFError {
     fn into_response(self) -> axum::response::Response {

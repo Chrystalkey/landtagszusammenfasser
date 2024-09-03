@@ -1,15 +1,16 @@
 use std::sync::Arc;
 
+use crate::infra::api as ifapi;
 use crate::infra::api::{CUPPayload, CUPResponse, CUPResponsePayload};
 use crate::infra::db::connection as dbcon;
-use crate::{error::LTZFError, infra::api as ifapi, AppState};
-use axum::{extract::State, Json};
+use crate::error::LTZFError;
+use crate::AppState;
 use uuid::Uuid;
 
-async fn handle_gesvh(
-    State(app): State<Arc<AppState>>,
-    Json(cupdate): Json<ifapi::CUPUpdate>,
-) -> std::result::Result<Json<CUPResponse>, LTZFError> {
+pub(crate) async fn handle_gesvh(
+    app: Arc<AppState>,
+    cupdate: ifapi::CUPUpdate,
+) -> std::result::Result<CUPResponse, LTZFError> {
     let gesvh = if let CUPPayload::GesVH(gesvh) = cupdate.payload {
         gesvh
     } else {
@@ -65,7 +66,7 @@ async fn handle_gesvh(
                         state: ifapi::CUPRessourceState::Created,
                     },
                 };
-                return Ok(Json(response));
+                return Ok(response);
             };
         } else {
             // update
