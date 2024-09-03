@@ -2,73 +2,78 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream;
 use quote::format_ident;
+use quote::quote;
+use quote::ToTokens;
 use syn::DeriveInput;
 
-///
-/// This Macro generates Structures and Functions to
-/// enable interaction with diesel. Frankly, I do not know
-/// why diesel does not provide these themselves, but anyway.
-/// For a struct `Structure` corresponding to a `structure` in
-/// the schema.rs, the following syntax:
-/// ```
-/// #[derive(DieselInteraction)]
-/// #[schema_table="structure"]
-/// pub struct Structure{...}
-/// ```
-/// the macro generates the implementation of the 
-/// ```
-/// pub trait DieselInteraction
-/// ```
-/// This trait only makes sense for entities with an id.
-/// Compounded primary keys are not supported.
-/// 
-/// It also generates a struct call `Update{}`, containing all but the id field wrapped in a Option<>.
-/// So for this case, it would generate 
-/// ```
-/// pub struct UpdateStructure{...}
-/// ```
-
-#[proc_macro_derive(DieselInteraction, attributes(schema_table))]
+#[proc_macro_derive(DieselInteraction, attributes(connection_type))]
 pub fn whatever(input: TokenStream) -> TokenStream {
     let ast = syn::parse(input).unwrap();
     implement_macro(&ast)
 }
 fn is_i32_type(ty: &syn::Type) -> bool {
-    if let syn::Type::Path(type_path) = ty{
+    if let syn::Type::Path(type_path) = ty {
         if let Some(segment) = type_path.path.segments.last() {
             return segment.ident == "i32";
         }
     }
     false
 }
-use quote::quote;
+
+fn get_schema_table(ast: &DeriveInput) -> syn::Path {
+    let mut tbl_nm = None;
+    for att in ast.attrs.iter() {
+        match att {
+            syn::Attribute {
+                style: syn::AttrStyle::Outer,
+                meta: syn::Meta::List(syn::MetaList{ path, ..}),
+                ..
+            } => {
+                if path.is_ident("diesel") {
+                    let _ = att.parse_nested_meta(
+                        |meta|{
+                            if meta.path.is_ident("table_name"){
+                                let value = meta.value().unwrap();
+                                tbl_nm = Some(value.parse::<syn::Path>().unwrap());
+                                return Ok(());
+                            }
+                            Ok(())
+                        }
+                    );
+                }
+            }
+            _ => {}
+        }
+    }
+    return tbl_nm.expect("No attribute `table_name` specified");
+}
+
+fn get_connection_type(ast: &DeriveInput) -> syn::Path {
+    for att in ast.attrs.iter() {
+        match att {
+            syn::Attribute {
+                style: syn::AttrStyle::Outer,
+                meta: syn::Meta::List(syn::MetaList{ path, ..}),
+                ..
+            } => {
+                if path.is_ident("connection_type") {
+                    let table_name = att.parse_args::<syn::Path>().unwrap();
+                    return table_name;
+                }
+            }
+            _ => {}
+        }
+    }
+    panic!("No attribute `connection_type` specified")
+}
+
 fn implement_macro(ast: &DeriveInput) -> TokenStream {
     let name = &ast.ident;
+    let slug_name = format_ident!("{}", name.to_string().to_lowercase());
     let generics = &ast.generics;
-    let schema_table_string = {
-        let mut result = None;
-        for att in ast.attrs.iter() {
-            match att {
-                syn::Attribute {
-                    style: syn::AttrStyle::Outer,
-                    meta: syn::Meta::NameValue(syn::MetaNameValue { value, path, .. }),
-                    ..
-                } => {
-                    if path.is_ident("schema_table") {
-                        if let syn::Expr::Lit(lit) = value {
-                            if let syn::Lit::Str(lit) = &lit.lit {
-                                result = Some(lit.value());
-                                break;
-                            }
-                        }
-                    }
-                }
-                _ => {}
-            }
-        }
-        result.unwrap()
-    };
-    let update_struct_name = format_ident!("Update{}", name);
+    let schema_table =  get_schema_table(ast);
+    let connection_type = get_connection_type(ast);
+
     let fields = match &ast.data {
         syn::Data::Struct(data_struct) => match &data_struct.fields {
             syn::Fields::Named(fields_named) => &fields_named.named,
@@ -80,7 +85,7 @@ fn implement_macro(ast: &DeriveInput) -> TokenStream {
             panic!("Only structs are supported by the DieselIntegration Macro")
         }
     };
-    let optionized_fields = fields
+    let substruct_fields = fields
         .iter()
         .filter(|field| {
             !(field.ident.is_some()
@@ -90,96 +95,147 @@ fn implement_macro(ast: &DeriveInput) -> TokenStream {
         .map(|fields| {
             let name = &fields.ident;
             let ty = &fields.ty;
-            quote! {
-                pub #name: Option<#ty>
-            }
+            (
+                quote! {
+                    pub #name: Option<#ty>
+                },
+                quote! {
+                    pub #name: #ty
+                },
+                quote! {
+                    if let Some(ut_val) = &ut.#name {
+                        query = query.filter(module::#name.eq(ut_val));
+                    };
+                },
+                quote! {
+                    #name: Some(row.#name)
+                },
+                quote! {
+                    #name: row.#name
+                },
+            )
         });
-    let filter_query = fields.iter()
-    .filter(|field| {
-        !(field.ident.is_some()
-            && field.ident.as_ref().unwrap().to_string() == "id"
-            && is_i32_type(&field.ty))
-    })
-    .map(|fields| {
-        let name = &fields.ident;
-        quote! {
-            if let Some(ut_val) = &ut.#name {
-                query = query.filter(table::#name.eq(ut_val));
-            };
-        }
-    });
+    let update_fields = substruct_fields.clone().map(|(x, _, _, _, _)| x);
+    let insert_fields = substruct_fields.clone().map(|(_, x, _, _, _)| x);
+    let query_filter_expression = substruct_fields.clone().map(|(_, _, x, _, _)| x);
+    let upd_from_fields = substruct_fields.clone().map(|(_, _, _, x, _)| x);
+    let insert_from_fields = substruct_fields.clone().map(|(_, _, _, _, x)| x);
 
-    let schema_table = format_ident!("{}", schema_table_string);
     let update_struct = quote! {
-        #[derive(Debug, Default, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset)]
+        #[derive(Debug, Default, Clone, AsChangeset)]
         #[diesel(table_name=#schema_table)]
-        pub struct #update_struct_name #generics {
-            #(#optionized_fields),*
+        #[diesel(check_for_backend(diesel::pg::Pg))]
+        pub struct Update #generics {
+            #(#update_fields),*
         }
     };
-    let gen = quote! {
-        #update_struct
+    let insert_struct = quote! {
+        #[derive(Clone, Debug, Insertable)]
+        #[diesel(table_name=#schema_table)]
+        #[diesel(check_for_backend(diesel::pg::Pg))]
+        pub struct Insert #generics{
+            #(#insert_fields),*
+        }
+    };
 
-        impl DieselInteraction<#update_struct_name #generics,
-        Connection,
-        PaginationResult<Self>> for #name #generics {
-            async fn create( conn: &mut Connection, it: &Self) -> Result<Self> {
-                use crate::schema::#schema_table::dsl::*;
-                let itcl = it.clone();
-                Ok(conn.interact(move|conn|{
-                    insert_into(#schema_table).values(itcl).get_result::<Self>(conn)
-                }).await??)
+    let gen = quote! {
+        pub mod #slug_name{
+            use #schema_table::dsl as module;   // put the dsl module into scope
+            use #schema_table::table;           // put the table into scope
+            use diesel::*;
+            use diesel_interaction::{DieselInteractionError, PaginationResult};
+
+            type Connection = #connection_type;
+            type Result<T> = std::result::Result<T, DieselInteractionError>;
+
+            #update_struct
+
+            #insert_struct
+            impl From<super::#name> for Update{
+                fn from(row: super::#name) -> Self{
+                    Update{
+                        #(#upd_from_fields),*
+                    }
+                }
             }
-            async fn update(conn: &mut Connection, id: i32, ut: &#update_struct_name #generics) -> Result<Self> {
-                use crate::schema::#schema_table::dsl::*;
-                
-                let utcl = ut;
-                let ut = utcl.clone();
-                Ok(conn.interact(move|conn|{
-                diesel::update(#schema_table.filter(id.eq(id))).set(ut).get_result(conn)
-                }).await??)
+            impl From<super::#name> for Insert{
+                fn from(row: super::#name) -> Self{
+                    Insert{
+                        #(#insert_from_fields),*
+                    }
+                }
             }
-            async fn get(conn: &mut Connection, id: i32) -> Result<Self> {
-                use crate::schema::#schema_table::dsl::*;
-                
-                Ok(conn.interact(move|conn|{
-                #schema_table.filter(id.eq(id)).first::<Self>(conn)
-                }).await??)
+            async fn insert(conn: &mut Connection, it: Insert) -> Result<usize> {
+                let result = conn
+                    .interact(move |conn| diesel::insert_into(table).values(&it).execute(conn))
+                    .await??;
+                Ok(result)
             }
-            async fn matches(conn: &mut Connection, ut: &#update_struct_name #generics) -> Result<Vec<Self>> {
-                use crate::schema::#schema_table::dsl as table;
-                let utcl = ut;
-                let ut = utcl.clone();
-                Ok(conn.interact(move|conn|{
-                    let mut query = table::#schema_table.into_boxed();
-                    #(#filter_query)*
-                    query.load::<Self>(conn)
-                }).await??)
+            async fn update(conn: &mut Connection, id: i32, ut: &Update) -> Result<usize> {
+                let utcl = ut.clone();
+                let result = conn
+                    .interact(move |conn| {
+                        diesel::update(table.filter(module::id.eq(id)))
+                            .set(utcl)
+                            .execute(conn)
+                    })
+                    .await??;
+                Ok(result)
             }
-            async fn paginate(conn: &mut Connection, page: i64, page_size: i64) -> Result<PaginationResult<Self>> {
-                use crate::schema::#schema_table::dsl::*;
+            async fn select(conn: &mut Connection, id: i32) -> Result<super::#name> {
+                let result = conn
+                    .interact(move |conn| {
+                        table
+                            .filter(module::id.eq(id))
+                            .select(super::#name::as_select())
+                            .get_result(conn)
+                    })
+                    .await??;
+                Ok(result)
+            }
+            async fn select_matching(conn: &mut Connection, ut: Update) -> Result<Vec<super::#name>> {
+                let result = conn
+                    .interact(move |conn| {
+                        let mut query = table.into_boxed();
+                        #(#query_filter_expression)*
+                        query.load::<super::#name>(conn)
+                    })
+                    .await??;
+                Ok(result)
+            }
+            async fn paginate(
+                conn: &mut Connection,
+                page: i64,
+                page_size: i64,
+            ) -> Result<PaginationResult<super::#name>> {
                 let page_size = if page_size < 1 { 1 } else { page_size };
-                let total_items =  conn.interact(|conn|{
-                    #schema_table.count().get_result(conn)
-                }).await??;
-                let items = conn.interact(move|conn|{
-                    #schema_table.limit(page_size).offset(page * page_size).load::<Self>(conn)
-                }).await??;
+                let total_items = conn
+                    .interact(|conn| table.count().get_result(conn))
+                    .await??;
+                let items = conn
+                    .interact(move |conn| {
+                        table
+                            .limit(page_size)
+                            .offset(page * page_size)
+                            .load::<super::#name>(conn)
+                    })
+                    .await??;
                 Ok(PaginationResult {
                     items,
                     total_items,
                     page,
                     page_size,
-                    num_pages: total_items / page_size + i64::from(total_items % page_size != 0)
+                    num_pages: total_items / page_size + i64::from(total_items % page_size != 0),
                 })
             }
             async fn delete(conn: &mut Connection, id: i32) -> Result<usize> {
-                use crate::schema::#schema_table::dsl::*;
-                Ok(conn.interact(move|conn|{
-                    diesel::delete(#schema_table.filter(id.eq(id))).execute(conn)
-                }).await??)
+                let result = conn
+                    .interact(move |conn| diesel::delete(table.filter(module::id.eq(id))).execute(conn))
+                    .await??;
+                Ok(result)
             }
         }
     };
     gen.into()
 }
+
