@@ -11,7 +11,7 @@ use crate::handlers::authentication::authenticate_collector;
 use crate::infra::api::CUPResponse;
 use crate::AppState;
 use crate::infra::api as ifapi;
-use crate::error::{LTZFError, Result};
+use crate::error::*;
 
 pub fn app_router(_state: Arc<AppState>) -> Router<Arc<AppState>> {
     Router::new()
@@ -38,8 +38,12 @@ async fn handle_gesvh(
     headers: HeaderMap,
     Json(cupdate): Json<ifapi::CUPUpdate>,
 ) -> std::result::Result<Json<CUPResponse>, LTZFError> {
-    if !authenticate_collector(&headers, app.clone()).await? {
-        return Err(crate::error::LTZFError::Unauthorized("Collector not authorized".to_owned()));
-    }
+    let coll_id = uuid::Uuid::parse_str(collector_id.as_str()).map_err(ParsingError::from)?;
+    authenticate_collector(coll_id,&headers, app.clone()).await?;
+    tracing::info!("Collector {} called post(gesetzesvorhaben) with msg_id {}", coll_id, cupdate.msg_id);
+    tracing::debug!("Received CUPUpdate Struct: {:?}", cupdate);
+    tracing::debug!("headers: {:?}", headers);
+
     let response = crate::handlers::gesetzesvorhaben::handle_gesvh(app, cupdate).await?;
-    Ok(Json(response))}
+    Ok(Json(response))
+}

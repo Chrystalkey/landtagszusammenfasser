@@ -1,12 +1,33 @@
 use std::sync::Arc;
 
+use crate::error::*;
 use crate::infra::api as ifapi;
-use crate::infra::api::{CUPPayload, CUPResponse, CUPResponsePayload};
 use crate::infra::db::connection as dbcon;
-use crate::error::LTZFError;
 use crate::AppState;
+use ifapi::{CUPPayload, CUPResponse, CUPResponsePayload, DatabaseInteraction};
 use uuid::Uuid;
-
+macro_rules! handle_retrieval_error {
+    ($field:expr, $name:expr, $conn:ident, $app:ident) => {
+        match &$field {
+            Some(thing) => match thing.fetch_id(&mut $conn).await {
+                Ok(id) => Some(id),
+                Err(LTZFError::RetrievalError(RetrievalError::NoMatch)) => {
+                    crate::external::no_match_found(
+                        format!(
+                            "No match was found for field `{}` using this query: {:?}",
+                            $name, &$field
+                        ),
+                        $app.clone(),
+                    )
+                    .await;
+                    None
+                }
+                Err(error) => return Err(error),
+            },
+            None => None,
+        }
+    };
+}
 pub(crate) async fn handle_gesvh(
     app: Arc<AppState>,
     cupdate: ifapi::CUPUpdate,
@@ -16,7 +37,7 @@ pub(crate) async fn handle_gesvh(
     } else {
         return Err(LTZFError::WrongEndpoint("Gesetzesvorhaben".to_owned()));
     };
-    let mut conn = app.pool.get().await?;
+    let mut conn = app.pool.get().await.map_err(DatabaseError::from)?;
     // if there is a uuid supplied, the match is unique and the data is definitely to be updated. If it cannot be updated, an error is returned.
 
     // if no uuid is supplied, either there was none found, in which case a best-effort match is created with all available data
@@ -29,50 +50,69 @@ pub(crate) async fn handle_gesvh(
             ext_id: gesvh.ext_id,
             ..Default::default()
         };
-        let matches = dbcon::gesetzesvorhaben::select_matching(&mut conn, update_gesvh).await?;
+        let matches = dbcon::gesetzesvorhaben::select_matching(&mut conn, update_gesvh)
+            .await
+            .map_err(DatabaseError::from)?;
         // if one match: update
         if matches.is_empty() {
-            // create
-            let gen_id = Uuid::now_v7();
-            let ins_gesvh = dbcon::gesetzesvorhaben::Insert {
-                ext_id: gen_id,
-                off_titel: gesvh
-                    .off_titel
-                    .expect("Offizieller Titel is a required field"),
-                titel: gesvh.titel.expect("Titel is a required field"),
-                verfassungsaendernd: gesvh
-                    .verfassungsaendernd
-                    .expect("Verfassungsändernd is a required field"),
-                id_gesblatt: gesvh.id_gesblatt,
-                url_gesblatt: gesvh.url_gesblatt,
-                trojaner: gesvh.trojaner,
-                feder: None, // TODO: implement search for associated fields
-                initiat: None,
-            };
-            // construct the struct, check for validity
-            let result = dbcon::gesetzesvorhaben::insert(&mut conn, ins_gesvh).await?;
-            if result == 0 {
-                return Err(LTZFError::DatabaseError("Insert failed".to_owned()));
-            } else {
-                let response = CUPResponse {
-                    msg_id: Uuid::now_v7(),
-                    timestamp: chrono::Utc::now(),
-                    responding_to: cupdate.msg_id,
-                    payload: CUPResponsePayload {
-                        data: CUPPayload::GesVH(ifapi::updateable_entities::Gesetzesvorhaben {
-                            ext_id: Some(gen_id),
-                            ..Default::default()
-                        }),
-                        state: ifapi::CUPRessourceState::Created,
-                    },
-                };
-                return Ok(response);
-            };
+            // could not find anything to update.
+            // this means the collectors knows of an object that does not exist in the database. This is an error to be returned.
         } else {
             // update
         }
     } else {
-        // do extensive matching
+        // no id supplied, so assumed create was intended
+        let gen_id = Uuid::now_v7();
+        let feder = handle_retrieval_error!(gesvh.federfuehrung, "Federführung", conn, app);
+        let initiat = handle_retrieval_error!(gesvh.initiator, "Initiator", conn, app);
+
+        let ins_gesvh = dbcon::gesetzesvorhaben::Insert {
+            ext_id: gen_id,
+            off_titel: gesvh.off_titel.map_or(
+                Err(DatabaseError::DatabaseError(
+                    "off_titel is a required field".to_owned(),
+                )),
+                |x| Ok(x),
+            )?,
+            titel: gesvh.titel.map_or(
+                Err(DatabaseError::DatabaseError(
+                    "Titel is a required field".to_owned(),
+                )),
+                |x| Ok(x),
+            )?,
+            verfassungsaendernd: gesvh.verfassungsaendernd.map_or(
+                Err(DatabaseError::DatabaseError(
+                    "Verfassungsändernd is a required field".to_owned(),
+                )),
+                |x| Ok(x),
+            )?,
+            id_gesblatt: gesvh.id_gesblatt,
+            url_gesblatt: gesvh.url_gesblatt,
+            trojaner: gesvh.trojaner,
+            feder: feder,
+            initiat,
+        };
+        // construct the struct, check for validity
+        let result = dbcon::gesetzesvorhaben::insert(&mut conn, ins_gesvh)
+            .await
+            .map_err(DatabaseError::from)?;
+        if result == 0 {
+            return Err(DatabaseError::DatabaseError("Insert failed".to_owned()).into());
+        } else {
+            let response = CUPResponse {
+                msg_id: Uuid::now_v7(),
+                timestamp: chrono::Utc::now(),
+                responding_to: cupdate.msg_id,
+                payload: CUPResponsePayload {
+                    data: CUPPayload::GesVH(ifapi::Gesetzesvorhaben {
+                        ext_id: Some(gen_id),
+                        ..Default::default()
+                    }),
+                    state: ifapi::CUPRessourceState::Created,
+                },
+            };
+            return Ok(response);
+        };
     }
     // if more than one match: error on ambiguous data, let a human decide
     todo!();

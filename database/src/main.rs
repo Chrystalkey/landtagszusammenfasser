@@ -14,7 +14,7 @@ mod infra;
 mod router;
 
 pub use diesel;
-use infra::schema;
+use infra::db::schema;
 
 // Define embedded database migrations
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations/");
