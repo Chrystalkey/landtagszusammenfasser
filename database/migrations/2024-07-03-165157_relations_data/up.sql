@@ -17,9 +17,8 @@ CREATE TABLE
     rel_ges_status (
         gesetzesvorhaben INTEGER NOT NULL REFERENCES gesetzesvorhaben (id) ON DELETE CASCADE,
         status INTEGER NOT NULL REFERENCES status (id) ON DELETE CASCADE,
-        abstimmung INTEGER NOT NULL REFERENCES abstimmungen (id) ON DELETE CASCADE,
         datum TIMESTAMP NOT NULL, -- the last timestamp is the current status
-        PRIMARY KEY (gesetzesvorhaben, status, abstimmung)
+        PRIMARY KEY (gesetzesvorhaben, status)
     );
 
 CREATE TABLE

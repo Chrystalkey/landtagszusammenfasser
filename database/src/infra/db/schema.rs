@@ -107,7 +107,7 @@ diesel::table! {
         #[max_length = 255]
         id_gesblatt -> Nullable<Varchar>,
         verfassungsaendernd -> Bool,
-        trojaner -> Nullable<Bool>,
+        trojaner -> Bool,
         feder -> Nullable<Int4>,
         initiat -> Nullable<Int4>,
     }
@@ -150,10 +150,9 @@ diesel::table! {
 }
 
 diesel::table! {
-    rel_ges_status (gesetzesvorhaben, status, abstimmung) {
+    rel_ges_status (gesetzesvorhaben, status) {
         gesetzesvorhaben -> Int4,
         status -> Int4,
-        abstimmung -> Int4,
         datum -> Timestamp,
     }
 }
@@ -237,7 +236,6 @@ diesel::joinable!(rel_ges_eigenschaft -> gesetzeseigenschaften (eigenschaft));
 diesel::joinable!(rel_ges_eigenschaft -> gesetzesvorhaben (gesetzesvorhaben));
 diesel::joinable!(rel_ges_schlagworte -> gesetzesvorhaben (gesetzesvorhaben));
 diesel::joinable!(rel_ges_schlagworte -> schlagworte (schlagwort));
-diesel::joinable!(rel_ges_status -> abstimmungen (abstimmung));
 diesel::joinable!(rel_ges_status -> gesetzesvorhaben (gesetzesvorhaben));
 diesel::joinable!(rel_ges_status -> status (status));
 diesel::joinable!(rel_ges_tops -> abstimmungen (abstimmung));

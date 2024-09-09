@@ -39,11 +39,11 @@ pub struct Abstimmungstyp{
 }
 
 
-#[derive(Debug, Clone, Selectable, Queryable, Identifiable, DieselInteraction)]
+#[derive(Debug, Clone, Selectable, Queryable, Identifiable, QueryableByName, DieselInteraction)]
 #[connection_type(deadpool_diesel::postgres::Connection)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name=crate::schema::ausschuesse, belongs_to(Parlamente, foreign_key=parlament))]
-pub struct Ausschuesse{
+pub struct Ausschuss{
     pub id : i32,
     pub name: String,
     pub parlament: Option<i32>,
@@ -62,12 +62,11 @@ pub struct Ausschussberatungen {
     pub dokument: Option<i32>,
 }
 
-
 #[derive(Debug, Clone, Selectable, Queryable, Identifiable, DieselInteraction)]
 #[connection_type(deadpool_diesel::postgres::Connection)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name=crate::schema::dokumente, belongs_to(Dokumenttypen, foreign_key=doktyp) , belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben))]
-pub struct Dokumente {
+pub struct Dokument {
     pub id : i32,
     pub ext_id: uuid::Uuid,
     pub off_id: String,
@@ -81,32 +80,29 @@ pub struct Dokumente {
     pub doktyp: Option<i32>,
 }
 
-
 #[derive(Debug, Clone, Selectable, Queryable, Identifiable, DieselInteraction)]
 #[connection_type(deadpool_diesel::postgres::Connection)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name=crate::schema::dokumenttypen)]
-pub struct Dokumenttypen{
+pub struct Dokumenttyp{
     pub id : i32,
     pub name: String,
 }
-
 
 #[derive(Debug, Clone, Selectable, Queryable, Identifiable, DieselInteraction)]
 #[connection_type(deadpool_diesel::postgres::Connection)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name=crate::schema::fraktionen)]
-pub struct Fraktionen{
+pub struct Fraktion{
     pub id : i32,
     pub name: String,
 }
-
 
 #[derive(Debug, Clone, Selectable, Queryable, Identifiable, DieselInteraction)]
 #[connection_type(deadpool_diesel::postgres::Connection)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name=crate::schema::gesetzeseigenschaften)]
-pub struct Gesetzeseigenschaften{
+pub struct Gesetzeseigenschaft{
     pub id : i32,
     pub eigenschaft: String,
 }
@@ -123,47 +119,57 @@ pub struct Gesetzesvorhaben {
     pub url_gesblatt: Option<String>,
     pub id_gesblatt: Option<String>,
     pub verfassungsaendernd: bool,
-    pub trojaner: Option<bool>,
+    pub trojaner: bool,
     pub feder: Option<i32>,
     pub initiat: Option<i32>,
 }
-
 
 #[derive(Debug, Clone, Selectable, Queryable, Identifiable, DieselInteraction)]
 #[connection_type(deadpool_diesel::postgres::Connection)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name=crate::schema::initiatoren)]
-pub struct Initiatoren {
+pub struct Initiator {
 pub id: i32,
     pub name: String,
     pub organisation: String,
     pub url: String,
 }
 
+#[derive(Debug, Clone, Selectable, Queryable, Identifiable, DieselInteraction)]
+#[connection_type(deadpool_diesel::postgres::Connection)]
+#[diesel(table_name=crate::schema::parlamente)]
+#[diesel(primary_key(id))]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct Parlamente{
+    pub id: i32,
+    pub name: String,
+    pub kurzname: String,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, Identifiable, Associations, Selectable)]
-#[diesel(table_name=crate::schema::rel_ges_eigenschaft, primary_key(gesetzesvorhaben,eigenschaft), belongs_to(Gesetzeseigenschaften, foreign_key=eigenschaft) , belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben))]
+#[diesel(table_name=crate::schema::rel_ges_eigenschaft, primary_key(gesetzesvorhaben,eigenschaft), belongs_to(Gesetzeseigenschaft, foreign_key=eigenschaft) , belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben))]
 pub struct RelGesEigenschaft {
     pub gesetzesvorhaben: i32,
     pub eigenschaft: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, Identifiable, Associations, Selectable)]
-#[diesel(table_name=crate::schema::rel_ges_schlagworte, primary_key(gesetzesvorhaben,schlagwort), belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben) , belongs_to(Schlagworte, foreign_key=schlagwort))]
+#[diesel(table_name=crate::schema::rel_ges_schlagworte, primary_key(gesetzesvorhaben,schlagwort), belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben) , belongs_to(Schlagwort, foreign_key=schlagwort))]
 pub struct RelGesSchlagworte {
     pub gesetzesvorhaben: i32,
     pub schlagwort: i32,
 }
+
 #[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Identifiable, Associations, Selectable)]
-#[diesel(table_name=crate::schema::rel_ges_status, primary_key(gesetzesvorhaben,status,abstimmung), belongs_to(Abstimmungen, foreign_key=abstimmung) , belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben) , belongs_to(Status, foreign_key=status))]
+#[diesel(table_name=crate::schema::rel_ges_status, primary_key(gesetzesvorhaben,status), belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben) , belongs_to(Status, foreign_key=status))]
 pub struct RelGesStatus {
     pub gesetzesvorhaben: i32,
     pub status: i32,
-    pub abstimmung: i32,
     pub datum: chrono::NaiveDateTime,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Queryable, Insertable, AsChangeset, Identifiable, Associations, Selectable)]
-#[diesel(table_name=crate::schema::rel_ges_tops, primary_key(top,gesetzesvorhaben,dokument,abstimmung), belongs_to(Abstimmungen, foreign_key=abstimmung) , belongs_to(Dokumente, foreign_key=dokument) , belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben) , belongs_to(Tops, foreign_key=top))]
+#[diesel(table_name=crate::schema::rel_ges_tops, primary_key(top,gesetzesvorhaben,dokument,abstimmung), belongs_to(Abstimmungen, foreign_key=abstimmung) , belongs_to(Dokument, foreign_key=dokument) , belongs_to(Gesetzesvorhaben, foreign_key=gesetzesvorhaben) , belongs_to(Tops, foreign_key=top))]
 pub struct RelGesTops {
     pub top: i32,
     pub gesetzesvorhaben: i32,
@@ -176,7 +182,7 @@ pub struct RelGesTops {
 #[connection_type(deadpool_diesel::postgres::Connection)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name=crate::schema::schlagworte)]
-pub struct Schlagworte {
+pub struct Schlagwort {
     pub id: i32,
     pub schlagwort: String,
     pub beschreibung: String,
@@ -192,6 +198,7 @@ pub struct SonstigeId {
     pub typ: String,
     pub inhalt: String,
 }
+
 #[derive(Debug, Clone, Selectable, Queryable, Identifiable, DieselInteraction)]
 #[connection_type(deadpool_diesel::postgres::Connection)]
 #[diesel(table_name=crate::schema::status, belongs_to(Parlamente, foreign_key=parlament))]
@@ -223,15 +230,4 @@ pub struct Tops {
     pub datum: chrono::NaiveDate,
     pub url: String,
     pub parlament: Option<i32>,
-}
-
-#[derive(Debug, Clone, Selectable, Queryable, Identifiable, DieselInteraction)]
-#[connection_type(deadpool_diesel::postgres::Connection)]
-#[diesel(table_name=crate::schema::parlamente)]
-#[diesel(primary_key(id))]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct Parlamente{
-    pub id: i32,
-    pub name: String,
-    pub kurzname: String,
 }

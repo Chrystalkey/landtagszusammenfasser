@@ -10,7 +10,8 @@ CREATE TABLE
     status (
         id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
-        parlament INTEGER REFERENCES parlamente (id) ON DELETE CASCADE
+        parlament INTEGER REFERENCES parlamente (id) ON DELETE CASCADE,
+        UNIQUE (name, parlament)
     );
 
 -- updateable entities have an external uuid
@@ -31,7 +32,7 @@ CREATE TABLE
         url_gesblatt VARCHAR(255),
         id_gesblatt VARCHAR(255),
         verfassungsaendernd BOOLEAN NOT NULL,
-        trojaner BOOLEAN,
+        trojaner BOOLEAN NOT NULL,
         feder INTEGER REFERENCES ausschuesse (id) ON DELETE SET NULL,
         initiat INTEGER REFERENCES initiatoren (id) ON DELETE SET NULL
     );

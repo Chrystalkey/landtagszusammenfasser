@@ -18,6 +18,14 @@ fn is_i32_type(ty: &syn::Type) -> bool {
     }
     false
 }
+fn is_option(ty: &syn::Type) -> bool {
+    if let syn::Type::Path(type_path) = ty {
+        if let Some(segment) = type_path.path.segments.last() {
+            return segment.ident == "Option" && !segment.arguments.is_empty();
+        }
+    }
+    false
+}
 
 fn get_schema_table(ast: &DeriveInput) -> syn::Path {
     let mut tbl_nm = None;
@@ -94,9 +102,17 @@ fn implement_macro(ast: &DeriveInput) -> TokenStream {
         .map(|fields| {
             let name = &fields.ident;
             let ty = &fields.ty;
+            let is_opt = is_option(ty);
+            
             (
-                quote! {
-                    pub #name: Option<#ty>
+                if is_opt {
+                    quote!{
+                        pub #name: #ty
+                    }
+                }else{
+                    quote! {
+                        pub #name: Option<#ty>
+                    }
                 },
                 quote! {
                     pub #name: #ty
@@ -106,8 +122,14 @@ fn implement_macro(ast: &DeriveInput) -> TokenStream {
                         query = query.filter(module::#name.eq(ut_val));
                     };
                 },
-                quote! {
-                    #name: Some(row.#name)
+                if is_opt{
+                    quote! {
+                        #name: row.#name
+                    }
+                }else{
+                    quote! {
+                        #name: Some(row.#name)
+                    }
                 },
                 quote! {
                     #name: row.#name
@@ -139,11 +161,12 @@ fn implement_macro(ast: &DeriveInput) -> TokenStream {
 
     let gen = quote! {
         pub mod #slug_name{
-            use #schema_table::dsl as module;   // put the dsl module into scope
-            use #schema_table::table;           // put the table into scope
+            pub use #schema_table::dsl as module;   // put the dsl module into scope
+            pub use #schema_table::table;           // put the table into scope
             use diesel::*;
             use diesel_interaction::{DieselInteractionError, PaginationResult};
-
+            
+            pub type Master = super::#name;
             type Connection = #connection_type;
             type Result<T> = std::result::Result<T, DieselInteractionError>;
 

@@ -15,15 +15,20 @@ pub enum DatabaseError{
 
     #[error("Database Operation Error: {0}")]
     DatabaseError(String),
+    #[error("Async Interaction Error: {0}")]
+    AsyncError(#[from] diesel_interaction::DieselInteractionError),
 
     #[error("Database Interaction Error: {0}")]
-    DBInteractionError(#[from] diesel_interaction::DieselInteractionError),
+    DBInteractionError(#[from] deadpool_diesel::InteractError),
 
     #[error("Database Connection error: {0}")]
     DBConnectionError(#[from] deadpool_diesel::PoolError),
     
     #[error("Database Migrations error: {0}")]
     MigrationsError(#[from] diesel_migrations::MigrationError),
+
+    #[error("Required Field Missing to complete Insert: {0}")]
+    MissingFieldForInsert(String)
 }
 #[derive(Error, Debug)] 
 pub enum ParsingError{

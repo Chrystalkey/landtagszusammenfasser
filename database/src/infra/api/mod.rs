@@ -1,2 +1,3 @@
-mod models;
-pub use models::*;
+pub mod collectors;
+
+pub mod webservice;
