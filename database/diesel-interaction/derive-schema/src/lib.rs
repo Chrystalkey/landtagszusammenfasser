@@ -164,9 +164,15 @@ fn implement_macro(ast: &DeriveInput) -> TokenStream {
                     }
                 }
             }
-            pub async fn insert(conn: &mut Connection, it: Insert) -> Result<usize> {
+
+            pub async fn insert(conn: &mut Connection, it: Insert) -> Result<i32> {
                 let result = conn
-                    .interact(move |conn| diesel::insert_into(table).values(&it).execute(conn))
+                    .interact(
+                        move |conn| 
+                        diesel::insert_into(table).values(&it)
+                        .returning(module::id)
+                        .get_result(conn)
+                )
                     .await??;
                 Ok(result)
             }

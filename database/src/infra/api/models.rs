@@ -110,7 +110,7 @@ pub trait DatabaseInteraction {
     async fn fetch_id(&self, conn: &mut deadpool_diesel::postgres::Connection) -> Result<i32>;
 }
 
-async fn fetch_parlament_id(
+pub(crate) async fn fetch_parlament_id(
     parlament: [char; 2],
     conn: &mut deadpool_diesel::postgres::Connection,
 ) -> Result<i32> {
@@ -187,6 +187,7 @@ impl DatabaseInteraction for Initiator {
 pub struct Status {
     pub name: String,
     pub parlament: [char; 2],
+    pub datum: chrono::NaiveDateTime
 }
 
 impl DatabaseInteraction for Status {
@@ -280,6 +281,7 @@ impl DatabaseInteraction for Gesetzesvorhaben {
         }
     }
 }
+
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Default)]
 pub struct Dokument {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -343,7 +345,9 @@ impl DatabaseInteraction for Dokument {
             off_id: self.off_id.clone(),
             gesetzesvorhaben: Some(gesvh),
         };
-        let result = dbcon::dokumente::select_matching(conn, query).await.map_err(DatabaseError::from)?;
+        let result = 
+        dbcon::dokumente::select_matching(conn, query)
+        .await.map_err(DatabaseError::from)?;
         if result.len() == 1 {
             Ok(result[0].id)
         } else if result.len() > 1 {

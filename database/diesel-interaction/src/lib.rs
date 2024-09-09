@@ -68,7 +68,7 @@ use thiserror::Error;
 ///             }
 ///         }
 ///     }
-///     async fn insert(conn: &mut Connection, it: Insert) -> Result<usize> {
+///     async fn insert(conn: &mut Connection, it: Insert) -> Result<i32> {
 ///         let result = conn
 ///             .interact(move |conn| diesel::insert_into(table).values(&it).execute(conn))
 ///             .await??;
