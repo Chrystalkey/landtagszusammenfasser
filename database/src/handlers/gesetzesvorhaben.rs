@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 
 extern crate diesel_interaction;
@@ -5,7 +6,7 @@ use crate::external::no_match_found;
 use crate::infra::db::connection as dbcon;
 use crate::infra::api::{self, FatOption};
 use crate::AppState;
-use crate::{error::*, router::GetGesvhQueryFilters};
+use crate::error::*;
 use axum::http::StatusCode;
 use diesel::Connection;
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, OptionalExtension};
@@ -303,7 +304,7 @@ pub(crate) async fn get_gesvh(app: Arc<AppState>, gesvh_id: Uuid) -> Result<api:
 
 pub(crate) async fn get_gesvh_filtered(
     app: Arc<AppState>,
-    params: GetGesvhQueryFilters,
+    params: HashMap<String, String>,
 ) -> Result<api::WSResponse> {
     let conn = app.pool.get()
     .await.map_err(DatabaseError::from)?;
