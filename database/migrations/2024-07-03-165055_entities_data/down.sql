@@ -1,10 +1,8 @@
-DROP TABLE abstimmungsergebnisse;
-DROP TABLE tagesordnungspunkt;
-DROP TABLE abstimmungen;
-DROP TABLE sonstige_ids;
-DROP TABLE ausschussberatungen;
-DROP TABLE dokumente;
+DROP TABLE further_notes;
+DROP TABLE further_links;
+DROP TABLE rel_dok_autor;
+DROP TABLE dokument;
+DROP TABLE rel_station_schlagwort;
+DROP TABLE station;
 DROP TABLE gesetzesvorhaben;
-DROP TABLE status;
-DROP TABLE tops;
-DROP TABLE ausschuesse;
+DROP TABLE ausschuss;

@@ -1,43 +1,76 @@
 -- Your SQL goes here
+INSERT INTO
+    gesetzestyp (value)
+VALUES
+    ('Zustimmungsgesetz'),
+    ('Einspruchsgesetz'),
+    ('Volksbegehren');
+
+REVOKE ALL ON TABLE gesetzestyp
+FROM
+    public;
+
+GRANT
+SELECT
+    ON TABLE gesetzestyp TO public;
+    
+INSERT INTO
+    status (value)
+VALUES
+    ('Entwurf: Referentenentwurf'),
+    ('Entwurf: Eckpunktepapier'),
+    ('Parlament: Initiative'),
+    ('Kabinettsbeschluss'),
+    ('Parlament: Stellungnahme'),
+    ('Parlament: Beschlussempfehlung'),
+    ('Parlament: Lesung/Plenarsitzung'),
+    ('Parlament: Beschluss'),
+    ('In Kraft Getreten'),
+    ('Abgelehnt');
 
 INSERT INTO
-    gesetzeseigenschaften (id, eigenschaft)
+    parlament (name, kurzname)
 VALUES
-    (1, 'Zustimmungsgesetz'),
-    (2, 'Einspruchsgesetz'),
-    (3, 'Volksbegehren');
+    ('Bundestag', 'BT'),
+    ('Bundesrat', 'BR'),
+    ('Bundesversammlung', 'BV'),
+    ('Baden Württemberg', 'BW'),
+    ('Bayern', 'BY'),
+    ('Berlin', 'BE'),
+    ('Brandenburg', 'BB'),
+    ('Bremen', 'HB'),
+    ('Hamburg', 'HH'),
+    ('Hessen', 'HE'),
+    ('Mecklenburg-Vorpommern', 'MV'),
+    ('Niedersachsen', 'NI'),
+    ('Nordrhein-Westfalen', 'NW'),
+    ('Rheinland-Pfalz', 'RP'),
+    ('Saarland', 'SL'),
+    ('Sachsen', 'SN'),
+    ('Sachsen-Anhalt', 'ST'),
+    ('Schleswig-Holstein', 'SH'),
+    ('Thüringen', 'TH');
+
+REVOKE ALL ON TABLE parlament
+FROM
+    public;
+
+GRANT
+SELECT
+    ON TABLE parlament TO public;
 
 INSERT INTO
-    parlamente (id, name, kurzname)
+    dokumententyp (value)
 VALUES
-    (1, 'Bundestag', 'BT'),
-    (2, 'Bundesrat', 'BR'),
-    (3, 'Bundesversammlung', 'BV'),
-    (4, 'Baden Württemberg', 'BW'),
-    (5, 'Bayern', 'BY'),
-    (6, 'Berlin', 'BE'),
-    (7, 'Brandenburg', 'BB'),
-    (8, 'Bremen', 'HB'),
-    (9, 'Hamburg', 'HH'),
-    (10, 'Hessen', 'HE'),
-    (11, 'Mecklenburg-Vorpommern', 'MV'),
-    (12, 'Niedersachsen', 'NI'),
-    (13, 'Nordrhein-Westfalen', 'NW'),
-    (14, 'Rheinland-Pfalz', 'RP'),
-    (15, 'Saarland', 'SL'),
-    (16, 'Sachsen', 'SN'),
-    (17, 'Sachsen-Anhalt', 'ST'),
-    (18, 'Schleswig-Holstein', 'SH'),
-    (19, 'Thüringen', 'TH');
-REVOKE ALL ON TABLE parlamente FROM public;
-GRANT SELECT ON TABLE parlamente TO public;
+    ('Protokoll'),
+    ('Gesetzesentwurf'),
+    ('Stellungnahme'),
+    ('Beschlussfassung');
 
-INSERT INTO
-    dokumenttypen (id, name)
-VALUES
-    (1, 'Eckpunktepapier'),
-    (2, 'Referentenentwurf'),
-    (3, 'Beschlussempfehlung'),
-    (4, 'Finale Fassung'),
-    (5, 'Gesetzesentwurf'),
-    (6, 'Kabinettsbeschluss');
+REVOKE ALL ON TABLE dokumententyp
+FROM
+    public;
+
+GRANT
+SELECT
+    ON TABLE dokumententyp TO public;

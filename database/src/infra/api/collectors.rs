@@ -1,8 +1,6 @@
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::infra::db::connection as dbcon;
-use crate::error::*;
 
 /// these are Collector-Updateable Structures (including associated data)
 /// All other structures can only be updated indirectly.
@@ -70,77 +68,48 @@ pub struct Initiator {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Default)]
-pub struct Status {
-    pub name: String,
-    pub parlament: [char; 2],
+pub struct Station {
+    pub status: String,
     pub datum: chrono::DateTime<Utc>,
+    pub url : Option <String>,
+    pub parlament: [char; 2],
+    pub schlagworte: Vec<String>,
+    pub dokumente: Vec<Dokument>,
+    pub ausschuss: Option<Ausschuss>,
+    pub meinungstenzdenz: Option<i32>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Default)]
 pub struct Gesetzesvorhaben {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
-    pub ext_id: Option<Uuid>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
-    pub titel: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
-    pub off_titel: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
-    pub url_gesblatt: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
-    pub id_gesblatt: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
-    pub verfassungsaendernd: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
-    pub trojaner: Option<bool>,
+    pub titel: String,
+    pub verfassungsaendernd: bool,
+    pub trojaner: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub federfuehrung: Option<Ausschuss>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
-    pub initiator: Option<Initiator>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
-    pub status: Option<Status>,
+    pub initiator: String,
+    pub typ: String,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     #[serde(default)]
-    pub dokumente: Vec<Dokument>,
+    pub links: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     #[serde(default)]
-    pub schlagworte: Vec<String>,
+    pub notes: Vec<String>,
+
     #[serde(skip_serializing_if = "Vec::is_empty")]
     #[serde(default)]
-    pub eigenschaften: Vec<String>,
+    pub stationen : Vec<Station>
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Default)]
 pub struct Dokument {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
-    pub ext_id: Option<Uuid>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
-    pub off_id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
-    pub erstellt_am: Option<chrono::DateTime<Utc>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
-    pub url: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
-    pub pfad: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
-    pub hash: Option<String>,
+    pub identifikator: String,
+    pub titel: String,
+    pub hash: String,
+    pub zsmfassung: String,
+    pub typ: String,
+    pub url: String,
+    pub autoren: Vec<(String, String)>, // name and organisation
 
     pub letzter_zugriff: chrono::DateTime<Utc>,
-    pub typ: String,
-    pub file_type: String,
 }

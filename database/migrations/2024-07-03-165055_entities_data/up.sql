@@ -1,98 +1,68 @@
 -- tables that require foreign keys and represent entities
 CREATE TABLE
-    ausschuesse (
+    ausschuss (
         id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
-        parlament INTEGER REFERENCES parlamente (id) ON DELETE CASCADE
-    );
-
-CREATE TABLE
-    status (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        parlament INTEGER REFERENCES parlamente (id) ON DELETE CASCADE,
-        UNIQUE (name, parlament)
+        parlament INTEGER NOT NULL REFERENCES parlament (id) ON DELETE CASCADE
     );
 
 -- updateable entities have an external uuid
-CREATE TABLE
-    tops (
-        id SERIAL PRIMARY KEY,
-        ext_id UUID UNIQUE NOT NULL,
-        datum DATE NOT NULL,
-        url VARCHAR(255) NOT NULL,
-        parlament INTEGER REFERENCES parlamente (id) ON DELETE CASCADE
-    );
+
 CREATE TABLE
     gesetzesvorhaben (
         id SERIAL PRIMARY KEY,
-        ext_id UUID UNIQUE NOT NULL,
+        api_id UUID UNIQUE NOT NULL,
         titel VARCHAR(255) NOT NULL,
-        off_titel VARCHAR(255) NOT NULL,
-        url_gesblatt VARCHAR(255),
-        id_gesblatt VARCHAR(255),
+        initiator VARCHAR(128) NOT NULL,
         verfassungsaendernd BOOLEAN NOT NULL,
         trojaner BOOLEAN NOT NULL,
-        feder INTEGER REFERENCES ausschuesse (id) ON DELETE SET NULL,
-        initiat INTEGER REFERENCES initiatoren (id) ON DELETE SET NULL
+        typ INTEGER NOT NULL REFERENCES gesetzestyp (id) ON DELETE CASCADE,
+        federf INTEGER REFERENCES ausschuss (id) ON DELETE SET NULL
     );
+    
+CREATE TABLE station(
+    id SERIAL PRIMARY KEY,
+    gesetzesvorhaben INTEGER NOT NULL REFERENCES gesetzesvorhaben (id) ON DELETE CASCADE,
+    status INTEGER NOT NULL REFERENCES status (id) ON DELETE CASCADE,
+    parlament INTEGER NOT NULL REFERENCES parlament (id) ON DELETE CASCADE,
+
+    api_id UUID UNIQUE NOT NULL,
+    datum TIMESTAMP NOT NULL,
+    ausschuss INTEGER REFERENCES ausschuss (id) ON DELETE SET NULL,
+    meinungstendenz INTEGER
+);
+
+CREATE TABLE rel_station_schlagwort(
+    station INTEGER NOT NULL REFERENCES station (id) ON DELETE CASCADE,
+    schlagwort INTEGER NOT NULL REFERENCES schlagwort (id) ON DELETE CASCADE,
+    PRIMARY KEY (station, schlagwort)
+);
 
 CREATE TABLE
-    dokumente (
+    dokument (
         id SERIAL PRIMARY KEY,
-        ext_id UUID UNIQUE NOT NULL,
-        off_id VARCHAR(255) NOT NULL,
-        created_at TIMESTAMP NOT NULL,
-        accessed_at TIMESTAMP NOT NULL,
+        api_id UUID UNIQUE NOT NULL,
+        identifikator VARCHAR(255) NOT NULL,
+        last_access TIMESTAMP NOT NULL,
         url VARCHAR(255) NOT NULL,
-        path VARCHAR(255),
-        hash CHAR(64) NOT NULL, -- TODO: check if this is the correct length
-        filetype VARCHAR(16) NOT NULL,
-        gesetzesvorhaben INTEGER REFERENCES gesetzesvorhaben (id) ON DELETE CASCADE,
-        doktyp INTEGER REFERENCES dokumenttypen (id) ON DELETE SET NULL
+        hash CHAR(128) NOT NULL, -- TODO: check if this is the correct length
+        doktyp INTEGER NOT NULL REFERENCES dokumententyp (id),
+        gesetzesvorhaben INTEGER NOT NULL REFERENCES gesetzesvorhaben (id) ON DELETE CASCADE,
+        station INTEGER NOT NULL REFERENCES station (id) ON DELETE CASCADE
     );
+CREATE TABLE rel_dok_autor(
+    dokument INTEGER NOT NULL REFERENCES dokument (id) ON DELETE CASCADE,
+    autor INTEGER NOT NULL REFERENCES autor (id) ON DELETE CASCADE,
+    PRIMARY KEY (dokument, autor)
+);
 
-CREATE TABLE
-    ausschussberatungen (
-        id SERIAL PRIMARY KEY,
-        ext_id UUID UNIQUE NOT NULL,
-        datum DATE NOT NULL,
-        gesetzesvorhaben INTEGER REFERENCES gesetzesvorhaben (id) ON DELETE CASCADE,
-        ausschuss INTEGER REFERENCES ausschuesse (id) ON DELETE SET NULl,
-        dokument INTEGER REFERENCES dokumente (id) ON DELETE SET NULL
-    );
-
-CREATE TABLE
-    sonstige_ids ( -- updated via their cascading reference
-        id SERIAL PRIMARY KEY,
-        gesetzesvorhaben INTEGER REFERENCES gesetzesvorhaben (id) ON DELETE CASCADE,
-        typ VARCHAR(255) NOT NULL,
-        inhalt VARCHAR(255) NOT NULL
-    );
-
-CREATE TABLE
-    abstimmungen (
-        id SERIAL PRIMARY KEY, 
-        ext_id UUID UNIQUE NOT NULL,
-        namentlich BOOLEAN NOT NULL,
-        url VARCHAR(255) NOT NULL,
-        typ INTEGER REFERENCES abstimmungstyp (id) ON DELETE SET NULL,
-        gesetzesvorhaben INTEGER REFERENCES gesetzesvorhaben (id) ON DELETE CASCADE
-    );
-
-CREATE TABLE
-    tagesordnungspunkt ( --updated via tops
-        id SERIAL PRIMARY KEY,
-        titel VARCHAR(255) NOT NULL,
-        tops_id INTEGER REFERENCES tops (id) ON DELETE CASCADE,
-        document INTEGER REFERENCES dokumente (id) ON DELETE SET NULL,
-        abstimmung INTEGER REFERENCES abstimmungen (id) ON DELETE SET NULL
-    );
-
-CREATE TABLE
-    abstimmungsergebnisse ( --updated via abstimmung/tops
-        id SERIAL PRIMARY KEY,
-        abstimmung INTEGER REFERENCES abstimmungen (id) ON DELETE CASCADE,
-        fraktion INTEGER REFERENCES fraktionen (id) ON DELETE CASCADE,
-        anteil DOUBLE PRECISION NOT NULL
-    );
+CREATE TABLE further_links(
+    id SERIAL PRIMARY KEY,
+    link VARCHAR(255) NOT NULL,
+    gesetzesvorhaben INTEGER NOT NULL REFERENCES gesetzesvorhaben (id) ON DELETE CASCADE
+);
+CREATE TABLE further_notes(
+    id SERIAL PRIMARY KEY,
+    notes VARCHAR(255) NOT NULL,
+    gesetzesvorhaben INTEGER NOT NULL REFERENCES gesetzesvorhaben (id) ON DELETE CASCADE
+);

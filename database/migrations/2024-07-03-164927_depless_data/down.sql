@@ -1,7 +1,6 @@
-DROP TABLE dokumenttypen;
-DROP TABLE fraktionen;
-DROP TABLE abstimmungstyp;
-DROP TABLE schlagworte;
-DROP TABLE initiatoren;
-DROP TABLE parlamente;
-DROP TABLE gesetzeseigenschaften;
+DROP TABLE status;
+DROP TABLE dokumententyp;
+DROP TABLE schlagwort;
+DROP TABLE autor;
+DROP TABLE parlament;
+DROP TABLE gesetzestyp;

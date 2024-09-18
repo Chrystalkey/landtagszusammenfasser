@@ -1,8 +1,9 @@
 -- This file should undo anything in `up.sql`
-GRANT ALL ON TABLE parlamente TO public;
-GRANT ALL ON TABLE dokumenttypen TO public;
-GRANT ALL ON TABLE gesetzeseigenschaften TO public;
+GRANT ALL ON TABLE gesetzestyp TO public;
+GRANT ALL ON TABLE parlament TO public;
+GRANT ALL ON TABLE dokumententyp TO public;
 
-DELETE FROM gesetzeseigenschaften WHERE TRUE;
-DELETE FROM parlamente WHERE TRUE;
-DELETE FROM dokumenttypen WHERE TRUE;
+DELETE FROM gesetzestyp WHERE TRUE;
+DELETE FROM parlament WHERE TRUE;
+DELETE FROM dokumententyp WHERE TRUE;
+DELETE FROM status WHERE TRUE;

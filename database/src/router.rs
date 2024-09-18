@@ -133,7 +133,7 @@ async fn post_gesvh(
     Query(params): Query<HashMap<String, String>>,
     headers: HeaderMap,
     Json(cupdate): Json<clapi::CUPUpdate>,
-) -> std::result::Result<Json<clapi::CUPResponse>, LTZFError> {
+) -> std::result::Result<StatusCode, LTZFError> {
     let coll_id = uuid::Uuid::parse_str(params.get("collector_id").unwrap().as_str())
         .map_err(ParsingError::from)?;
     authenticate_collector(coll_id, &headers, app.clone()).await?;
@@ -147,5 +147,5 @@ async fn post_gesvh(
 
     let response = crate::handlers::gesetzesvorhaben::post_gesvh(app, cupdate).await?;
     tracing::debug!("Response: {:?}", response);
-    Ok(Json(response))
+    Ok(response)
 }
