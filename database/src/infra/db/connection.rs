@@ -34,8 +34,10 @@ pub struct Dokumententyp{
 pub struct Dokument {
     pub id : i32,
     pub api_id: uuid::Uuid,
-    pub identifikator: String,
+    pub titel: String,
+    pub identifikator: String, 
     pub last_access: chrono::NaiveDateTime,
+    pub zsmfassung: String,
     pub url: String,
     pub hash: String, 
     pub doktyp: i32,

@@ -24,8 +24,12 @@ diesel::table! {
         id -> Int4,
         api_id -> Uuid,
         #[max_length = 255]
+        titel -> Varchar,
+        #[max_length = 255]
         identifikator -> Varchar,
         last_access -> Timestamp,
+        #[max_length = 512]
+        zsmfassung -> Varchar,
         #[max_length = 255]
         url -> Varchar,
         #[max_length = 128]

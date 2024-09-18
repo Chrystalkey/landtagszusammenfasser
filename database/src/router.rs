@@ -6,16 +6,14 @@ use axum::http::{HeaderMap, StatusCode};
 use axum::response::IntoResponse;
 use axum::routing::{get, post, put};
 use axum::{Json, Router};
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use serde::Deserialize;
 
 use crate::error::*;
 use crate::handlers::authentication::authenticate_collector;
-use crate::infra::api::collectors as clapi;
-use crate::infra::api::webservice as wsapi;
+use crate::infra::api;
 use crate::AppState;
 
-/// Dingens: Nur ein Endpoint für gesetzesvorhaben und assoziierte dinge inklusive Dokumente
 pub fn app_router(_state: Arc<AppState>) -> Router<Arc<AppState>> {
     let route = Router::new().route("/", get(root));
     let route = route_collector(route);
@@ -25,11 +23,11 @@ pub fn app_router(_state: Arc<AppState>) -> Router<Arc<AppState>> {
 pub fn route_collector(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
     router
         .route(
-            "/api/v1/collector/:collector_id/gesetzesvorhaben",
+            "/api/v1/gesetzesvorhaben",
             post(post_gesvh),
         )
         .route(
-            "/api/v1/collector/:collector_id/gesetzesvorhaben/:gesvh_id",
+            "/api/v1/gesetzesvorhaben/:gesvh_id",
             put(put_gesvh),
         )
 }
@@ -59,10 +57,10 @@ async fn handler_404() -> impl IntoResponse {
 #[allow(dead_code)]
 #[derive(Debug, Deserialize, Default)]
 pub struct GetGesvhQueryFilters {
-    pub updated_since: Option<chrono::DateTime<Utc>>,
-    pub updated_until: Option<chrono::DateTime<Utc>>,
-    pub created_since: Option<chrono::DateTime<Utc>>,
-    pub created_until: Option<chrono::DateTime<Utc>>,
+    pub updated_since: Option<DateTime<Utc>>,
+    pub updated_until: Option<DateTime<Utc>>,
+    pub created_since: Option<DateTime<Utc>>,
+    pub created_until: Option<DateTime<Utc>>,
     pub parlament: Option<String>,
     pub status: Option<String>,
     pub limit: Option<u32>,
@@ -73,7 +71,7 @@ async fn get_gesvh_filter(
     State(app): State<Arc<AppState>>,
     Query(params): Query<GetGesvhQueryFilters>,
     headers: HeaderMap,
-) -> Result<Json<wsapi::WSResponse>> {
+) -> Result<Json<api::WSResponse>> {
     tracing::info!("Webservice API called GET gesetzesvorhaben without uuid");
     tracing::debug!("Received Query Parameters: {:?}", params);
     tracing::debug!("headers: {:?}", headers);
@@ -81,12 +79,13 @@ async fn get_gesvh_filter(
     tracing::debug!("Response: {:?}", response);
     Ok(Json(response))
 }
+
 /// GET /api/v1/webservice/gesetzesvorhaben/:gesvh_id
 async fn get_gesvh(
     State(app): State<Arc<AppState>>,
     Path(gesvh): Path<String>,
     headers: HeaderMap,
-) -> Result<Json<wsapi::WSResponse>> {
+) -> Result<Json<api::WSResponse>> {
     let gesvh_id = uuid::Uuid::parse_str(gesvh.as_str()).map_err(ParsingError::from)?;
     tracing::info!(
         "Webservice API called GET gesetzesvorhaben on Gesetzesvorhaben {}",
@@ -105,8 +104,8 @@ async fn put_gesvh(
     Path(path_vars): Path<HashMap<String, String>>,
     Query(params): Query<HashMap<String, String>>,
     headers: HeaderMap,
-    Json(cupdate): Json<clapi::CUPUpdate>,
-) -> Result<Json<clapi::CUPResponse>> {
+    Json(cupdate): Json<api::CUPUpdate>,
+) -> Result<Json<api::CUPResponse>> {
     let coll_id =
         uuid::Uuid::parse_str(params.get("collector_id").unwrap()).map_err(ParsingError::from)?;
     let gesvh_id =
@@ -130,12 +129,14 @@ async fn put_gesvh(
 /// All parts are mandatory, this is the only currently implemented end point
 async fn post_gesvh(
     State(app): State<Arc<AppState>>,
-    Query(params): Query<HashMap<String, String>>,
     headers: HeaderMap,
-    Json(cupdate): Json<clapi::CUPUpdate>,
+    Json(cupdate): Json<api::CUPUpdate>
 ) -> std::result::Result<StatusCode, LTZFError> {
-    let coll_id = uuid::Uuid::parse_str(params.get("collector_id").unwrap().as_str())
-        .map_err(ParsingError::from)?;
+    let coll_id = uuid::Uuid::parse_str(
+        headers.get("collector_id").unwrap().to_str()
+        .map_err(ParsingError::from)?
+    )
+    .map_err(ParsingError::from)?;
     authenticate_collector(coll_id, &headers, app.clone()).await?;
     tracing::info!(
         "Collector {} called post(gesetzesvorhaben) with msg_id {}",

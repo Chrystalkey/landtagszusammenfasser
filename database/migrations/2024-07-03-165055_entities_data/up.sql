@@ -42,8 +42,10 @@ CREATE TABLE
     dokument (
         id SERIAL PRIMARY KEY,
         api_id UUID UNIQUE NOT NULL,
+        titel VARCHAR(255) NOT NULL,
         identifikator VARCHAR(255) NOT NULL,
         last_access TIMESTAMP NOT NULL,
+        zsmfassung VARCHAR(512) NOT NULL,
         url VARCHAR(255) NOT NULL,
         hash CHAR(128) NOT NULL, -- TODO: check if this is the correct length
         doktyp INTEGER NOT NULL REFERENCES dokumententyp (id),

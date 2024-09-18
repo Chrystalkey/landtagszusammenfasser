@@ -2,51 +2,19 @@ use std::sync::Arc;
 
 extern crate diesel_interaction;
 use crate::external::no_match_found;
-use crate::infra::api::collectors as clapi;
-use crate::infra::api::webservice as wsapi;
 use crate::infra::db::connection as dbcon;
+use crate::infra::api::{self, FatOption};
 use crate::AppState;
 use crate::{error::*, router::GetGesvhQueryFilters};
 use axum::http::StatusCode;
-use clapi::CUPResponse;
 use diesel::Connection;
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, OptionalExtension};
 use uuid::Uuid;
 
-macro_rules! required_field {
-    ($value:expr) => {
-        $value.clone().map_or(
-            Err(DatabaseError::MissingFieldForInsert(format!(
-                "{} is a required field",
-                stringify!($value)
-            ))),
-            |x| Ok(x),
-        )?
-    };
-}
-
-macro_rules! async_db {
-    ($conn:ident, $load_function:ident, $query:block) => {
-        $conn
-            .interact(move |c| $query.$load_function(c))
-            .await
-            .map_err(diesel_interaction::DieselInteractionError::from)
-            .map_err(DatabaseError::from)?
-            .map_err(DatabaseError::from)?
-    };
-}
-#[allow(dead_code)]
-fn update_gesvh(
-    db_id: i32,
-    gesvh: clapi::Gesetzesvorhaben,
-    app: Arc<AppState>,
-    mut conn: deadpool_diesel::postgres::Connection,
-) -> Result<clapi::Gesetzesvorhaben> {
-    todo!();
-}
+use crate::async_db;
 
 fn create_gesvh(
-    gesvh: clapi::Gesetzesvorhaben,
+    gesvh: api::Gesetzesvorhaben,
     app: Arc<AppState>,
     conn: &mut diesel::pg::PgConnection,
 ) -> ::std::result::Result<(), DatabaseError> {
@@ -55,6 +23,8 @@ fn create_gesvh(
     let gen_id = Uuid::now_v7();
     
     let federf_db_id = if let Some(value) = gesvh.federfuehrung {
+        let value = value.unwrap_data()
+        .map_err(|err| DatabaseError::MissingFieldForInsert(format!("{} with value {:?}", err.to_string(), value)))?;
         let name = value.name.clone();
         let res: Vec<i32> = crate::schema::ausschuss::table
             .select(crate::schema::ausschuss::dsl::id)
@@ -124,10 +94,12 @@ fn create_gesvh(
     Ok(())
 }
 
-fn create_stationen(gesvh_id: i32, stationen: Vec<clapi::Station>, conn: &mut diesel::pg::PgConnection, app: Arc<AppState>) -> std::result::Result<(), DatabaseError>{
+fn create_stationen(gesvh_id: i32, stationen: Vec<FatOption<api::Station, i32>>, conn: &mut diesel::pg::PgConnection, app: Arc<AppState>) -> std::result::Result<(), DatabaseError>{
     // for each station
     for station in stationen{
-        let (status, requires_ausschuss) ={
+        let station = station.unwrap_data()
+        .map_err(|err| DatabaseError::MissingFieldForInsert(format!("{} with value {:?}", err.to_string(), station)))?;
+        let (status, requires_ausschuss) = {
             let id = dbcon::status::table.select(dbcon::status::module::id)
             .filter(dbcon::status::module::value.eq(station.status.clone()))
             .first(conn)
@@ -148,9 +120,11 @@ fn create_stationen(gesvh_id: i32, stationen: Vec<clapi::Station>, conn: &mut di
         };
 
         // insert station, returning id
-        let ausschuss_id = match station.ausschuss{
+        let ausschuss_id = match &station.ausschuss{
             None => None,
             Some(data) => {
+                let data = data.unwrap_data()
+                .map_err(|err| DatabaseError::MissingFieldForInsert(format!("{} with value {:?}", err, data)))?;
                 let id = dbcon::ausschuss::table.select(dbcon::ausschuss::module::id)
                 .filter(dbcon::ausschuss::module::name.eq(data.name.clone()))
                 .first(conn)
@@ -189,27 +163,31 @@ fn create_stationen(gesvh_id: i32, stationen: Vec<clapi::Station>, conn: &mut di
 
         // insert documents, returning id
         let mut autor_inserts = vec![];
-        for doc in station.dokumente{
+        for doc in &station.dokumente{
+            let doc = doc.unwrap_data()
+            .map_err(|err| DatabaseError::MissingFieldForInsert(format!("{} with value {:?}", err, doc)))?;
             let doktyp_id: i32 = dbcon::dokumententyp::table.select(dbcon::dokumententyp::module::id)
-            .filter(dbcon::dokumententyp::module::value.eq(doc.typ))
+            .filter(dbcon::dokumententyp::module::value.eq(doc.typ.clone()))
             .first(conn)?;
             let api_id = Uuid::now_v7();
             let dok_insert = dbcon::dokument::Insert{
                 api_id,
+                titel: doc.titel.clone(),
+                zsmfassung: doc.zsmfassung.clone(),
                 gesetzesvorhaben: gesvh_id,
-                hash: doc.hash,
-                identifikator: doc.identifikator,
+                hash: doc.hash.clone(),
+                identifikator: doc.identifikator.clone(),
                 station: station_id,
                 last_access: doc.letzter_zugriff.naive_utc(),
                 doktyp: doktyp_id,
-                url: doc.url,
+                url: doc.url.clone(),
             };
             let dok_id : i32 = diesel::insert_into(dbcon::dokument::table)
             .values(&dok_insert)
             .returning(dbcon::dokument::module::id)
             .get_result(conn)?;
 
-            for autor in doc.autoren{
+            for autor in &doc.autoren{
                 let autor_id: i32 = dbcon::autor::table
                 .select(dbcon::autor::module::id)
                 .filter(dbcon::autor::module::name.eq(autor.0.clone()))
@@ -240,7 +218,7 @@ fn create_stationen(gesvh_id: i32, stationen: Vec<clapi::Station>, conn: &mut di
         .values(&autor_inserts)
         .execute(conn)?;
         // insert schlagworte into rel_station_schlagwort
-        for schlagwort in station.schlagworte{
+        for schlagwort in &station.schlagworte{
             let schlagwort = schlagwort.to_lowercase();// alle schlagworte sind lowercase, ob man will oder nicht
             let schlagwort_id: i32 = dbcon::schlagwort::table
             .select(dbcon::schlagwort::module::id)
@@ -275,19 +253,20 @@ fn create_stationen(gesvh_id: i32, stationen: Vec<clapi::Station>, conn: &mut di
 /// This endpoint is supposed to be used by humans who know the data to not have to use the database directly.
 pub(crate) async fn put_gesvh(
     _app: Arc<AppState>,
-    cupdate: clapi::CUPUpdate,
+    cupdate: api::CUPUpdate,
     gesvh_id: Uuid,
-) -> std::result::Result<CUPResponse, LTZFError> {
+) -> std::result::Result<api::CUPResponse, LTZFError> {
     todo!("Endpoint to be used for updates by humans, not implemented yet")
 }
 
 /// Used to create gesetzesvorhaben & associated data with HTTP POST
 pub(crate) async fn post_gesvh(
     app: Arc<AppState>,
-    cupdate: clapi::CUPUpdate,
+    cupdate: api::CUPUpdate,
 ) -> std::result::Result<StatusCode, LTZFError> {
     let gesvh = cupdate.payload;
-    let conn = app.pool.get().await.map_err(DatabaseError::from)?;
+    let conn = app.pool.get()
+    .await.map_err(DatabaseError::from)?;
 
     conn.interact( move |conn| {
             conn.transaction::<_, DatabaseError, _>(move |conn|{
@@ -297,21 +276,37 @@ pub(crate) async fn post_gesvh(
             }).map_err(LTZFError::from)
         }
     ).await
+    // now check for mergeable entries in Gesetzesvorhaben
+    // identifieable over title, typ, initiator
     .map_err(DatabaseError::from)??;
     return Ok(StatusCode::CREATED);
 }
 
-pub(crate) async fn get_gesvh(app: Arc<AppState>, gesvh_id: Uuid) -> Result<wsapi::WSResponse> {
+pub(crate) async fn get_gesvh(app: Arc<AppState>, gesvh_id: Uuid) -> Result<api::WSResponse> {
     let conn = app.pool.get().await.map_err(DatabaseError::from)?;
-    
-    todo!()
+    let result : dbcon::Gesetzesvorhaben = async_db!(
+        conn, first,
+        {
+            dbcon::gesetzesvorhaben::table
+                .filter(dbcon::gesetzesvorhaben::module::api_id.eq(gesvh_id))
+        }
+    );
+    return Ok(
+        api::WSResponse{
+            id: Uuid::now_v7(),
+            payload: api::WSPayload::Gesetzesvorhaben(
+                vec![api::Gesetzesvorhaben::construct_from(result, conn).await?]
+            ),
+        }
+    );
 }
 
 pub(crate) async fn get_gesvh_filtered(
     app: Arc<AppState>,
     params: GetGesvhQueryFilters,
-) -> Result<wsapi::WSResponse> {
-    let conn = app.pool.get().await.map_err(DatabaseError::from)?;
+) -> Result<api::WSResponse> {
+    let conn = app.pool.get()
+    .await.map_err(DatabaseError::from)?;
 
     todo!()
 }
