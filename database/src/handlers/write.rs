@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::sync::Arc;
 
 extern crate diesel_interaction;
@@ -12,8 +11,6 @@ use diesel::Connection;
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, OptionalExtension};
 use uuid::Uuid;
 
-use crate::async_db;
-
 fn create_gesvh(
     gesvh: api::Gesetzesvorhaben,
     app: Arc<AppState>,
@@ -22,24 +19,30 @@ fn create_gesvh(
     use crate::schema::gesetzesvorhaben as gm;
 
     let gen_id = Uuid::now_v7();
+    tracing::trace!("Generating Id: {}", gen_id);
     
     let federf_db_id = if let Some(value) = gesvh.federfuehrung {
+        tracing::trace!("Federführung was Supplied, checking for existence");
         let value = value.unwrap_data()
         .map_err(|err| DatabaseError::MissingFieldForInsert(format!("{} with value {:?}", err.to_string(), value)))?;
         let name = value.name.clone();
-        let res: Vec<i32> = crate::schema::ausschuss::table
+        let res: Option<i32> = crate::schema::ausschuss::table
             .select(crate::schema::ausschuss::dsl::id)
             .filter(crate::schema::ausschuss::dsl::name.eq(name))
-            .load::<i32>(conn)?;
-        if res.is_empty(){
+            .first::<i32>(conn)
+            .optional()?;
+        if res.is_none(){
             // insert new ausschuss and send email for review
             tracing::warn!("Ausschuss {} not found in database, inserting and sending email for review", value.name.as_str());
             use crate::schema::parlament as pm;
             use crate::schema::ausschuss as am;
+            tracing::trace!("Checking wether Parlament {} for exists", value.parlament.iter().collect::<String>());
             let parl_id : i32 = pm::table
                 .select(pm::dsl::id)
                 .filter(pm::dsl::kurzname.eq(value.parlament.into_iter().collect::<String>()))
                 .first(conn)?;
+            tracing::trace!("Parlament found");
+            tracing::trace!("Inserting new Ausschuss");
             let id : i32 = diesel::insert_into(am::table)
             .values(&dbcon::ausschuss::Insert{
                 name: value.name.clone(),
@@ -47,22 +50,28 @@ fn create_gesvh(
             })
             .returning(am::dsl::id)
             .get_result(conn)?;
+            tracing::trace!("Newly inserted Ausschuss has id: {}", id);
+            tracing::debug!("Ausschuss {} (P: {}) was not found in database, inserted, please review. Id = {}", 
+            value.name.as_str(), value.parlament.iter().collect::<String>(), id);
             no_match_found(format!("Ausschuss {} (P: {}) was not found in database, inserted, please review. Id = {}", 
             value.name.as_str(), value.parlament.iter().collect::<String>(), id), 
             app.clone());
             Some(id)
         }else{
-            Some(res[0])
+            tracing::debug!("Federführung found in database: id = {}", res.unwrap());
+            res
         }
     } else {
         None
     };
     let gesvh_typ_id :i32= {
+        tracing::debug!("Trying to find Gesetzestyp in Database");
         use crate::schema::gesetzestyp as tm;
         tm::table.select(tm::dsl::id)
         .filter(tm::dsl::value.eq(gesvh.typ.clone()))
         .first(conn)?
     };
+    tracing::debug!("Gesetzestyp found, id = {}", gesvh_typ_id);
     let gesvh_db_insert: dbcon::gesetzesvorhaben::Insert = dbcon::gesetzesvorhaben::Insert {
         api_id: gen_id,
         titel: gesvh.titel,
@@ -72,18 +81,22 @@ fn create_gesvh(
         initiator: gesvh.initiator.clone(),
         typ: gesvh_typ_id,
     };
+    tracing::debug!("Inserting Gesetzesvorhaben into Database as struct: {:?}", gesvh_db_insert);
     let gesvh_db_id :i32 = diesel::insert_into(gm::table)
     .values(gesvh_db_insert)
     .returning(gm::dsl::id)
     .get_result(conn)?;
+    tracing::debug!("Insertion successful, id = {}", gesvh_db_id);
 
     // insert links & notes
+    tracing::trace!("Inserting Further Links");
     diesel::insert_into(crate::schema::further_links::table)
         .values(&gesvh.links.iter().map(|x| dbcon::furtherlinks::Insert{
             gesetzesvorhaben: gesvh_db_id,
             link: x.clone(),
         }).collect::<Vec<dbcon::furtherlinks::Insert>>()
     ).execute(conn)?;
+    tracing::trace!("Inserting Further Notes");
     diesel::insert_into(dbcon::furthernotes::table)
         .values(&gesvh.notes.iter().map(|x| dbcon::furthernotes::Insert{
             gesetzesvorhaben: gesvh_db_id,
@@ -91,11 +104,18 @@ fn create_gesvh(
         }).collect::<Vec<dbcon::furthernotes::Insert>>()
     ).execute(conn)?;
     // insert stationen 
+    tracing::trace!("Inserting Stationen");
     create_stationen(gesvh_db_id, gesvh.stationen, conn, app)?;
     Ok(())
 }
 
 fn create_stationen(gesvh_id: i32, stationen: Vec<FatOption<api::Station, i32>>, conn: &mut diesel::pg::PgConnection, app: Arc<AppState>) -> std::result::Result<(), DatabaseError>{
+    if stationen.is_empty(){
+        tracing::warn!("No Stationen supplied, is a mandatory field");
+        return Err(
+            DatabaseError::MissingFieldForInsert("No Stationen supplied, is a mandatory field".to_string())
+        );
+    }
     // for each station
     for station in stationen{
         let station = station.unwrap_data()
@@ -116,8 +136,8 @@ fn create_stationen(gesvh_id: i32, stationen: Vec<FatOption<api::Station, i32>>,
                 .get_result(conn)?;
                 no_match_found(format!("Status {} was not found in database, inserted, please review. Id = {}", 
                 station.status, id), app.clone());
-                (id, (station.status == "Parlament: Stellungnahme"))
-            }else{(id.unwrap(), (station.status == "Parlament: Stellungnahme"))}
+                (id, (station.status == "Parlament: Beschlussempfehlung"))
+            }else{(id.unwrap(), (station.status == "Parlament: Beschlussempfehlung"))}
         };
 
         // insert station, returning id
@@ -151,10 +171,13 @@ fn create_stationen(gesvh_id: i32, stationen: Vec<FatOption<api::Station, i32>>,
         .values(&dbcon::station::Insert{
             api_id: Uuid::now_v7(),
             parlament: dbcon::parlament::table.select(dbcon::parlament::module::id)
-                .filter(dbcon::parlament::module::kurzname.eq(station.parlament.iter().collect::<String>()))
+                .filter(dbcon::parlament::module::kurzname.eq(station.parlament.clone()))
                 .first(conn)?,
             gesetzesvorhaben: gesvh_id,
-            ausschuss: ausschuss_id, 
+            ausschuss: 
+            if requires_ausschuss && ausschuss_id.is_none() {
+                return Err(DatabaseError::MissingFieldForInsert(format!("Inserting a Station of this type requires an Ausschuss to be supplied.")));
+            }else{ausschuss_id}, 
             meinungstendenz: station.meinungstenzdenz,
             status,
             datum: station.datum.naive_utc(),
@@ -250,16 +273,6 @@ fn create_stationen(gesvh_id: i32, stationen: Vec<FatOption<api::Station, i32>>,
     Ok(())
 }
 
-/// Used to update gesetzesvorhaben with HTTP PUT
-/// This endpoint is supposed to be used by humans who know the data to not have to use the database directly.
-pub(crate) async fn put_gesvh(
-    _app: Arc<AppState>,
-    cupdate: api::CUPUpdate,
-    gesvh_id: Uuid,
-) -> std::result::Result<api::CUPResponse, LTZFError> {
-    todo!("Endpoint to be used for updates by humans, not implemented yet")
-}
-
 /// Used to create gesetzesvorhaben & associated data with HTTP POST
 pub(crate) async fn post_gesvh(
     app: Arc<AppState>,
@@ -268,46 +281,20 @@ pub(crate) async fn post_gesvh(
     let gesvh = cupdate.payload;
     let conn = app.pool.get()
     .await.map_err(DatabaseError::from)?;
-
+    tracing::debug!("Starting Insertion Transaction");
     conn.interact( move |conn| {
             conn.transaction::<_, DatabaseError, _>(move |conn|{
                 {
                     create_gesvh(gesvh, app, conn)
                 }
-            }).map_err(LTZFError::from)
+            }).map_err(|err| 
+                {tracing::warn!("Transaction cancelled, rolled back");LTZFError::from(err)})
         }
     ).await
     // now check for mergeable entries in Gesetzesvorhaben
     // identifieable over title, typ, initiator
     .map_err(DatabaseError::from)??;
+    tracing::debug!("Finished Insertion Transaction");
+    tracing::info!("Inserted New Gesetzesvorhaben into Database");
     return Ok(StatusCode::CREATED);
-}
-
-pub(crate) async fn get_gesvh(app: Arc<AppState>, gesvh_id: Uuid) -> Result<api::WSResponse> {
-    let conn = app.pool.get().await.map_err(DatabaseError::from)?;
-    let result : dbcon::Gesetzesvorhaben = async_db!(
-        conn, first,
-        {
-            dbcon::gesetzesvorhaben::table
-                .filter(dbcon::gesetzesvorhaben::module::api_id.eq(gesvh_id))
-        }
-    );
-    return Ok(
-        api::WSResponse{
-            id: Uuid::now_v7(),
-            payload: api::WSPayload::Gesetzesvorhaben(
-                vec![api::Gesetzesvorhaben::construct_from(result, conn).await?]
-            ),
-        }
-    );
-}
-
-pub(crate) async fn get_gesvh_filtered(
-    app: Arc<AppState>,
-    params: HashMap<String, String>,
-) -> Result<api::WSResponse> {
-    let conn = app.pool.get()
-    .await.map_err(DatabaseError::from)?;
-
-    todo!()
 }

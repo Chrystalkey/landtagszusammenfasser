@@ -28,7 +28,7 @@ pub fn route_collector(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
 pub fn route_webservice(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
     router
         .route(
-            "/api/v1/gesetzesvorhaben/",
+            "/api/v1/gesetzesvorhaben",
             get(get_gesvh_filter),
         )
         .route(
@@ -58,10 +58,6 @@ pub fn route_webservice(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> 
             "/api/v1/ausschuesse/:api_id",
             get(get_ausschuss),
         )
-        .route(
-            "/api/v1/ausschuesse",
-            get(get_ausschuss_filter),
-        )
 }
 
 async fn root() -> &'static str {
@@ -87,18 +83,7 @@ async fn get_ausschuss(
     tracing::debug!("Response: {:?}", response);
     Ok(Json(response))
 }
-async fn get_ausschuss_filter(
-    State(app): State<Arc<AppState>>,
-    Query(params): Query<HashMap<String, String>>,
-    headers: HeaderMap,
-) -> Result<Json<api::WSResponse>> {
-    tracing::info!("Webservice API called GET ausschuesse without uuid");
-    tracing::debug!("Received Query Parameters: {:?}", params);
-    tracing::debug!("headers: {:?}", headers);
-    let response = todo!();
-    tracing::debug!("Response: {:?}", response);
-    Ok(Json(response))
-}
+
 async fn get_stationen(
     State(app): State<Arc<AppState>>,
     Path(station): Path<String>,
@@ -113,7 +98,7 @@ async fn get_stationen(
 }
 async fn get_stationen_filter(
     State(app): State<Arc<AppState>>,
-    Query(params): Query<HashMap<String, String>>,
+    Query(params): Query<filters::StationFilter>,
     headers: HeaderMap,
 ) -> Result<Json<api::WSResponse>> {
     tracing::info!("Webservice API called GET stationen without uuid");
@@ -125,7 +110,7 @@ async fn get_stationen_filter(
 }
 async fn get_dok_filter(
     State(app): State<Arc<AppState>>,
-    Query(params): Query<HashMap<String, String>>,
+    Query(params): Query<filters::DokFilter>,
     headers: HeaderMap,
 ) -> Result<Json<api::WSResponse>> {
     tracing::info!("Webservice API called GET dokumente without uuid");
@@ -151,13 +136,13 @@ async fn get_dok(
 /// GET /api/v1/webservice/gesetzesvorhaben?since=timestamp&until=timestamp&limit=number...
 async fn get_gesvh_filter(
     State(app): State<Arc<AppState>>,
-    Query(params): Query<HashMap<String, String>>,
+    Query(params): Query<filters::GesVHFilter>,
     headers: HeaderMap,
 ) -> Result<Json<api::WSResponse>> {
     tracing::info!("Webservice API called GET gesetzesvorhaben without uuid");
     tracing::debug!("Received Query Parameters: {:?}", params);
     tracing::debug!("headers: {:?}", headers);
-    let response = crate::handlers::gesetzesvorhaben::get_gesvh_filtered(app, params).await?;
+    let response = crate::handlers::read::get_gesvh_filtered(app, params).await?;
     tracing::debug!("Response: {:?}", response);
     Ok(Json(response))
 }
@@ -174,7 +159,7 @@ async fn get_gesvh(
         gesvh_id
     );
     tracing::debug!("headers: {:?}", headers);
-    let response = crate::handlers::gesetzesvorhaben::get_gesvh(app, gesvh_id).await?;
+    let response = crate::handlers::read::get_gesvh(app, gesvh_id).await?;
     tracing::debug!("Response: {:?}", response);
     Ok(Json(response))
 }
@@ -184,11 +169,11 @@ async fn get_gesvh(
 async fn post_gesvh(
     State(app): State<Arc<AppState>>,
     headers: HeaderMap,
+    Query(param) : Query<HashMap<String,String>>,
     Json(cupdate): Json<api::CUPUpdate>
 ) -> std::result::Result<StatusCode, LTZFError> {
     let coll_id = uuid::Uuid::parse_str(
-        headers.get("collector_id").unwrap().to_str()
-        .map_err(ParsingError::from)?
+        param.get("collector").unwrap()
     )
     .map_err(ParsingError::from)?;
     authenticate_collector(coll_id, &headers, app.clone()).await?;
@@ -200,7 +185,36 @@ async fn post_gesvh(
     tracing::debug!("Received CUPUpdate Struct: {:?}", cupdate);
     tracing::debug!("headers: {:?}", headers);
 
-    let response = crate::handlers::gesetzesvorhaben::post_gesvh(app, cupdate).await?;
+    let response = crate::handlers::write::post_gesvh(app, cupdate).await?;
     tracing::debug!("Response: {:?}", response);
     Ok(response)
+}
+
+pub(crate) mod filters{
+    use serde::Deserialize;
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct GesVHFilter{
+        pub updated_since: Option<chrono::DateTime<chrono::Utc>>,
+        pub updated_until: Option<chrono::DateTime<chrono::Utc>>,
+        pub limit: Option<usize>,
+        pub offset: Option<usize>,
+        pub parlament: Option<String>,
+    }
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct DokFilter{
+        pub since: Option<chrono::DateTime<chrono::Utc>>,
+        pub until: Option<chrono::DateTime<chrono::Utc>>,
+        pub limit: Option<usize>,
+        pub offset: Option<usize>,
+        pub typ: Option<String>,
+        pub autor: Option<String>,
+    }
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct StationFilter{
+        pub since: Option<chrono::DateTime<chrono::Utc>>,
+        pub until: Option<chrono::DateTime<chrono::Utc>>,
+        pub limit: Option<usize>,
+        pub offset: Option<usize>,
+        pub status: Option<String>,
+    }
 }

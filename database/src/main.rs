@@ -100,7 +100,7 @@ fn init_tracing() {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "example_tokio_postgres=debug".into()),
+                .unwrap_or_else(|_| "RUST_LOG=debug".into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
