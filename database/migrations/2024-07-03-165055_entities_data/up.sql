@@ -19,13 +19,14 @@ CREATE TABLE
         typ INTEGER NOT NULL REFERENCES gesetzestyp (id) ON DELETE CASCADE,
         federf INTEGER REFERENCES ausschuss (id) ON DELETE SET NULL
     );
-    
+
 CREATE TABLE station(
     id SERIAL PRIMARY KEY,
     gesetzesvorhaben INTEGER NOT NULL REFERENCES gesetzesvorhaben (id) ON DELETE CASCADE,
     status INTEGER NOT NULL REFERENCES status (id) ON DELETE CASCADE,
     parlament INTEGER NOT NULL REFERENCES parlament (id) ON DELETE CASCADE,
 
+    url VARCHAR(255),
     api_id UUID UNIQUE NOT NULL,
     datum TIMESTAMP NOT NULL,
     ausschuss INTEGER REFERENCES ausschuss (id) ON DELETE SET NULL,

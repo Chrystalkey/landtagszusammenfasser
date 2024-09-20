@@ -86,7 +86,7 @@ pub struct Station {
     pub meinungstenzdenz: Option<i32>,
 }
 impl Station {
-    async fn construct_from(
+    pub async fn construct_from(
         thing: super::db::connection::Station,
         conn: deadpool_diesel::postgres::Connection,
     ) -> Result<Self, DatabaseError> {
@@ -108,15 +108,15 @@ impl Station {
         use diesel::sql_types::{Nullable, Integer, Text};
         #[derive(QueryableByName, Debug)]
         struct StationRow{
-            #[sql_type = "Nullable<Integer>"]
+            #[diesel(sql_type = Nullable<Integer>)]
             mtend: Option<i32>,
-            #[sql_type = "Text"]
+            #[diesel(sql_type = Text)]
             statval: String,
-            #[sql_type = "Text"]
+            #[diesel(sql_type = Text)]
             parlname: String,
-            #[sql_type = "Nullable<Text>"]
+            #[diesel(sql_type = Nullable<Text>)]
             asname: Option<String>,
-            #[sql_type = "Nullable<Text>"]
+            #[diesel(sql_type = Nullable<Text>)]
             aspname: Option<String>,
         }
         // (meinungstendenz, status, parlament, ausschuss_name, ausschuss_parl)
@@ -145,7 +145,7 @@ impl Station {
         Ok(Station {
             status: db_result.statval,
             datum: thing.datum.and_utc(),
-            url: (),
+            url: thing.url,
             parlament: db_result.parlname,
             schlagworte,
             dokumente: dokumente.iter().map(|x| FatOption::Id(*x)).collect(),

@@ -127,6 +127,8 @@ diesel::table! {
         gesetzesvorhaben -> Int4,
         status -> Int4,
         parlament -> Int4,
+        #[max_length = 255]
+        url -> Nullable<Varchar>,
         api_id -> Uuid,
         datum -> Timestamp,
         ausschuss -> Nullable<Int4>,

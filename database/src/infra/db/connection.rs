@@ -44,6 +44,7 @@ pub struct Dokument {
     pub gesetzesvorhaben: i32,
     pub station: i32,
 }
+
 #[derive(Debug, Clone, Selectable, Queryable, Identifiable, DieselInteraction)]
 #[connection_type(deadpool_diesel::postgres::Connection)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -57,12 +58,14 @@ pub struct Station{
     pub id: i32, 
     pub gesetzesvorhaben: i32,
     pub status: i32,
-    pub parlament: i32, 
-    pub api_id: uuid::Uuid,
+    pub parlament: i32,
+    pub url: Option<String>,
+    pub api_id: uuid::Uuid, 
     pub datum: chrono::NaiveDateTime,
     pub ausschuss: Option<i32>,
     pub meinungstendenz: Option<i32>,
 }
+
 #[derive(Debug, Clone, Selectable, Queryable, Identifiable, DieselInteraction)]
 #[connection_type(deadpool_diesel::postgres::Connection)]
 #[diesel(check_for_backend(diesel::pg::Pg))]

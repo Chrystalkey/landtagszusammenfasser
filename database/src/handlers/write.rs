@@ -174,6 +174,7 @@ fn create_stationen(gesvh_id: i32, stationen: Vec<FatOption<api::Station, i32>>,
             if requires_ausschuss && ausschuss_id.is_none() {
                 return Err(DatabaseError::MissingFieldForInsert(format!("Inserting a Station of this type requires an Ausschuss to be supplied.")));
             }else{ausschuss_id}, 
+            url: station.url.clone(),
             meinungstendenz: station.meinungstenzdenz,
             status,
             datum: station.datum.naive_utc(),
