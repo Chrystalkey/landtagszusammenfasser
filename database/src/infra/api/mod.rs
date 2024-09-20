@@ -1,6 +1,6 @@
 use crate::async_db;
 use chrono::{DateTime, Utc};
-use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
+use diesel::{ExpressionMethods, QueryDsl, QueryableByName, RunQueryDsl};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -17,7 +17,6 @@ pub enum WSPayload {
     Gesetzesvorhaben(Vec<Gesetzesvorhaben>),
     Dokumente(Vec<Dokument>),
     Stationen(Vec<Station>),
-    Ausschuesse(Vec<Ausschuss>),
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -68,12 +67,6 @@ pub struct CUPResponse {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Default)]
-pub struct Ausschuss {
-    pub name: String,
-    pub parlament: [char; 2],
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Default)]
 pub struct Station {
     pub status: String,
     pub datum: DateTime<Utc>,
@@ -87,14 +80,81 @@ pub struct Station {
     pub dokumente: Vec<FatOption<Dokument, i32>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
-    pub ausschuss: Option<FatOption<Ausschuss, i32>>,
+    pub ausschuss: Option<(String, String)>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub meinungstenzdenz: Option<i32>,
 }
-impl Station{
-    async fn create_from(thing: super::db::connection::Station)
+impl Station {
+    async fn construct_from(
+        thing: super::db::connection::Station,
+        conn: deadpool_diesel::postgres::Connection,
+    ) -> Result<Self, DatabaseError> {
+        const STATEMENT : &str = 
+        "WITH helptable AS (SELECT ausschuss.id as asid, ausschuss.name as asname, parlament.kurzname as aspname
+            FROM ausschuss, parlament
+            WHERE ausschuss.parlament = parlament.id), 
+            pretable AS (
+            SELECT station.meinungstendenz as mtend, status.value as statval, pmain.kurzname as parlname, station.ausschuss as saus
+            FROM station, status, parlament as pmain
+            WHERE station.id = ? AND station.parlament = pmain.id AND station.status = status.id
+        )
+            
+        SELECT mtend, statval, parlname, asname, aspname
+        FROM pretable
+        LEFT JOIN helptable
+        ON pretable.saus = helptable.asid;";
+        use diesel::QueryableByName;
+        use diesel::sql_types::{Nullable, Integer, Text};
+        #[derive(QueryableByName, Debug)]
+        struct StationRow{
+            #[sql_type = "Nullable<Integer>"]
+            mtend: Option<i32>,
+            #[sql_type = "Text"]
+            statval: String,
+            #[sql_type = "Text"]
+            parlname: String,
+            #[sql_type = "Nullable<Text>"]
+            asname: Option<String>,
+            #[sql_type = "Nullable<Text>"]
+            aspname: Option<String>,
+        }
+        // (meinungstendenz, status, parlament, ausschuss_name, ausschuss_parl)
+        let db_result : StationRow = async_db!(
+            conn, get_result,
+            {
+                diesel::sql_query(STATEMENT)
+                .bind::<diesel::sql_types::Integer, _>(thing.id)
+            }
+        );
+        let schlagworte : Vec<String> = async_db!(
+            conn, load,
+            {
+                crate::schema::schlagwort::table
+                    .inner_join(crate::schema::rel_station_schlagwort::table)
+                    .filter(crate::schema::rel_station_schlagwort::dsl::station.eq(thing.id))
+                    .select(crate::schema::schlagwort::dsl::value)
+            }
+        );
+        let dokumente : Vec<i32> = async_db!(conn, load, {
+            crate::schema::dokument::table
+                .select(crate::schema::dokument::dsl::id)
+                .filter(crate::schema::dokument::dsl::station.eq(thing.id))
+        });
+
+        Ok(Station {
+            status: db_result.statval,
+            datum: thing.datum.and_utc(),
+            url: (),
+            parlament: db_result.parlname,
+            schlagworte,
+            dokumente: dokumente.iter().map(|x| FatOption::Id(*x)).collect(),
+            ausschuss: db_result.asname.map(|val| (val, db_result.aspname.unwrap())),
+            meinungstenzdenz: db_result.mtend,
+        })
+    }
 }
+
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Default)]
 pub struct Gesetzesvorhaben {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -104,7 +164,7 @@ pub struct Gesetzesvorhaben {
     pub trojaner: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
-    pub federfuehrung: Option<FatOption<Ausschuss, i32>>,
+    pub federfuehrung: Option<(String, String)>,
     pub initiator: String,
     pub typ: String,
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -128,12 +188,24 @@ impl Gesetzesvorhaben {
                 .select(crate::schema::station::dsl::id)
                 .filter(crate::schema::station::dsl::gesetzesvorhaben.eq(data.id))
         });
+        let fdf_ausschuss: Option<(String, String)> = match data.federf {
+            None => None,
+            Some(fdf) => Some(async_db!(conn, first, {
+                crate::schema::ausschuss::table
+                    .inner_join(crate::schema::parlament::table)
+                    .select((
+                        crate::schema::ausschuss::dsl::name,
+                        crate::schema::parlament::dsl::kurzname,
+                    ))
+                    .filter(crate::schema::ausschuss::dsl::id.eq(fdf))
+            })),
+        };
         Ok(Self {
             api_id: Some(data.api_id),
             titel: data.titel,
             verfassungsaendernd: data.verfassungsaendernd,
             trojaner: data.trojaner,
-            federfuehrung: data.federf.map(|x| FatOption::Id(x)),
+            federfuehrung: fdf_ausschuss,
             initiator: data.initiator,
             typ: async_db!(conn, first, {
                 crate::schema::gesetzestyp::table
@@ -210,7 +282,9 @@ mod test {
     use super::*;
     #[test]
     fn test_json_form() {
-        let date : DateTime<Utc>= DateTime::parse_from_rfc3339("2024-09-19T12:12:20Z").unwrap().into();
+        let date: DateTime<Utc> = DateTime::parse_from_rfc3339("2024-09-19T12:12:20Z")
+            .unwrap()
+            .into();
         let data = Gesetzesvorhaben {
             titel: "Test".to_string(),
             verfassungsaendernd: false,

@@ -23,9 +23,7 @@ fn create_gesvh(
     
     let federf_db_id = if let Some(value) = gesvh.federfuehrung {
         tracing::trace!("Federführung was Supplied, checking for existence");
-        let value = value.unwrap_data()
-        .map_err(|err| DatabaseError::MissingFieldForInsert(format!("{} with value {:?}", err.to_string(), value)))?;
-        let name = value.name.clone();
+        let name = value.0.clone();
         let res: Option<i32> = crate::schema::ausschuss::table
             .select(crate::schema::ausschuss::dsl::id)
             .filter(crate::schema::ausschuss::dsl::name.eq(name))
@@ -33,28 +31,28 @@ fn create_gesvh(
             .optional()?;
         if res.is_none(){
             // insert new ausschuss and send email for review
-            tracing::warn!("Ausschuss {} not found in database, inserting and sending email for review", value.name.as_str());
+            tracing::warn!("Ausschuss {:?} not found in database, inserting and sending email for review", &value);
             use crate::schema::parlament as pm;
             use crate::schema::ausschuss as am;
-            tracing::trace!("Checking wether Parlament {} for exists", value.parlament.iter().collect::<String>());
+            tracing::trace!("Checking wether Parlament {} for exists", value.1.as_str());
             let parl_id : i32 = pm::table
                 .select(pm::dsl::id)
-                .filter(pm::dsl::kurzname.eq(value.parlament.into_iter().collect::<String>()))
+                .filter(pm::dsl::kurzname.eq(value.1.clone()))
                 .first(conn)?;
             tracing::trace!("Parlament found");
             tracing::trace!("Inserting new Ausschuss");
             let id : i32 = diesel::insert_into(am::table)
             .values(&dbcon::ausschuss::Insert{
-                name: value.name.clone(),
+                name: value.0.clone(),
                 parlament: parl_id,
             })
             .returning(am::dsl::id)
             .get_result(conn)?;
             tracing::trace!("Newly inserted Ausschuss has id: {}", id);
             tracing::debug!("Ausschuss {} (P: {}) was not found in database, inserted, please review. Id = {}", 
-            value.name.as_str(), value.parlament.iter().collect::<String>(), id);
+            value.0.as_str(), value.1.as_str(), id);
             no_match_found(format!("Ausschuss {} (P: {}) was not found in database, inserted, please review. Id = {}", 
-            value.name.as_str(), value.parlament.iter().collect::<String>(), id), 
+            value.0.as_str(), value.1, id), 
             app.clone());
             Some(id)
         }else{
@@ -64,7 +62,7 @@ fn create_gesvh(
     } else {
         None
     };
-    let gesvh_typ_id :i32= {
+    let gesvh_typ_id : i32= {
         tracing::debug!("Trying to find Gesetzestyp in Database");
         use crate::schema::gesetzestyp as tm;
         tm::table.select(tm::dsl::id)
@@ -144,25 +142,23 @@ fn create_stationen(gesvh_id: i32, stationen: Vec<FatOption<api::Station, i32>>,
         let ausschuss_id = match &station.ausschuss{
             None => None,
             Some(data) => {
-                let data = data.unwrap_data()
-                .map_err(|err| DatabaseError::MissingFieldForInsert(format!("{} with value {:?}", err, data)))?;
                 let id = dbcon::ausschuss::table.select(dbcon::ausschuss::module::id)
-                .filter(dbcon::ausschuss::module::name.eq(data.name.clone()))
+                .filter(dbcon::ausschuss::module::name.eq(data.0.clone()))
                 .first(conn)
                 .optional()?;
                 if id.is_none(){
                     // insert new ausschuss
                     let id: i32 = diesel::insert_into(dbcon::ausschuss::table)
                     .values(&dbcon::ausschuss::Insert{
-                        name: data.name.clone(),
+                        name: data.0.clone(),
                         parlament: dbcon::parlament::table.select(dbcon::parlament::module::id)
-                            .filter(dbcon::parlament::module::kurzname.eq(data.parlament.iter().collect::<String>()))
+                            .filter(dbcon::parlament::module::kurzname.eq(data.1.clone()))
                             .first(conn)?
                     })
                     .returning(dbcon::ausschuss::module::id)
                     .get_result(conn)?;
                     no_match_found(format!("Ausschuss {} (P: {}) was not found in database, inserted, please review. Id = {}", 
-                    data.name, data.parlament.iter().collect::<String>(), id), app.clone());
+                    data.0, data.1, id), app.clone());
                     Some(id)
                 }else{Some(id.unwrap())}
             }
