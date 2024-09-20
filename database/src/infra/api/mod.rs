@@ -92,7 +92,9 @@ pub struct Station {
     #[serde(default)]
     pub meinungstenzdenz: Option<i32>,
 }
-
+impl Station{
+    async fn create_from(thing: super::db::connection::Station)
+}
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Default)]
 pub struct Gesetzesvorhaben {
     #[serde(skip_serializing_if = "Option::is_none")]

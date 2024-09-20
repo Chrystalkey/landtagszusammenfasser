@@ -1,11 +1,12 @@
 use crate::async_db;
 
+use crate::infra::api::WSResponse;
 use crate::AppState;
 use crate::error::{Result, DatabaseError};
 use crate::infra::db::connection as dbcon;
 use crate::infra::api;
-use std::sync::Arc;
 use diesel::prelude::*;
+use std::sync::Arc;
 use uuid::Uuid;
 
 pub(crate) async fn get_gesvh(app: Arc<AppState>, gesvh_id: Uuid) -> Result<api::WSResponse> {
@@ -73,6 +74,50 @@ pub(crate) async fn get_gesvh_filtered(
         api::WSResponse{
             id: Uuid::now_v7(),
             payload: api::WSPayload::Gesetzesvorhaben(api_vec),
+        }
+    );
+}
+
+async fn get_dok(app: Arc<AppState>, api_id: Uuid) -> Result<api::WSResponse>{
+    let conn = app.pool.get().await
+    .map_err(DatabaseError::from)?;
+    let result : dbcon::Dokument = async_db!(
+        conn, first,
+        {
+            crate::schema::dokument::table
+            .filter(crate::schema::dokument::dsl::api_id.eq(api_id))
+        }
+    );
+    let dokument = api::Dokument::construct_from(result, conn).await?;
+    return Ok(
+        WSResponse{
+            id: Uuid::now_v7(),
+            payload: api::WSPayload::Dokumente(
+                vec![dokument]
+            )
+        }
+    );
+}
+async fn get_dok_filtered(app: Arc<AppState>, filters: crate::router::filters::DokFilter) ->Result<WSResponse>{
+    todo!()
+}
+async fn get_station(app: Arc<AppState>, api_id: Uuid) -> Result<WSResponse>{
+    let conn = app.pool.get().await
+    .map_err(DatabaseError::from)?;
+    let result : dbcon::Station = async_db!(
+        conn, first,
+        {
+            crate::schema::station::table
+            .filter(crate::schema::station::dsl::api_id.eq(api_id))
+        }
+    );
+    let data = api::Station::construct_from(result, conn).await?;
+    return Ok(
+        WSResponse{
+            id: Uuid::now_v7(),
+            payload: api::WSPayload::Stationen(
+                vec![data]
+            )
         }
     );
 }
