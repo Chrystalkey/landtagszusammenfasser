@@ -106,6 +106,7 @@ impl Station {
         ON pretable.saus = helptable.asid;";
         use diesel::QueryableByName;
         use diesel::sql_types::{Nullable, Integer, Text};
+        #[allow(dead_code)]
         #[derive(QueryableByName, Debug)]
         struct StationRow{
             #[diesel(sql_type = Nullable<Integer>)]

@@ -92,7 +92,9 @@ async fn get_stationen(
     let station_id = uuid::Uuid::parse_str(station.as_str()).map_err(ParsingError::from)?;
     tracing::info!("Webservice API called GET stationen on Station {}", station_id);
     tracing::debug!("headers: {:?}", headers);
-    let response = todo!();
+    let response = crate::handlers::read::get_station(
+        app, station_id
+    ).await?;
     tracing::debug!("Response: {:?}", response);
     Ok(Json(response))
 }
@@ -128,7 +130,9 @@ async fn get_dok(
     let dok_id = uuid::Uuid::parse_str(dok.as_str()).map_err(ParsingError::from)?;
     tracing::info!("Webservice API called GET dokumente on Dokument {}", dok_id);
     tracing::debug!("headers: {:?}", headers);
-    let response = todo!();
+    let response = crate::handlers::read::get_dok(
+        app, dok_id
+    ).await?;
     tracing::debug!("Response: {:?}", response);
     Ok(Json(response))
 }

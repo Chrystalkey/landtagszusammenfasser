@@ -38,6 +38,8 @@ pub struct Configuration {
     port: u16,
     #[arg(long, short, env = "DATABASE_URL")]
     db_url: String,
+    #[arg(long, short)]
+    config : Option<String>,
 }
 
 // Struct to hold the application state

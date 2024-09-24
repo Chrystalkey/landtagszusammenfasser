@@ -78,7 +78,7 @@ pub(crate) async fn get_gesvh_filtered(
     );
 }
 
-async fn get_dok(app: Arc<AppState>, api_id: Uuid) -> Result<api::WSResponse>{
+pub async fn get_dok(app: Arc<AppState>, api_id: Uuid) -> Result<api::WSResponse>{
     let conn = app.pool.get().await
     .map_err(DatabaseError::from)?;
     let result : dbcon::Dokument = async_db!(
@@ -98,10 +98,10 @@ async fn get_dok(app: Arc<AppState>, api_id: Uuid) -> Result<api::WSResponse>{
         }
     );
 }
-async fn get_dok_filtered(app: Arc<AppState>, filters: crate::router::filters::DokFilter) ->Result<WSResponse>{
+pub async fn get_dok_filtered(app: Arc<AppState>, filters: crate::router::filters::DokFilter) ->Result<WSResponse>{
     todo!()
 }
-async fn get_station(app: Arc<AppState>, api_id: Uuid) -> Result<WSResponse>{
+pub async fn get_station(app: Arc<AppState>, api_id: Uuid) -> Result<WSResponse>{
     let conn = app.pool.get().await
     .map_err(DatabaseError::from)?;
     let result : dbcon::Station = async_db!(

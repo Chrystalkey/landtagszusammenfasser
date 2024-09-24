@@ -1,0 +1,15 @@
+[core]
+host = "127.0.0.1"
+port = 8080
+
+[database]
+database_url = "postgres://postgres:postgres@localhost/postgres"
+
+[email]
+server = ""
+user = ""
+password = ""
+
+sender = ""
+reciever = ""
+port = number
