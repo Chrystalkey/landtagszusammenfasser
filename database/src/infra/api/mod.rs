@@ -65,7 +65,11 @@ pub struct CUPResponse {
     pub timestamp: DateTime<Utc>,
     pub payload: Gesetzesvorhaben,
 }
-
+/// bessere idee: TODO: hier weitermachen
+/// es gibt "Station", "Status" heißt "Stationstyp"
+/// und es gibt "Stellungnahme", die eine Station referenziert, auf die sie sich bezieht
+/// dazu ein table "Stellungnahme(id, ..., dok_id, station_id)" und ein table "Station(id, ...)"
+/// und ein table "Dokumente(id, ..., Station_id(NULLABLE)"
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Default)]
 pub struct Station {
     pub status: String,

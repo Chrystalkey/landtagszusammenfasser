@@ -25,239 +25,48 @@ paths:
                 $ref: "#/components/schemas/gesetzesvorhaben"
 components:
   schemas:
-    gesetzeseigenschaften:
+    cupupdate:
       type: object
-      has-id: true
       properties:
-        eigenschaft:
+        msg_id: 
           type: string
-          max-length: 255
-
-    parlamente:
-      type: object
-      has-id: true
-      properties:
-        name:
+        timestamp: 
           type: string
-        kurzname:
-          type: string
-          length: 2
-    initiatoren:
-      type: object
-      has-id: true
-      properties:
-        name:
-          type: string
-          nullable: true
-        organisation:
-          type: string
-        url:
-          type: string
-          nullable: true
-          format: url
-    dokumententyp:
-      type: object
-      has-id: true
-      properties:
-        dokumententyp:
-          type: string
-
-    # dinge mit referenzen
-    ausschuesse:
-      type: object
-      has-id: true
-      properties:
-        name:
-          type: string
-        parlament:
-          $ref: "#/components/schemas/parlamente"
-
-    top-liste-ausschuss:
-      type: object
-      has-id: true
-      properties:
-        datum:
-          type: string
-          format: date-time
-        url:
-          type: string
-          format: url
-        ausschuss:
-          $ref: "#/components/schemas/ausschuesse"
-    top-liste-parlament:
-      type: object
-      has-id: true
-      properties:
-        datum:
-          type: string
-          format: date-time
-        url:
-          type: string
-          format: url
-        parlament:
-          type: integer
-          $ref: "#/components/schemas/parlamente"
-
-    top-parlament:
-      type: object
-      has-id: true
-      properties:
-        titel:
-          type: string
-        top-liste:
-          type: integer
-          $ref: "#/components/schemas/top-liste-parlamente"
-
-    top-ausschuss:
-      type: object
-      has-id: true
-      properties:
-        titel:
-          type: string
-        top-liste:
-          type: integer
-          $ref: "#/components/schemas/top-liste-ausschuesse"
-    abstimmungen:
-      type: object
-      has-id: true
-      properties:
-        namentlich:
-          type: boolean
-        url:
-          type: string
-          format: url
-        typ:
-          type: integer
-          $ref: "#/components/schemas/abstimmungstyp"
-        gesetzesvorhaben:
+        payload: 
+          type: object
           $ref: "#/components/schemas/gesetzesvorhaben"
-    gesetzesstatus:
+    cupresponse:
       type: object
-      has-id: true
       properties:
-        gesetz_status:
+        msg_id: 
           type: string
-          max-length: 255
-        parlament:
-          $ref: "#/components/schemas/parlamente"
+        responding_to: 
+          type: string
+
     gesetzesvorhaben:
       type: object
-      has-id: true
       properties:
-        external_id:
-          type: integer
-          format: uuid
+        api_id: 
+          type: string
         titel:
           type: string
-        offi_titel:
-          type: string
-        url_gesblatz:
-          type: string
-          format: url
-          nullable: true
-        id_gesblatt:
-          type: string
-          nullable: true
         verfassungsaendernd:
-          type: boolean
+          type: bool
         trojaner:
-          type: boolean
+          type: bool
         federfuehrung:
-          $ref: "#/components/schemas/ausschuesse"
-          nullable: true
+          type: unbekannt
         initiator:
-          $ref: "#/components/schemas/initiatoren"
-          nullable: true
-        schlagworte:
-          type: array
-          items:
-            $ref: "#/components/schemas/schlagworte"
-        eigenschaften:
-          type: array
-          items:
-            $ref: "#/components/schemas/gesetzeseigenschaften"
-        status:
-          type: array
-          items:
-            $ref: "#/components/schemas/rel_gesetzesvorhaben_status"
-        tops-ausschuss:
-          type: array
-          items:
-            $ref: "#/components/schemas/top-ausschuss"
-        tops-parlament:
-          type: array
-          items:
-            $ref: "#/components/schemas/top-parlament"
-
-    dokumente:
-      type: object
-      has-id: true
-      properties:
-        off_id:
           type: string
-        datum:
-          type: string
-          format: date-time
-        url:
-          type: string
-          format: url
-        file:
-          type: string
-        hash:
-          type: string
-          format: base64
-        dokumententyp:
-          $ref: "#/components/schemas/dokumententyp"
-        gesetzesvorhaben:
-          $ref: "#/components/schemas/gesetzesvorhaben"
-  
-    ausschussberatung:
-      type: object
-      has-id: true
-      properties:
-        datum:
-          type: string
-          format: date-time
-        url:
-          type: string
-          format: url
-        ausschuss:
-          $ref: "#/components/schemas/ausschuesse"
-        dokument:
-          $ref: "#/components/schemas/dokumente"
-    gesetzesids:
-      type: object
-      has-id: true
-      properties:
-        gesetzesvorhaben:
-          $ref: "#/components/schemas/gesetzesvorhaben"
         typ:
           type: string
-        inhalt:
-          type: string
-    abstimmungsergebnisse:
+        links:
+          type: unbekannt
+        notes:
+          type: unbekannt
+        stationen:
+          type: unbekannt
+    station:
       type: object
-      has-id: true
-      properties:
-        abstimmung:
-          $ref: "#/components/schemas/abstimmungen"
-        fraktion:
-          $ref: "#/components/schemas/fraktionen"
-        anteil:
-          type: integer
-          format: int32
-    rel_gesetzesvorhaben_status:
-      type: object
-      properties:
-        gesetzesvorhaben:
-          $ref: "#/components/schemas/gesetzesvorhaben"
-          format: database_key
-        status:
-          $ref: "#/components/schemas/gesetzesstatus"
-          format: database_key
-        abstimmung:
-          $ref: "#/components/schemas/abstimmungen"
-          format: database_key
-        datum:
-          type: string
-          format: date-time
+      
+
