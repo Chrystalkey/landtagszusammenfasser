@@ -1,327 +1,450 @@
-use crate::async_db;
+use crate::error::DatabaseError;
 use chrono::{DateTime, Utc};
-use diesel::{ExpressionMethods, QueryDsl, QueryableByName, RunQueryDsl};
+use diesel::deserialize::{FromSql, FromSqlRow};
+use diesel::expression::AsExpression;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::error::DatabaseError;
+use crate::async_db;
 
-#[derive(Debug, Serialize)]
-pub struct WSResponse {
-    pub id: Uuid,
-    pub payload: WSPayload,
+pub struct Response {
+    pub payload: Vec<Gesetzesvorhaben>,
 }
 
-#[derive(Debug, Serialize)]
-pub enum WSPayload {
-    Gesetzesvorhaben(Vec<Gesetzesvorhaben>),
-    Dokumente(Vec<Dokument>),
-    Stationen(Vec<Station>),
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
-pub struct CUPUpdate {
-    pub msg_id: Uuid,
-    pub timestamp: DateTime<Utc>,
-    pub payload: Gesetzesvorhaben,
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AsExpression, FromSqlRow)]
+#[diesel(sql_type = diesel::sql_types::Text)]
+pub enum Gesetzestyp {
+    Einspruchsgesetz,
+    Zustimmungsgesetz,
+    Volksbegehren,
+    Sonstig,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
-#[serde(untagged)]
-pub enum FatOption<DataType, IDType>
-where
-    IDType: Copy,
-{
-    #[serde(untagged)]
-    Data(DataType),
-    #[serde(untagged)]
-    Id(IDType),
-}
-impl<D, I> FatOption<D, I>
-where
-    I: Copy,
-{
-    #[allow(dead_code)]
-    pub fn unwrap_id(&self) -> std::result::Result<I, &str> {
-        match self {
-            FatOption::Id(id) => Ok(*id),
-            _ => Err("Tried to unwrap a FatOption::Data as an ID"),
-        }
-    }
-    #[allow(dead_code)]
-    pub fn unwrap_data(&self) -> std::result::Result<&D, &str> {
-        match self {
-            FatOption::Data(data) => Ok(data),
-            _ => Err("Tried to unwrap a FatOption::ID as Data"),
-        }
-    }
+pub enum IdentifikatorTyp {
+    Drucksachennummer,
+    Vorgangsnummer,
 }
 
-/// These are the response structures. A CUPResponse is sent to the collector to notify it of the state of data after the update.
-#[derive(Serialize, Deserialize, Debug)]
-pub struct CUPResponse {
-    pub msg_id: Uuid,
-    pub responding_to: Uuid,
-    pub timestamp: DateTime<Utc>,
-    pub payload: Gesetzesvorhaben,
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+pub struct Identifikator {
+    id: String,
+    typ: IdentifikatorTyp,
 }
-/// bessere idee: TODO: hier weitermachen
-/// es gibt "Station", "Status" heißt "Stationstyp"
-/// und es gibt "Stellungnahme", die eine Station referenziert, auf die sie sich bezieht
-/// dazu ein table "Stellungnahme(id, ..., dok_id, station_id)" und ein table "Station(id, ...)"
-/// und ein table "Dokumente(id, ..., Station_id(NULLABLE)"
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Default)]
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+pub struct Gesetzesvorhaben {
+    /// The unique identifier of the Gesetzesvorhaben within our cosmos
+    api_id: Uuid,
+    /// The title of it
+    titel: String,
+    /// If it requires changing the constitution
+    verfassungsaendernd: bool,
+    /// if there is a trojaner suspected
+    trojaner: bool,
+    /// who initiated it
+    initiative: String,
+    /// the type of it
+    typ: Gesetzestyp,
+    /// other ids
+    ids: Vec<Identifikator>,
+    /// associated links
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
+    links: Vec<String>,
+    /// associated Notes
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
+    notes: Vec<String>,
+    /// Stationen it has passed
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
+    stationen: Vec<Station>,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AsExpression, FromSqlRow)]
+#[diesel(sql_type = diesel::sql_types::Text)]
+pub enum Stationstyp {
+    EntwurfReferentenentwurf,
+    EntwurfEckpunktepapier,
+    ParlamentInitiative,
+    ParlamentKabinettsbeschluss,
+    ParlamentBeschlussempfehlung,
+    ParlamentPlenarsitzung,
+    ParlamentBeschluss,
+    Inkraftgetreten,
+    Abgelehnt,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AsExpression, FromSqlRow)]
+#[diesel(sql_type = diesel::sql_types::Text)]
+pub enum Parlament {
+    /// Bundestag
+    BT,
+    /// Bundesrat
+    BR,
+    /// Bundesversammlung
+    BV,
+    /// Europakammer
+    EK,
+    /// Brandenburger Landtag
+    BB,
+    /// Bayerischer Landtag
+    BY,
+    /// Berliner Landtag
+    BE,
+    /// Bremischer Landtag
+    HB,
+    /// Hamburgischer Landtag
+    HH,
+    /// Hessischer Landtag
+    HE,
+    /// Mecklenburg-Vorpommerscher Landtag
+    MV,
+    /// Niedersächsischer Landtag
+    NI,
+    /// Nordrhein-Westfälischer Landtag
+    NW,
+    /// Rheinland-Pfälzischer Landtag
+    RP,
+    /// Saarländischer Landtag
+    SL,
+    /// Sächsischer Landtag
+    SN,
+    /// Thüringer Landtag
+    TH,
+    /// Schleswig-Holsteinischer Landtag
+    SH,
+    /// Baden-Württembergischer Landtag
+    BW,
+    /// Sachsen-Anhaltischer Landtag
+    ST,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct Station {
-    pub status: String,
+    pub stationstyp: Stationstyp,
     pub datum: DateTime<Utc>,
     pub url: Option<String>,
-    pub parlament: String,
+    pub parlament: Parlament,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     #[serde(default)]
     pub schlagworte: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     #[serde(default)]
-    pub dokumente: Vec<FatOption<Dokument, i32>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dokumente: Vec<Dokument>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     #[serde(default)]
-    pub ausschuss: Option<(String, String)>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
-    pub meinungstenzdenz: Option<i32>,
+    pub stellungnahmen: Vec<Stellungnahme>,
+    /// Entweder Plenum oder der Name eines Ausschusses
+    pub zuordnung: String,
 }
-impl Station {
-    pub async fn construct_from(
-        thing: super::db::connection::Station,
-        conn: deadpool_diesel::postgres::Connection,
-    ) -> Result<Self, DatabaseError> {
-        const STATEMENT : &str = 
-        "WITH helptable AS (SELECT ausschuss.id as asid, ausschuss.name as asname, parlament.kurzname as aspname
-            FROM ausschuss, parlament
-            WHERE ausschuss.parlament = parlament.id), 
-            pretable AS (
-            SELECT station.meinungstendenz as mtend, status.value as statval, pmain.kurzname as parlname, station.ausschuss as saus
-            FROM station, status, parlament as pmain
-            WHERE station.id = ? AND station.parlament = pmain.id AND station.status = status.id
-        )
-            
-        SELECT mtend, statval, parlname, asname, aspname
-        FROM pretable
-        LEFT JOIN helptable
-        ON pretable.saus = helptable.asid;";
-        use diesel::QueryableByName;
-        use diesel::sql_types::{Nullable, Integer, Text};
-        #[allow(dead_code)]
-        #[derive(QueryableByName, Debug)]
-        struct StationRow{
-            #[diesel(sql_type = Nullable<Integer>)]
-            mtend: Option<i32>,
-            #[diesel(sql_type = Text)]
-            statval: String,
-            #[diesel(sql_type = Text)]
-            parlname: String,
-            #[diesel(sql_type = Nullable<Text>)]
-            asname: Option<String>,
-            #[diesel(sql_type = Nullable<Text>)]
-            aspname: Option<String>,
-        }
-        // (meinungstendenz, status, parlament, ausschuss_name, ausschuss_parl)
-        let db_result : StationRow = async_db!(
-            conn, get_result,
-            {
-                diesel::sql_query(STATEMENT)
-                .bind::<diesel::sql_types::Integer, _>(thing.id)
-            }
-        );
-        let schlagworte : Vec<String> = async_db!(
-            conn, load,
-            {
-                crate::schema::schlagwort::table
-                    .inner_join(crate::schema::rel_station_schlagwort::table)
-                    .filter(crate::schema::rel_station_schlagwort::dsl::station.eq(thing.id))
-                    .select(crate::schema::schlagwort::dsl::value)
-            }
-        );
-        let dokumente : Vec<i32> = async_db!(conn, load, {
-            crate::schema::dokument::table
-                .select(crate::schema::dokument::dsl::id)
-                .filter(crate::schema::dokument::dsl::station.eq(thing.id))
-        });
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+pub struct Stellungnahme {
+    pub datum: DateTime<Utc>,
+    pub titel: String,
+    pub dokument: Dokument,
+    pub meinung: i32,
+    pub url: String,
+}
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AsExpression, FromSqlRow)]
+#[diesel(sql_type = diesel::sql_types::Text)]
+pub enum DokumentTyp {
+    /// Was man vom Ministerium bekommt
+    Gesetzesentwurf,
+    /// Was Ausschüsse abgeben oder als Kabinettsbeschluss rausgeht
+    Beschlussempfehlung,
+    /// Was das Parlament beschließt
+    Beschluss,
+    /// Was die Zivilgesellschaft abgibt
+    Stellungnahme,
+    /// Parlamentsprotokolle
+    Protokoll,
+    /// Catch-All
+    Sonstiges,
+}
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+pub struct Autor {
+    pub name: String,
+    pub organisation: String,
+}
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+pub struct Dokument {
+    pub titel: String,
+    pub url: String,
+    pub hash: String,
+    pub zusammenfassung: String,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
+    pub schlagworte: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
+    pub autoren: Vec<Autor>,
+    pub typ: DokumentTyp,
+}
 
-        Ok(Station {
-            status: db_result.statval,
-            datum: thing.datum.and_utc(),
-            url: thing.url,
-            parlament: db_result.parlname,
-            schlagworte,
-            dokumente: dokumente.iter().map(|x| FatOption::Id(*x)).collect(),
-            ausschuss: db_result.asname.map(|val| (val, db_result.aspname.unwrap())),
-            meinungstenzdenz: db_result.mtend,
-        })
+macro_rules! match_enum {
+    ($enum:ident, $value:ident, $($variant:ident),+) => {
+        match $value.as_str(){
+            $(
+                stringify!($variant) => Ok($enum::$variant),
+            )+
+            _ => Err(format!("Invalid Enum Value for enum {}: {}", stringify!($enum), stringify!($value)).into()),
+        }
+    };
+}
+
+impl<DB> FromSql<diesel::sql_types::Text, DB> for Gesetzestyp
+where
+    DB: diesel::backend::Backend,
+    String: FromSql<diesel::sql_types::Text, DB>,
+{
+    fn from_sql(bytes: DB::RawValue<'_>) -> diesel::deserialize::Result<Self> {
+        let s = String::from_sql(bytes)?;
+        match_enum!(
+            Gesetzestyp,
+            s,
+            Einspruchsgesetz,
+            Zustimmungsgesetz,
+            Volksbegehren,
+            Sonstig
+        )
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Default)]
-pub struct Gesetzesvorhaben {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub api_id: Option<Uuid>,
-    pub titel: String,
-    pub verfassungsaendernd: bool,
-    pub trojaner: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
-    pub federfuehrung: Option<(String, String)>,
-    pub initiator: String,
-    pub typ: String,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    #[serde(default)]
-    pub links: Vec<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    #[serde(default)]
-    pub notes: Vec<String>,
+impl<DB> FromSql<diesel::sql_types::Text, DB> for Stationstyp
+where
+    DB: diesel::backend::Backend,
+    String: FromSql<diesel::sql_types::Text, DB>,
+{
+    fn from_sql(bytes: DB::RawValue<'_>) -> diesel::deserialize::Result<Self> {
+        let s = String::from_sql(bytes)?;
+        match_enum!(
+            Stationstyp,
+            s,
+            EntwurfReferentenentwurf,
+            EntwurfEckpunktepapier,
+            ParlamentInitiative,
+            ParlamentKabinettsbeschluss,
+            ParlamentBeschlussempfehlung,
+            ParlamentPlenarsitzung,
+            ParlamentBeschluss,
+            Inkraftgetreten,
+            Abgelehnt
+        )
+    }
+}
+impl<DB> FromSql<diesel::sql_types::Text, DB> for DokumentTyp
+where
+    DB: diesel::backend::Backend,
+    String: FromSql<diesel::sql_types::Text, DB>,
+{
+    fn from_sql(bytes: DB::RawValue<'_>) -> diesel::deserialize::Result<Self> {
+        let s = String::from_sql(bytes)?;
+        match_enum!(
+            DokumentTyp,
+            s,
+            Gesetzesentwurf,
+            Beschlussempfehlung,
+            Beschluss,
+            Stellungnahme,
+            Protokoll,
+            Sonstiges
+        )
+    }
+}
 
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    #[serde(default)]
-    pub stationen: Vec<FatOption<Station, i32>>,
+impl<DB> FromSql<diesel::sql_types::Text, DB> for Parlament
+where
+    DB: diesel::backend::Backend,
+    String: FromSql<diesel::sql_types::Text, DB>,
+{
+    fn from_sql(bytes: DB::RawValue<'_>) -> diesel::deserialize::Result<Self> {
+        let s = String::from_sql(bytes)?;
+        match_enum!(
+            Parlament, s, BT, BR, BV, EK, BB, BY, BE, HB, HH, HE, MV, NI, NW, RP, SL, SN, TH, SH,
+            BW, ST
+        )
+    }
 }
 impl Gesetzesvorhaben {
     pub async fn construct_from(
-        data: super::db::connection::Gesetzesvorhaben,
-        conn: deadpool_diesel::postgres::Connection,
-    ) -> Result<Self, DatabaseError> {
-        let stationen: Vec<i32> = async_db!(conn, load, {
-            crate::schema::station::table
-                .select(crate::schema::station::dsl::id)
-                .filter(crate::schema::station::dsl::gesetzesvorhaben.eq(data.id))
+        object: crate::infra::db::connection::Gesetzesvorhaben,
+        conn: &mut deadpool_diesel::postgres::Connection,
+    ) -> Result<Self, crate::error::DatabaseError> {
+        use crate::infra::db::schema as dbs;
+        use diesel::prelude::*;
+
+        let db_stationen: Vec<crate::infra::db::connection::Station> = async_db!(conn, load, {
+            dbs::station::table.filter(dbs::station::gesvh_id.eq(object.id))
         });
-        let fdf_ausschuss: Option<(String, String)> = match data.federf {
-            None => None,
-            Some(fdf) => Some(async_db!(conn, first, {
-                crate::schema::ausschuss::table
-                    .inner_join(crate::schema::parlament::table)
-                    .select((
-                        crate::schema::ausschuss::dsl::name,
-                        crate::schema::parlament::dsl::kurzname,
-                    ))
-                    .filter(crate::schema::ausschuss::dsl::id.eq(fdf))
-            })),
-        };
-        Ok(Self {
-            api_id: Some(data.api_id),
-            titel: data.titel,
-            verfassungsaendernd: data.verfassungsaendernd,
-            trojaner: data.trojaner,
-            federfuehrung: fdf_ausschuss,
-            initiator: data.initiator,
+        let mut stations = vec![];
+        for station in db_stationen {
+            let station = Station::construct_from(station, conn).await?;
+            stations.push(station);
+        }
+        let mut ids: Vec<(String, String)> = async_db!(conn, load, {
+            dbs::rel_gesvh_id::table
+                .inner_join(dbs::identifikatortyp::table)
+                .filter(dbs::rel_gesvh_id::gesetzesvorhaben_id.eq(object.id))
+                .select((
+                    dbs::rel_gesvh_id::identifikator,
+                    dbs::identifikatortyp::value,
+                ))
+        });
+        let ids = ids
+            .drain(..)
+            .map(|(id, typ)| Identifikator {
+                id,
+                typ: match typ.as_str() {
+                    "drucksachennummer" => IdentifikatorTyp::Drucksachennummer,
+                    "vorgangsnummer" => IdentifikatorTyp::Vorgangsnummer,
+                    _ => unimplemented!(),
+                },
+            })
+            .collect();
+
+        return Ok(Self {
+            api_id: object.api_id,
+            titel: object.titel,
+            verfassungsaendernd: object.verfassungsaendernd,
+            trojaner: object.trojaner,
+            initiative: object.initiative,
             typ: async_db!(conn, first, {
-                crate::schema::gesetzestyp::table
-                    .select(crate::schema::gesetzestyp::dsl::value)
-                    .filter(crate::schema::gesetzestyp::dsl::id.eq(data.typ))
+                dbs::gesetzestyp::table
+                    .filter(dbs::gesetzestyp::id.eq(object.typ))
+                    .select(dbs::gesetzestyp::value)
             }),
+            ids,
             links: async_db!(conn, load, {
-                crate::schema::further_links::table
-                    .select(crate::schema::further_links::dsl::link)
-                    .filter(crate::schema::further_links::dsl::gesetzesvorhaben.eq(data.id))
+                dbs::rel_gesvh_links::table
+                    .filter(dbs::rel_gesvh_links::gesetzesvorhaben_id.eq(object.id))
+                    .select(dbs::rel_gesvh_links::link)
             }),
-            stationen: stationen.iter().map(|x| FatOption::Id(*x)).collect(),
             notes: async_db!(conn, load, {
-                crate::schema::further_notes::table
-                    .select(crate::schema::further_notes::dsl::notes)
-                    .filter(crate::schema::further_notes::dsl::gesetzesvorhaben.eq(data.id))
+                dbs::rel_gesvh_notes::table
+                    .filter(dbs::rel_gesvh_notes::gesetzesvorhaben_id.eq(object.id))
+                    .select(dbs::rel_gesvh_notes::note)
             }),
-        })
+            stationen: stations,
+        });
     }
 }
-
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Default)]
-pub struct Dokument {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub api_id: Option<Uuid>,
-    pub identifikator: String,
-    pub titel: String,
-    pub hash: String,
-    pub zsmfassung: String,
-    pub typ: String,
-    pub url: String,
-    pub autoren: Vec<(String, String)>, // name and organisation
-
-    pub letzter_zugriff: chrono::DateTime<Utc>,
+impl Station {
+    pub async fn construct_from(
+        object: crate::infra::db::connection::Station,
+        conn: &mut deadpool_diesel::postgres::Connection,
+    ) -> Result<Self, crate::error::DatabaseError> {
+        use crate::infra::db::schema as dbs;
+        use diesel::prelude::*;
+        let db_doks: Vec<crate::infra::db::connection::Dokument> = async_db!(conn, load, {
+            dbs::dokument::table
+                .inner_join(dbs::rel_station_dokument::table)
+                .filter(dbs::rel_station_dokument::station_id.eq(object.id))
+                .select(dbs::dokument::all_columns)
+        });
+        let mut dokumente = vec![];
+        for dok in db_doks {
+            dokumente.push(Dokument::construct_from(dok, conn).await?);
+        }
+        let db_stellungnahmen: Vec<crate::infra::db::connection::Stellungnahme> =
+            async_db!(conn, load, {
+                dbs::stellungnahme::table
+                    .filter(dbs::stellungnahme::station_id.eq(object.id))
+                    .select(dbs::stellungnahme::all_columns)
+            });
+        let mut stellungnahmen = vec![];
+        for stellungnahme in db_stellungnahmen {
+            stellungnahmen.push(Stellungnahme::construct_from(stellungnahme, conn).await?);
+        }
+        return Ok(Self {
+            stationstyp: async_db!(conn, first, {
+                dbs::stationstyp::table
+                    .filter(dbs::stationstyp::id.eq(object.stationstyp))
+                    .select(dbs::stationstyp::value)
+            }),
+            datum: object.zeitpunkt.and_utc(),
+            url: object.url,
+            parlament: async_db!(conn, first, {
+                dbs::parlament::table
+                    .filter(dbs::parlament::id.eq(object.parlament))
+                    .select(dbs::parlament::value)
+            }),
+            schlagworte: async_db!(conn, load, {
+                dbs::rel_station_schlagwort::table
+                    .filter(dbs::rel_station_schlagwort::station_id.eq(object.id))
+                    .inner_join(dbs::schlagwort::table)
+                    .select(dbs::schlagwort::value)
+            }),
+            dokumente,
+            stellungnahmen,
+            zuordnung: object.zuordnung,
+        });
+    }
+}
+impl Stellungnahme {
+    pub async fn construct_from(
+        object: crate::infra::db::connection::Stellungnahme,
+        conn: &mut deadpool_diesel::postgres::Connection,
+    ) -> Result<Self, crate::error::DatabaseError> {
+        use diesel::prelude::*;
+        return Ok(Self {
+            datum: object.zeitpunkt.and_utc(),
+            titel: object.titel,
+            dokument: Dokument::construct_from(
+                async_db!(conn, first, {
+                    crate::infra::db::schema::dokument::table
+                        .filter(crate::infra::db::schema::dokument::id.eq(object.dokument_id))
+                }),
+                conn,
+            )
+            .await?,
+            meinung: object.meinung,
+            url: object.url,
+        });
+    }
 }
 
 impl Dokument {
-    #[allow(dead_code)]
     pub async fn construct_from(
-        dbdok: crate::infra::db::connection::Dokument,
-        conn: deadpool_diesel::postgres::Connection,
-    ) -> std::result::Result<Self, DatabaseError> {
-        let doktyp: String = async_db!(conn, first, {
-            crate::schema::dokumententyp::table
-                .select(crate::schema::dokumententyp::dsl::value)
-                .filter(crate::schema::dokumententyp::dsl::id.eq(dbdok.doktyp))
-        });
-
-        let autoren: Vec<(String, String)> = async_db!(conn, load, {
-            crate::schema::autor::table
+        object: crate::infra::db::connection::Dokument,
+        conn: &mut deadpool_diesel::postgres::Connection,
+    ) -> Result<Self, crate::error::DatabaseError> {
+        use diesel::prelude::*;
+        let mut autoren_db: Vec<(String, String)> = async_db!(conn, load, {
+            crate::infra::db::schema::rel_dok_autor::table
+                .filter(crate::infra::db::schema::rel_dok_autor::dokument_id.eq(object.id))
+                .inner_join(crate::infra::db::schema::autor::table)
                 .select((
-                    crate::schema::autor::dsl::name,
-                    crate::schema::autor::dsl::organisation,
+                    crate::infra::db::schema::autor::name,
+                    crate::infra::db::schema::autor::organisation,
                 ))
-                .filter(crate::schema::autor::dsl::id.eq(dbdok.id))
         });
+        let autoren = autoren_db
+            .drain(..)
+            .map(|(name, org)| Autor {
+                name,
+                organisation: org,
+            })
+            .collect();
 
-        Ok(Self {
-            api_id: Some(dbdok.api_id),
-            identifikator: dbdok.identifikator,
-            titel: dbdok.titel,
-            hash: dbdok.hash,
-            zsmfassung: dbdok.zsmfassung,
-            typ: doktyp,
-            url: dbdok.url,
-            autoren: autoren,
-            letzter_zugriff: DateTime::from_naive_utc_and_offset(dbdok.last_access, Utc),
-        })
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    #[test]
-    fn test_json_form() {
-        let date: DateTime<Utc> = DateTime::parse_from_rfc3339("2024-09-19T12:12:20Z")
-            .unwrap()
-            .into();
-        let data = Gesetzesvorhaben {
-            titel: "Test".to_string(),
-            verfassungsaendernd: false,
-            trojaner: false,
-            typ: "Einspruchsgesetz".to_string(),
-            initiator: "BAMF".to_string(),
-            stationen: vec![FatOption::Data(Station {
-                status: "Entwurf: Eckpunktepapier".to_string(),
-                datum: date,
-                parlament: "BY".to_string(),
-                url: Some("https://example.com".to_string()),
-                ..Default::default()
-            })],
-            ..Default::default()
-        };
-        eprintln!("Serialized data: {}", serde_json::to_string(&data).unwrap());
-        let json: &str = r#"{
-            "titel": "Test",
-            "trojaner": false,
-            "initiator": "BAMF",
-            "typ": "Einspruchsgesetz",
-            "verfassungsaendernd": false,
-            "stationen" : [
-                {
-                    "status": "Entwurf: Eckpunktepapier",
-                    "datum" : "2024-09-19T12:12:20Z",
-                    "url": "https://example.com",
-                    "parlament": "BY"
-                }
-            ]
-            }"#;
-        let parsed_data: super::Gesetzesvorhaben = serde_json::from_str(json).unwrap();
-        assert_eq!(parsed_data, data);
+        return Ok(Self {
+            titel: object.titel,
+            hash: object.hash,
+            url: object.url,
+            zusammenfassung: object.zusammenfassung,
+            schlagworte: async_db!(conn, load, {
+                crate::infra::db::schema::rel_dok_schlagwort::table
+                    .filter(crate::infra::db::schema::rel_dok_schlagwort::dokument_id.eq(object.id))
+                    .inner_join(crate::infra::db::schema::schlagwort::table)
+                    .select(crate::infra::db::schema::schlagwort::value)
+            }),
+            autoren,
+            typ: async_db!(conn, first, {
+                crate::infra::db::schema::dokumenttyp::table
+                    .filter(crate::infra::db::schema::dokumenttyp::id.eq(object.dokumenttyp_id))
+                    .select(crate::infra::db::schema::dokumenttyp::value)
+            }),
+        });
     }
 }

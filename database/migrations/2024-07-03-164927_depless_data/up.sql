@@ -2,14 +2,17 @@
 CREATE TABLE
     gesetzestyp (
         id SERIAL PRIMARY KEY,
-        value VARCHAR(255) NOT NULL
+        value VARCHAR(64) NOT NULL
     );
+CREATE TABLE identifikatortyp (
+    id SERIAL PRIMARY KEY,
+    value VARCHAR(64) NOT NULL
+);
 
 CREATE TABLE
     parlament (
         id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        kurzname CHAR(2) UNIQUE NOT NULL
+        value CHAR(2) NOT NULL
     );
 
 CREATE TABLE
@@ -26,10 +29,10 @@ CREATE TABLE
     );
 
 CREATE TABLE
-    dokumententyp (id SERIAL PRIMARY KEY, value VARCHAR(255) NOT NULL);
+    dokumenttyp (id SERIAL PRIMARY KEY, value VARCHAR(255) NOT NULL);
 
 CREATE TABLE
-    status (
+    stationstyp (
         id SERIAL PRIMARY KEY,
         value VARCHAR(255) NOT NULL
     );

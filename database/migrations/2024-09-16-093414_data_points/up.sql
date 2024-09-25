@@ -4,7 +4,8 @@ INSERT INTO
 VALUES
     ('Zustimmungsgesetz'),
     ('Einspruchsgesetz'),
-    ('Volksbegehren');
+    ('Volksbegehren'),
+    ('Sonstig');
 
 REVOKE ALL ON TABLE gesetzestyp
 FROM
@@ -13,43 +14,48 @@ FROM
 GRANT
 SELECT
     ON TABLE gesetzestyp TO public;
-    
-INSERT INTO
-    status (value)
-VALUES
-    ('Entwurf: Referentenentwurf'),
-    ('Entwurf: Eckpunktepapier'),
-    ('Parlament: Initiative'),
-    ('Kabinettsbeschluss'),
-    ('Parlament: Stellungnahme'),
-    ('Parlament: Beschlussempfehlung'),
-    ('Parlament: Lesung/Plenarsitzung'),
-    ('Parlament: Beschluss'),
-    ('In Kraft Getreten'),
-    ('Abgelehnt');
 
 INSERT INTO
-    parlament (name, kurzname)
+    identifikatortyp (value)
 VALUES
-    ('Bundestag', 'BT'),
-    ('Bundesrat', 'BR'),
-    ('Bundesversammlung', 'BV'),
-    ('Baden Württemberg', 'BW'),
-    ('Bayern', 'BY'),
-    ('Berlin', 'BE'),
-    ('Brandenburg', 'BB'),
-    ('Bremen', 'HB'),
-    ('Hamburg', 'HH'),
-    ('Hessen', 'HE'),
-    ('Mecklenburg-Vorpommern', 'MV'),
-    ('Niedersachsen', 'NI'),
-    ('Nordrhein-Westfalen', 'NW'),
-    ('Rheinland-Pfalz', 'RP'),
-    ('Saarland', 'SL'),
-    ('Sachsen', 'SN'),
-    ('Sachsen-Anhalt', 'ST'),
-    ('Schleswig-Holstein', 'SH'),
-    ('Thüringen', 'TH');
+    ('Vorgangsnummer'),
+    ('Drucksachennummer');
+
+REVOKE ALL ON TABLE identifikatortyp
+FROM
+    public;
+
+GRANT
+SELECT
+    ON TABLE identifikatortyp TO public;
+
+INSERT INTO
+    stationstyp (value)
+VALUES
+    ('EntwurfReferentenentwurf'),
+    ('EntwurfEckpunktepapier'),
+    ('ParlamentInitiative'),
+    ('ParlamentKabinettsbeschluss'),
+    ('ParlamentStellungnahme'),
+    ('ParlamentBeschlussempfehlung'),
+    ('ParlamentPlenarsitzung'),
+    ('ParlamentBeschluss'),
+    ('Inkraftgetreten'),
+    ('Abgelehnt');
+REVOKE ALL ON TABLE stationstyp
+FROM
+    public;
+
+GRANT
+SELECT
+    ON TABLE stationstyp TO public;
+
+INSERT INTO parlament(value) VALUES 
+('BT'), ('BR'), ('BV'), ('EK'), 
+('BB'), ('BY'), ('BE'), ('HB'), 
+('HH'), ('HE'), ('MV'), ('NI'), 
+('NW'), ('RP'), ('SL'), ('SN'), 
+('SH'), ('TH'), ('BW'), ('ST');
 
 REVOKE ALL ON TABLE parlament
 FROM
@@ -60,17 +66,19 @@ SELECT
     ON TABLE parlament TO public;
 
 INSERT INTO
-    dokumententyp (value)
+    dokumenttyp (value)
 VALUES
     ('Protokoll'),
     ('Gesetzesentwurf'),
     ('Stellungnahme'),
-    ('Beschlussfassung');
+    ('Beschluss'),
+    ('Beschlussempfehlung'),
+    ('Sonstiges');
 
-REVOKE ALL ON TABLE dokumententyp
+REVOKE ALL ON TABLE dokumenttyp
 FROM
     public;
 
 GRANT
 SELECT
-    ON TABLE dokumententyp TO public;
+    ON TABLE dokumenttyp TO public;

@@ -1,6 +1,7 @@
-DROP TABLE status;
-DROP TABLE dokumententyp;
+DROP TABLE stationstyp;
+DROP TABLE dokumenttyp;
+DROP TABLE parlament;
 DROP TABLE schlagwort;
 DROP TABLE autor;
-DROP TABLE parlament;
+DROP TABLE identifikatortyp;
 DROP TABLE gesetzestyp;
