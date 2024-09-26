@@ -1,6 +1,5 @@
 DROP TABLE stellungnahme;
 
-DROP TABLE rel_station_stellungnahme;
 DROP TABLE rel_station_schlagwort;
 DROP TABLE rel_station_dokument;
 DROP TABLE station;

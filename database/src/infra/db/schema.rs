@@ -80,10 +80,12 @@ diesel::table! {
 }
 
 diesel::table! {
-    rel_gesvh_id (gesetzesvorhaben_id, id_typ, identifikator) {
+    rel_gesvh_id (id) {
+        id -> Int4,
         gesetzesvorhaben_id -> Int4,
         id_typ -> Int4,
         identifikator -> Varchar,
+        zeitpunkt -> Timestamp,
     }
 }
 

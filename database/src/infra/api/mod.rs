@@ -30,8 +30,8 @@ pub enum IdentifikatorTyp {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct Identifikator {
-    id: String,
-    typ: IdentifikatorTyp,
+    pub id: String,
+    pub typ: IdentifikatorTyp,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]

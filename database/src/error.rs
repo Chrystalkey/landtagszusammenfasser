@@ -22,7 +22,9 @@ pub enum DatabaseError{
     MigrationsError(#[from] diesel_migrations::MigrationError),
 
     #[error("Required Field Missing to complete Insert: {0}")]
-    MissingFieldForInsert(String)
+    MissingFieldForInsert(String), 
+    #[error("Multiple Merge Candidates found: {0:?} for {1:?}")]
+    MultipleMergeCandidates(Vec<i32>, crate::infra::api::Gesetzesvorhaben)
 }
 
 #[derive(Error, Debug)] 

@@ -29,10 +29,11 @@ CREATE TABLE gesetzesvorhaben(
     typ INTEGER NOT NULL REFERENCES gesetzestyp(id)
 );
 CREATE TABLE rel_gesvh_id(
+    id SERIAL PRIMARY KEY,
     gesetzesvorhaben_id INTEGER NOT NULL REFERENCES gesetzesvorhaben(id),
     id_typ INTEGER NOT NULL REFERENCES identifikatortyp(id),
     identifikator VARCHAR NOT NULL,
-    PRIMARY KEY (gesetzesvorhaben_id, id_typ, identifikator)
+    zeitpunkt TIMESTAMP NOT NULL
 );
 CREATE TABLE rel_gesvh_links(
     id SERIAL PRIMARY KEY,
