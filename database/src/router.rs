@@ -35,29 +35,6 @@ pub fn route_webservice(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> 
             "/api/v1/gesetzesvorhaben/:api_id",
             get(get_gesvh),
         )
-
-        .route(
-            "/api/v1/dokumente/:api_id",
-            get(get_dok),
-        )
-        .route(
-            "/api/v1/dokumente",
-            get(get_dok_filter),
-        )
-
-        .route(
-            "/api/v1/stationen/:api_id",
-            get(get_stationen),
-        )
-        .route(
-            "/api/v1/stationen",
-            get(get_stationen_filter),
-        )
-
-        .route(
-            "/api/v1/ausschuesse/:api_id",
-            get(get_ausschuss),
-        )
 }
 
 async fn root() -> &'static str {
@@ -69,72 +46,6 @@ async fn handler_404() -> impl IntoResponse {
         StatusCode::NOT_FOUND,
         "The requested resource was not found",
     )
-}
-
-async fn get_ausschuss(
-    State(app): State<Arc<AppState>>,
-    Path(ausschuss): Path<String>,
-    headers: HeaderMap,
-) -> Result<Json<api::Response>> {
-    let ausschuss_id = uuid::Uuid::parse_str(ausschuss.as_str()).map_err(ParsingError::from)?;
-    tracing::info!("Webservice API called GET ausschuesse on Ausschuss {}", ausschuss_id);
-    tracing::debug!("headers: {:?}", headers);
-    let response = todo!();
-    tracing::debug!("Response: {:?}", response);
-    Ok(Json(response))
-}
-
-async fn get_stationen(
-    State(app): State<Arc<AppState>>,
-    Path(station): Path<String>,
-    headers: HeaderMap,
-) -> Result<Json<api::Response>> {
-    let station_id = uuid::Uuid::parse_str(station.as_str()).map_err(ParsingError::from)?;
-    tracing::info!("Webservice API called GET stationen on Station {}", station_id);
-    tracing::debug!("headers: {:?}", headers);
-    let response = crate::handlers::read::get_station(
-        app, station_id
-    ).await?;
-    tracing::debug!("Response: {:?}", response);
-    Ok(Json(response))
-}
-async fn get_stationen_filter(
-    State(app): State<Arc<AppState>>,
-    Query(params): Query<filters::StationFilter>,
-    headers: HeaderMap,
-) -> Result<Json<api::Response>> {
-    tracing::info!("Webservice API called GET stationen without uuid");
-    tracing::debug!("Received Query Parameters: {:?}", params);
-    tracing::debug!("headers: {:?}", headers);
-    let response = todo!();
-    tracing::debug!("Response: {:?}", response);
-    Ok(Json(response))
-}
-async fn get_dok_filter(
-    State(app): State<Arc<AppState>>,
-    Query(params): Query<filters::DokFilter>,
-    headers: HeaderMap,
-) -> Result<Json<api::Response>> {
-    tracing::info!("Webservice API called GET dokumente without uuid");
-    tracing::debug!("Received Query Parameters: {:?}", params);
-    tracing::debug!("headers: {:?}", headers);
-    let response = todo!();
-    tracing::debug!("Response: {:?}", response);
-    Ok(Json(response))
-}
-async fn get_dok(
-    State(app): State<Arc<AppState>>,
-    Path(dok): Path<String>,
-    headers: HeaderMap,
-) -> Result<Json<api::Response>> {
-    let dok_id = uuid::Uuid::parse_str(dok.as_str()).map_err(ParsingError::from)?;
-    tracing::info!("Webservice API called GET dokumente on Dokument {}", dok_id);
-    tracing::debug!("headers: {:?}", headers);
-    let response = crate::handlers::read::get_dok(
-        app, dok_id
-    ).await?;
-    tracing::debug!("Response: {:?}", response);
-    Ok(Json(response))
 }
 
 /// GET /api/v1/webservice/gesetzesvorhaben?since=timestamp&until=timestamp&limit=number...
@@ -182,9 +93,8 @@ async fn post_gesvh(
     .map_err(ParsingError::from)?;
     authenticate_collector(coll_id, &headers, app.clone()).await?;
     tracing::info!(
-        "Collector {} called post(gesetzesvorhaben) with msg_id {}",
-        coll_id,
-        cupdate.msg_id
+        "Collector {} called post(gesetzesvorhaben)",
+        coll_id
     );
     tracing::debug!("Received CUPUpdate Struct: {:?}", cupdate);
     tracing::debug!("headers: {:?}", headers);

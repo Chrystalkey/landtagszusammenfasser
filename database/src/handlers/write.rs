@@ -1,44 +1,48 @@
 use std::sync::Arc;
 
 extern crate diesel_interaction;
-use crate::external::no_match_found;
 use crate::infra::db::connection as dbcon;
 use crate::infra::api;
 use crate::AppState;
-use crate::error::*;
+use crate::error::{DatabaseError, LTZFError};
 use axum::http::StatusCode;
-use diesel::Connection;
-use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, OptionalExtension};
-use uuid::Uuid;
 
-fn create_gesvh(
-    gesvh: api::Gesetzesvorhaben,
-    app: Arc<AppState>,
-    conn: &mut diesel::pg::PgConnection,
-) -> ::std::result::Result<(), DatabaseError> {
-    use crate::schema::gesetzesvorhaben as gm;
+use crate::infra::db::schema as dbschema;
+use diesel::prelude::*;
 
-    let gen_id = Uuid::now_v7();
-    tracing::trace!("Generating Id: {}", gen_id);
-    Ok(())
-}
+/// A gesvh is mergeable if: 
+/// new.titel == old.titel || new.off_titel == old.new_titel ||
+/// new.ids(vorgang_id) == old.ids(vorgang_id)
+async fn is_mergable(gesvh: &api::Gesetzesvorhaben, conn: &mut deadpool_diesel::postgres::Connection) 
+-> Result<bool, DatabaseError> {todo!()}
 
-fn create_stationen(gesvh_id: i32, stationen: Vec<FatOption<api::Station, i32>>, conn: &mut diesel::pg::PgConnection, app: Arc<AppState>) -> std::result::Result<(), DatabaseError>{
-    
-    Ok(())
-}
+fn merge_gesvh(gesvh: api::Gesetzesvorhaben, conn: &mut diesel::pg::PgConnection) 
+-> Result<(), DatabaseError> {todo!()}
+fn create_gesvh(gesvh: api::Gesetzesvorhaben, conn: &mut diesel::pg::PgConnection) 
+-> Result<(), DatabaseError> {todo!()}
 
 /// Used to create gesetzesvorhaben & associated data with HTTP POST
 pub(crate) async fn post_gesvh(
     app: Arc<AppState>,
-    cupdate: api::CUPUpdate,
+    object: api::Gesetzesvorhaben,
 ) -> std::result::Result<StatusCode, LTZFError> {
-    let gesvh = cupdate.payload;
-    let conn = app.pool.get()
-    .await.map_err(DatabaseError::from)?;
-    tracing::debug!("Starting Insertion Transaction");
-    todo!();
-    tracing::debug!("Finished Insertion Transaction");
-    tracing::info!("Inserted New Gesetzesvorhaben into Database");
+    let mut conn = 
+    app.pool.get().await.map_err(DatabaseError::from)?;
+
+    let is_mergeable = is_mergable(&object, &mut conn).await?;
+    conn.interact(
+        move |conn| {
+            conn.transaction(
+                |conn|{
+                    if is_mergeable{
+                        merge_gesvh(object, conn)
+                    }else{
+                        create_gesvh(object, conn)
+                    }
+                }
+            )
+        }
+    ).await
+    .map_err(DatabaseError::from)??;
     return Ok(StatusCode::CREATED);
 }

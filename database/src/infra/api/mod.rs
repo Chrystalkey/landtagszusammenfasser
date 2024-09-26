@@ -3,15 +3,17 @@ use chrono::{DateTime, Utc};
 use diesel::deserialize::{FromSql, FromSqlRow};
 use diesel::expression::AsExpression;
 use serde::{Deserialize, Serialize};
+use strum::EnumString;
 use uuid::Uuid;
 
 use crate::async_db;
 
+#[derive(Serialize, Debug, PartialEq, Clone, Default)]
 pub struct Response {
     pub payload: Vec<Gesetzesvorhaben>,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AsExpression, FromSqlRow)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AsExpression, FromSqlRow, EnumString)]
 #[diesel(sql_type = diesel::sql_types::Text)]
 pub enum Gesetzestyp {
     Einspruchsgesetz,
@@ -20,7 +22,7 @@ pub enum Gesetzestyp {
     Sonstig,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, EnumString)]
 pub enum IdentifikatorTyp {
     Drucksachennummer,
     Vorgangsnummer,
@@ -35,34 +37,34 @@ pub struct Identifikator {
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct Gesetzesvorhaben {
     /// The unique identifier of the Gesetzesvorhaben within our cosmos
-    api_id: Uuid,
+    pub api_id: Uuid,
     /// The title of it
-    titel: String,
+    pub titel: String,
     /// If it requires changing the constitution
-    verfassungsaendernd: bool,
+    pub verfassungsaendernd: bool,
     /// if there is a trojaner suspected
-    trojaner: bool,
+    pub trojaner: bool,
     /// who initiated it
-    initiative: String,
+    pub initiative: String,
     /// the type of it
-    typ: Gesetzestyp,
+    pub typ: Gesetzestyp,
     /// other ids
-    ids: Vec<Identifikator>,
+    pub ids: Vec<Identifikator>,
     /// associated links
     #[serde(skip_serializing_if = "Vec::is_empty")]
     #[serde(default)]
-    links: Vec<String>,
+    pub links: Vec<String>,
     /// associated Notes
     #[serde(skip_serializing_if = "Vec::is_empty")]
     #[serde(default)]
-    notes: Vec<String>,
+    pub notes: Vec<String>,
     /// Stationen it has passed
     #[serde(skip_serializing_if = "Vec::is_empty")]
     #[serde(default)]
-    stationen: Vec<Station>,
+    pub stationen: Vec<Station>,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AsExpression, FromSqlRow)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AsExpression, FromSqlRow, EnumString)]
 #[diesel(sql_type = diesel::sql_types::Text)]
 pub enum Stationstyp {
     EntwurfReferentenentwurf,
@@ -76,7 +78,7 @@ pub enum Stationstyp {
     Abgelehnt,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AsExpression, FromSqlRow)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AsExpression, FromSqlRow, EnumString)]
 #[diesel(sql_type = diesel::sql_types::Text)]
 pub enum Parlament {
     /// Bundestag
@@ -147,7 +149,7 @@ pub struct Stellungnahme {
     pub meinung: i32,
     pub url: String,
 }
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AsExpression, FromSqlRow)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AsExpression, FromSqlRow, EnumString)]
 #[diesel(sql_type = diesel::sql_types::Text)]
 pub enum DokumentTyp {
     /// Was man vom Ministerium bekommt

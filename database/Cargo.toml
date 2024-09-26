@@ -28,3 +28,4 @@ deadpool = "0.12.1"
 
 diesel_interaction = { path = "./diesel-interaction" }
 diesel_interaction_derive = {path = "./diesel-interaction/derive-schema"}
+strum = { version = "0.26.3", features = ["derive"] }
