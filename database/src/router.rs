@@ -104,6 +104,7 @@ async fn post_gesvh(
     Ok(response)
 }
 
+#[allow(dead_code)]
 pub(crate) mod filters{
     use serde::Deserialize;
     #[derive(Debug, Clone, Deserialize)]

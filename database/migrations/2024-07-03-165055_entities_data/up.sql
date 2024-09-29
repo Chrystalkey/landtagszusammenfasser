@@ -30,19 +30,19 @@ CREATE TABLE gesetzesvorhaben(
 );
 CREATE TABLE rel_gesvh_id(
     id SERIAL PRIMARY KEY,
-    gesetzesvorhaben_id INTEGER NOT NULL REFERENCES gesetzesvorhaben(id),
+    gesetzesvorhaben_id INTEGER NOT NULL REFERENCES gesetzesvorhaben(id) ON DELETE CASCADE,
     id_typ INTEGER NOT NULL REFERENCES identifikatortyp(id),
     identifikator VARCHAR NOT NULL,
     zeitpunkt TIMESTAMP NOT NULL
 );
 CREATE TABLE rel_gesvh_links(
     id SERIAL PRIMARY KEY,
-    gesetzesvorhaben_id INTEGER NOT NULL REFERENCES gesetzesvorhaben(id),
+    gesetzesvorhaben_id INTEGER NOT NULL REFERENCES gesetzesvorhaben(id) ON DELETE CASCADE,
     link VARCHAR NOT NULL
 );
 CREATE TABLE rel_gesvh_notes(
     id SERIAL PRIMARY KEY,
-    gesetzesvorhaben_id INTEGER NOT NULL REFERENCES gesetzesvorhaben(id),
+    gesetzesvorhaben_id INTEGER NOT NULL REFERENCES gesetzesvorhaben(id) ON DELETE CASCADE,
     note VARCHAR NOT NULL
 );
 
@@ -55,11 +55,13 @@ CREATE TABLE station(
     url VARCHAR,
     zuordnung VARCHAR NOT NULL
 );
+
 CREATE TABLE rel_station_dokument(
     station_id INTEGER NOT NULL REFERENCES station(id) ON DELETE CASCADE,
     dokument_id INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE,
     PRIMARY KEY (station_id, dokument_id)
 );
+
 CREATE TABLE rel_station_schlagwort(
     station_id INTEGER NOT NULL REFERENCES station(id) ON DELETE CASCADE,
     schlagwort_id INTEGER NOT NULL REFERENCES schlagwort(id) ON DELETE CASCADE,

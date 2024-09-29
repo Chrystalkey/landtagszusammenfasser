@@ -1,4 +1,3 @@
-use crate::async_db;
 use crate::infra::api::IdentifikatorTyp;
 use diesel::prelude::*;
 use std::sync::Arc;
@@ -62,15 +61,101 @@ async fn merge_candidates(
 }
 
 fn merge_gesvh(
-    gesvh: api::Gesetzesvorhaben,
-    conn: &mut diesel::pg::PgConnection,
+    _gesvh: api::Gesetzesvorhaben,
+    _conn: &mut diesel::pg::PgConnection,
 ) -> Result<(), DatabaseError> {
     todo!()
 }
+
+fn helper_create_dokument(
+    dok: api::Dokument,
+    conn: &mut diesel::pg::PgConnection
+) -> Result<i32, DatabaseError>{
+    let dok_id = diesel::insert_into(dbschema::dokument::table)
+            .values(&dbcon::dokument::Insert{
+                dokumenttyp_id: dbschema::dokumenttyp::table
+                .filter(dbschema::dokumenttyp::value.eq(format!("{:?}", dok.typ)))
+                .select(dbschema::dokumenttyp::id)
+                .first(conn)?,
+                hash: dok.hash,
+                titel: dok.titel,
+                url: dok.url,
+                zusammenfassung: dok.zusammenfassung,
+            })
+            .returning(dbschema::dokument::id)
+            .get_result::<i32>(conn)?;
+    let mut autor_ids = vec![];
+    for aut in dok.autoren{
+        let id_opt: Option<i32> = dbschema::autor::table
+        .filter(dbschema::autor::name.eq(aut.name.clone()))
+        .filter(dbschema::autor::organisation.eq(aut.organisation.clone()))
+        .select(dbschema::autor::id)
+        .first(conn)
+        .optional()?;
+        if let Some(id) = id_opt{
+            autor_ids.push(id);
+        }else{
+            let id = diesel::insert_into(dbschema::autor::table)
+            .values(
+                (
+                    dbschema::autor::name.eq(aut.name.clone()),
+                    dbschema::autor::organisation.eq(aut.organisation.clone())
+                )
+            )
+            .returning(dbschema::autor::id)
+            .get_result(conn)?;
+            autor_ids.push(id);
+        }
+    }
+    diesel::insert_into(dbschema::rel_dok_autor::table)
+    .values(autor_ids.iter().map(|id| (
+        dbschema::rel_dok_autor::autor_id.eq(id),
+        dbschema::rel_dok_autor::dokument_id.eq(dok_id)
+    )).collect::<Vec<_>>()
+    )
+    .execute(conn)?;
+    let sw_ids = helper_ins_or_ret_schlagwort(dok.schlagworte, conn)?;
+    diesel::insert_into(dbschema::rel_dok_schlagwort::table)
+    .values(
+        sw_ids.iter().map(|id|(
+            dbschema::rel_dok_schlagwort::dokument_id.eq(dok_id),
+            dbschema::rel_dok_schlagwort::schlagwort_id.eq(id)
+        )).collect::<Vec<_>>()
+    )
+    .execute(conn)?;
+    Ok(dok_id)
+}
+
+
+/// returns ids
+fn helper_ins_or_ret_schlagwort(
+    schlagworte: Vec<String>,
+    conn: &mut diesel::pg::PgConnection
+) -> Result<Vec<i32>, DatabaseError>{ // TODO: YOu stopped here
+    let mut result_vec = vec![];
+    for schlagwort in schlagworte{
+        let db_return = dbschema::schlagwort::table.filter(dbschema::schlagwort::value.eq(schlagwort.to_lowercase()))
+        .select(dbschema::schlagwort::id)
+        .first::<i32>(conn)
+        .optional()?;
+        if let Some(id) = db_return {
+            result_vec.push(id)
+        }else{
+            let id = diesel::insert_into(dbschema::schlagwort::table)
+            .values(dbschema::schlagwort::value.eq(schlagwort.clone()))
+            .returning(dbschema::schlagwort::id)
+            .get_result(conn)?;
+            result_vec.push(id);
+        }
+    }
+    Ok(result_vec)
+}
+
 fn create_gesvh(
     gesvh: api::Gesetzesvorhaben,
     conn: &mut diesel::pg::PgConnection,
-) -> Result<(), DatabaseError> {
+) -> Result<i32, DatabaseError> {
+    // insert the gesvh itself
     let typ_variant = gesvh.typ;
     let gesvh_object = dbcon::gesetzesvorhaben::Insert{
         api_id: gesvh.api_id, 
@@ -85,15 +170,117 @@ fn create_gesvh(
                 .select(dbschema::gesetzestyp::id)
                 .first::<i32>(conn)?,
     };
+    tracing::debug!("Inserting dbcon::Gesetzesvorhaben");
     let gesvh_id = diesel::insert_into(dbschema::gesetzesvorhaben::table)
             .values(&gesvh_object)
             .returning(dbschema::gesetzesvorhaben::id)
             .get_result::<i32>(conn)?;
-    // TODO: You stopped here
-    // insert the gesvh itself
+
     // insert stations
+    if gesvh.stationen.is_empty(){
+        tracing::warn!("Warning: No station supplied for newly created Gesvh. This is illegal");
+        return Err(DatabaseError::MissingFieldForInsert(
+            format!("Warning: No station supplied for newly created Gesvh with api id {}. This is illegal",
+            gesvh.api_id)
+        ));
+    }
+    tracing::debug!("Preparing Station Insert");
+    let mut stmt_inserts = vec![];
+    for station in gesvh.stationen{
+        tracing::trace!("Handling Station: {:?}", station);
+        let station_id = 
+        diesel::insert_into(dbschema::station::table)
+        .values(&dbcon::station::Insert{
+            gesvh_id,
+            url: station.url,
+            zeitpunkt: station.datum.naive_utc(),
+            zuordnung: station.zuordnung,
+            stationstyp: dbschema::stationstyp::table
+            .filter(dbschema::stationstyp::value.eq(format!("{:?}", station.stationstyp)))
+            .select(dbschema::stationstyp::id)
+            .first(conn)?,
+            parlament: dbschema::parlament::table
+            .filter(dbschema::parlament::value.eq(format!("{:?}", station.parlament)))
+            .select(dbschema::parlament::id)
+            .first(conn)?
+        })
+        .returning(dbschema::station::id)
+        .get_result::<i32>(conn)?;
+        //TODO: station.dokumente & station.stellungnahmen
+        let sw_ids = 
+            helper_ins_or_ret_schlagwort(station.schlagworte, conn)?;
+        diesel::insert_into(dbschema::rel_station_schlagwort::table)
+        .values(
+            sw_ids.iter().map(
+                |id|{
+                    use dbschema::rel_station_schlagwort as m;
+                    (m::schlagwort_id.eq(id), m::station_id.eq(station_id))
+                }
+            ).collect::<Vec<_>>()
+        )
+        .execute(conn)?;
+        for dok in station.dokumente{
+            let dok_id = helper_create_dokument(dok, conn)?;
+            diesel::insert_into(dbschema::rel_station_dokument::table)
+            .values(
+                (
+                    dbschema::rel_station_dokument::dokument_id.eq(dok_id),
+                    dbschema::rel_station_dokument::station_id.eq(station_id)
+                )
+            )
+            .execute(conn)?;
+        }
+        tracing::trace!("Inserting Associated Stellungnahmen");
+        for stmt in station.stellungnahmen{
+            let stl_dok_id = diesel::insert_into(
+                dbschema::dokument::table
+            )
+            .values(&dbcon::dokument::Insert{
+                zusammenfassung: stmt.dokument.zusammenfassung,
+                hash: stmt.dokument.hash,
+                url: stmt.dokument.url,
+                titel: stmt.dokument.titel,
+                dokumenttyp_id: dbschema::dokumenttyp::table
+                .filter(dbschema::dokumenttyp::value.eq(format!("{:?}", stmt.dokument.typ)))
+                .select(dbschema::dokumenttyp::id)
+                .first(conn)?
+            })
+            .returning(dbschema::dokument::id)
+            .get_result::<i32>(conn)?;
+
+            let stl_insert = dbcon::stellungnahme::Insert{
+                dokument_id: stl_dok_id,
+                meinung: stmt.meinung,
+                station_id,
+                titel: stmt.titel,
+                url: stmt.url,
+                zeitpunkt: stmt.datum.naive_utc(),
+            };
+            stmt_inserts.push(stl_insert);
+        }
+    }
+    tracing::trace!("Bulk inserting Statements");
+    diesel::insert_into(dbschema::stellungnahme::table)
+    .values(stmt_inserts)
+    .execute(conn)?;
     // Insert links & notes
-    Ok(())
+    tracing::trace!("Bulk inserting Links");
+    diesel::insert_into(dbschema::rel_gesvh_links::table)
+    .values(
+        gesvh.links.iter()
+        .map(|link| {(dbschema::rel_gesvh_links::gesetzesvorhaben_id.eq(gesvh_id), 
+        dbschema::rel_gesvh_links::link.eq(link))}).collect::<Vec<_>>()
+    )
+    .execute(conn)?;
+    tracing::trace!("Bulk inserting Notes");
+    diesel::insert_into(dbschema::rel_gesvh_notes::table)
+    .values(
+        gesvh.notes.iter()
+        .map(|link| {(dbschema::rel_gesvh_notes::gesetzesvorhaben_id.eq(gesvh_id), 
+        dbschema::rel_gesvh_notes::note.eq(link))}).collect::<Vec<_>>()
+    )
+    .execute(conn)?;
+    Ok(gesvh_id)
 }
 
 /// Used to create gesetzesvorhaben & associated data with HTTP POST
@@ -109,19 +296,84 @@ pub(crate) async fn post_gesvh(
         tracing::warn!("Error: Newly Posted Gesetzesvorhaben has more than one 
         candidate for a merge. It will be inserted as a new entry, please review manually.\n
         Candidate IDs: {:?}\nGesetzesvorhaben: {:?}", &merge_candidates, &object);
-        // TODO: send a mail message
         return Err(DatabaseError::MultipleMergeCandidates(merge_candidates, object).into());
     }
     conn.interact(move |conn| {
         conn.transaction(|conn| {
             if merge_candidates.len() == 1 {
-                merge_gesvh(object, conn)
+                tracing::info!("Merging new Gesetzesvorhaben with {}", merge_candidates[0]);
+                let _ = merge_gesvh(object, conn)?;
             } else {
-                create_gesvh(object, conn)
+                tracing::info!("Creating a new Gesetzesvorhaben");
+                let titel = object.titel.clone();
+                let gvh_id = create_gesvh(object, conn)?;
+                if merge_candidates.len() > 1{
+                    crate::external::send_email(
+                        format!("Ambiguous GSVH State: {}", titel), 
+                        format!("A new object was posted, but could not be merged due to multiple candidates being found.\n
+                        Thus it was inserted as a new object with id {}. The candidates for merging have ids {:?}",
+                            gvh_id, merge_candidates), 
+                        app.clone());
+                }
             }
+            Result::<_, DatabaseError>::Ok(())
         })
     })
     .await
     .map_err(DatabaseError::from)??;
     return Ok(StatusCode::CREATED);
+}
+
+#[cfg(test)]
+mod test{
+    use deadpool_diesel::Pool;
+    use deadpool_diesel::postgres::Connection;
+    use super::*;
+    use crate::infra::api;
+    macro_rules! pool_creation {
+        () => {
+            {use deadpool_diesel::Manager;
+            let db_url = "postgres://postgres:postgres@localhost/postgres";
+            let manager = 
+                Manager::new(db_url, deadpool_diesel::Runtime::Tokio1);
+            Pool::builder(manager).build().unwrap()}
+        }
+    }
+
+    #[tokio::test]
+    async fn create_gesetzesvorhaben()-> Result<(), DatabaseError>{
+        let pool = pool_creation!();
+        let conn :Connection = pool.get().await.unwrap();
+        let input_object = api::Gesetzesvorhaben{
+            api_id: uuid::Uuid::now_v7(),
+            titel: "Testvorhaben".to_string(),
+            verfassungsaendernd: true,
+            trojaner: false,
+            ids: vec![],
+            initiative: "Dingensbums der Dritte".to_string(),
+            typ: api::Gesetzestyp::Sonstig,
+            links: vec![],
+            notes: vec![],
+            stationen: vec![
+                api::Station{
+                    parlament: api::Parlament::BY,
+                    schlagworte: vec!["test".to_string(), "abc123".to_string()],
+                    url: Some("https://example.com".to_string()),
+                    zuordnung: "Ausschuss für Fragen der Testerstellung".to_string(),
+                    datum: chrono::Utc::now(),
+                    dokumente: vec![],
+                    stationstyp: api::Stationstyp::Abgelehnt,
+                    stellungnahmen: vec![]
+                }
+            ]
+        };
+
+        let id = 
+        conn.interact(|conn|
+            create_gesvh(input_object, conn)
+        )
+        .await??;
+        println!("Insert successfull, returning id {}", id);
+        Ok(())
+    }
 }

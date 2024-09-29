@@ -1,6 +1,5 @@
 use crate::async_db;
 
-use crate::infra::api::Response;
 use crate::AppState;
 use crate::error::{Result, DatabaseError};
 use crate::infra::db::connection as dbcon;
@@ -26,9 +25,9 @@ pub(crate) async fn get_gesvh(app: Arc<AppState>, gesvh_id: Uuid) -> Result<api:
 }
 pub(crate) async fn get_gesvh_filtered(
     app: Arc<AppState>,
-    filters: crate::router::filters::GesVHFilter,
+    _filters: crate::router::filters::GesVHFilter,
 ) -> Result<api::Response> {
-    let conn = app.pool.get()
+    let _conn = app.pool.get()
     .await.map_err(DatabaseError::from)?;
     todo!();
 }
