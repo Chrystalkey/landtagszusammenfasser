@@ -6,6 +6,7 @@ The project currently only works with postgres. Thus, set up a postgres database
 Set up rustc, cargo etc as described [here](https://rustup.rs/).
 
 ## Setting up Diesel
+### Installing
 Diesel is the tool we use to set up, manage and connect to the database.
 Because diesel is not only a crate, but also a command line tool to run database setup, migration and all those things, you need to install the tool seperately from the
 default cargo build process.
@@ -17,6 +18,12 @@ clang: error: linker command failed with exit code 1 (use -v to see invocation)
 ```
 Install the Postgres C libraries and rerun the client. On debian based systems this could for example be: `sudo apt install libpq-dev`.
 More information on this process can be found [here](https://diesel.rs/guides/getting-started).
+
+### Running Instructions
+The cli must be run to setup the database environment.
+
+**First, set up the database variables as seen in the .env file.**
+Again, in the `./database` directory, run `diesel database setup` and `diesel migration run`. This should suffice.
 
 
 ## Building and running the project
