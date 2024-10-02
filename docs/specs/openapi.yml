@@ -13,7 +13,11 @@ info:
   title: "Specification for the Landtagszusammenfasser Project"
   version: "0.1.0"
 paths:
+<<<<<<< HEAD
   /gesetzesvorhaben/{gesvh_id}:
+=======
+  /api/v1/gesetzesvorhaben/{gesvh_id}:
+>>>>>>> 364bed6 (specified the openapi spec to the changes)
     get:
       description: "Returns a Gesetzesvorhaben by id"
       parameters:
@@ -30,7 +34,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/gesetzesvorhaben"
+<<<<<<< HEAD
   /gesetzesvorhaben:
+=======
+  /api/v1/gesetzesvorhaben:
+>>>>>>> 364bed6 (specified the openapi spec to the changes)
     get:
       description: "Returns a filtered List of Gesetzesvorhaben"
       responses:
