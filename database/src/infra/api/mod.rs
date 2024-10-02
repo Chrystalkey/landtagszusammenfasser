@@ -49,6 +49,8 @@ pub struct Gesetzesvorhaben {
     /// the type of it
     pub typ: Gesetzestyp,
     /// other ids
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
     pub ids: Vec<Identifikator>,
     /// associated links
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -141,6 +143,7 @@ pub struct Station {
     /// Entweder Plenum oder der Name eines Ausschusses
     pub zuordnung: String,
 }
+
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct Stellungnahme {
     pub datum: DateTime<Utc>,

@@ -7,7 +7,7 @@ use crate::error::{DatabaseError, LTZFError};
 use crate::infra::api;
 use crate::infra::db::connection as dbcon;
 use crate::infra::db::schema as dbschema;
-use crate::AppState;
+use crate::{async_db, AppState};
 use axum::http::StatusCode;
 
 /// A gesvh is mergeable if:
@@ -17,17 +17,16 @@ async fn merge_candidates(
     conn: &mut deadpool_diesel::postgres::Connection,
 ) -> Result<Vec<i32>, DatabaseError> {
     let titel = gesvh.titel.clone();
-    let mut eligible_gesvh: Vec<i32> = conn
-        .interact(move |conn: &mut PgConnection| {
+    
+    // definitely mergeable if the title is the same (and the api_id is different)
+    let mut eligible_gesvh: Vec<i32> = async_db!(
+        conn, load, {
             dbschema::gesetzesvorhaben::table
                 .filter(dbschema::gesetzesvorhaben::titel.eq(titel))
                 .select(dbschema::gesetzesvorhaben::id)
-                .load::<i32>(conn)
-        })
-        .await
-        .map_err(diesel_interaction::DieselInteractionError::from)
-        .map_err(DatabaseError::from)?
-        .map_err(DatabaseError::from)?;
+        }
+    );
+    tracing::trace!("Found elements {:?} with a matching title", eligible_gesvh);
 
     let id_elements: Vec<api::Identifikator> = gesvh
         .ids
@@ -37,11 +36,11 @@ async fn merge_candidates(
         .collect();
 
     if id_elements.len() > 0 {
-        let result: Vec<i32> = conn
-            .interact(move |conn| {
-                dbschema::gesetzesvorhaben::table
+        tracing::trace!("Checking for matching Vorgangsnummer");
+        let result: Vec<i32> = async_db!(conn, load, {
+            dbschema::gesetzesvorhaben::table
                     .inner_join(
-                        dbschema::rel_gesvh_id::table.inner_join(dbschema::identifikatortyp::table),
+                        dbschema::rel_gesvh_id::table.inner_join(dbschema::identifikatortyp::table)
                     )
                     .filter(
                         dbschema::rel_gesvh_id::identifikator
@@ -49,22 +48,37 @@ async fn merge_candidates(
                             .and(dbschema::identifikatortyp::value.eq("Vorgangsnummer")),
                     )
                     .select(dbschema::gesetzesvorhaben::id)
-                    .load::<i32>(conn)
-            })
-            .await
-            .map_err(diesel_interaction::DieselInteractionError::from)
-            .map_err(DatabaseError::from)?
-            .map_err(DatabaseError::from)?;
+        });
         eligible_gesvh.extend(result);
     }
-    Ok(eligible_gesvh)
+    tracing::trace!("Found elements {:?} with a matching Vorgangsnummer or matching title", eligible_gesvh);
+    if eligible_gesvh.is_empty(){
+        return Ok(eligible_gesvh);
+    }
+    let api_id = gesvh.api_id;
+    let api_id_filtered: Vec<i32> = async_db!(
+        conn, load, {
+            let mut query = dbschema::gesetzesvorhaben::table.into_boxed();
+            for id in &eligible_gesvh{
+                query = query.or_filter(dbschema::gesetzesvorhaben::id.eq(*id)
+                .and(dbschema::gesetzesvorhaben::api_id.ne(api_id)));
+            }
+            query.select(dbschema::gesetzesvorhaben::id)
+        }
+    );
+    tracing::trace!("Found elements {:?} after filtering for equal api_ids", api_id_filtered);
+    if api_id_filtered.is_empty() {
+        tracing::warn!("No merge candidates found for Gesvh with api_id {} apart from the same entry", gesvh.api_id);
+        return Err(DatabaseError::ApiIDEqual(gesvh.api_id));
+    }
+    Ok(api_id_filtered)
 }
 
 fn merge_gesvh(
     _gesvh: api::Gesetzesvorhaben,
     _conn: &mut diesel::pg::PgConnection,
 ) -> Result<(), DatabaseError> {
-    todo!()
+    todo!("Not yet implemented!")
 }
 
 fn helper_create_dokument(
@@ -127,11 +141,11 @@ fn helper_create_dokument(
 }
 
 
-/// returns ids
+/// returns ids of the inserted schlagworte
 fn helper_ins_or_ret_schlagwort(
     schlagworte: Vec<String>,
     conn: &mut diesel::pg::PgConnection
-) -> Result<Vec<i32>, DatabaseError>{ // TODO: YOu stopped here
+) -> Result<Vec<i32>, DatabaseError>{
     let mut result_vec = vec![];
     for schlagwort in schlagworte{
         let db_return = dbschema::schlagwort::table.filter(dbschema::schlagwort::value.eq(schlagwort.to_lowercase()))
@@ -168,7 +182,7 @@ fn create_gesvh(
                     format!("{:?}", typ_variant))
                 )
                 .select(dbschema::gesetzestyp::id)
-                .first::<i32>(conn)?,
+                .first::<i32>(conn)?
     };
     tracing::debug!("Inserting dbcon::Gesetzesvorhaben");
     let gesvh_id = diesel::insert_into(dbschema::gesetzesvorhaben::table)
@@ -206,7 +220,7 @@ fn create_gesvh(
         })
         .returning(dbschema::station::id)
         .get_result::<i32>(conn)?;
-        //TODO: station.dokumente & station.stellungnahmen
+
         let sw_ids = 
             helper_ins_or_ret_schlagwort(station.schlagworte, conn)?;
         diesel::insert_into(dbschema::rel_station_schlagwort::table)
@@ -280,6 +294,7 @@ fn create_gesvh(
         dbschema::rel_gesvh_notes::note.eq(link))}).collect::<Vec<_>>()
     )
     .execute(conn)?;
+    tracing::info!("Inserted New Gesetzesvorhaben with id {} and api_id {}", gesvh_id, gesvh.api_id);
     Ok(gesvh_id)
 }
 
@@ -292,6 +307,7 @@ pub(crate) async fn post_gesvh(
 
     let merge_candidates = merge_candidates(&object, &mut conn).await?;
     tracing::info!("Mergeable: {}", merge_candidates.len() == 1);
+    tracing::trace!("Merge Candidates: {:?}", merge_candidates);
     if merge_candidates.len() > 1 {
         tracing::warn!("Error: Newly Posted Gesetzesvorhaben has more than one 
         candidate for a merge. It will be inserted as a new entry, please review manually.\n

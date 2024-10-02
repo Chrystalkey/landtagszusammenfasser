@@ -23,6 +23,10 @@ pub enum DatabaseError{
 
     #[error("Required Field Missing to complete Insert: {0}")]
     MissingFieldForInsert(String), 
+
+    #[error("The same API Id was already supplied: {0}")]
+    ApiIDEqual(uuid::Uuid),
+
     #[error("Multiple Merge Candidates found: {0:?} for {1:?}")]
     MultipleMergeCandidates(Vec<i32>, crate::infra::api::Gesetzesvorhaben)
 }

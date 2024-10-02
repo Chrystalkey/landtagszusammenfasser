@@ -13,9 +13,16 @@ info:
   title: "Specification for the Landtagszusammenfasser Project"
   version: "0.1.0"
 paths:
-  /gesetzesvorhaben:
+  /gesetzesvorhaben/{gesvh_id}:
     get:
       description: "Returns a Gesetzesvorhaben by id"
+      parameters:
+        - name: "gesvh_id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
       responses:
         "200":
           description: "successful operation"
@@ -23,50 +30,256 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/gesetzesvorhaben"
+  /gesetzesvorhaben:
+    get:
+      description: "Returns a filtered List of Gesetzesvorhaben"
+      responses:
+        "206":
+          description: "partial Content1"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/response"
+      parameters:
+        - name: "updated_since"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+            format: "date"
+        - name: "updated_until"
+          in: query
+          required: false
+          schema:
+            type: "string"
+            format: "date"
+        - name: "limit"
+          in: query
+          required: false
+          schema:
+            type: "integer"
+            minimum: 1
+            maximum: 100
+        - name: "offset"
+          in: query
+          required: false
+          schema:
+            type: "integer"
+            minimum: 0
+        - name: "parlament"
+          in: query
+          required: false
+          schema:
+            type: "string"
+            enum:
+              [
+                "BT",
+                "BR",
+                "BV",
+                "EK",
+                "BB",
+                "BY",
+                "BE",
+                "HB",
+                "HH",
+                "HE",
+                "MV",
+                "NI",
+                "NW",
+                "RP",
+                "SL",
+                "SN",
+                "TH",
+                "SH",
+                "BW",
+                "ST",
+              ]
+    post:
+      description: "Pushing a new Gesetzesvorhaben"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/gesetzesvorhaben"
+      parameters:
+        - name: "collector"
+          in: path
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
+      responses:
+        "201":
+          description: "Successfully Created or integrated the posted Thing"
 components:
   schemas:
-    cupupdate:
-      type: object
+    dokument:
+      type: "object"
       properties:
-        msg_id: 
-          type: string
-        timestamp: 
-          type: string
-        payload: 
-          type: object
-          $ref: "#/components/schemas/gesetzesvorhaben"
-    cupresponse:
-      type: object
-      properties:
-        msg_id: 
-          type: string
-        responding_to: 
-          type: string
-
-    gesetzesvorhaben:
-      type: object
-      properties:
-        api_id: 
-          type: string
         titel:
-          type: string
-        verfassungsaendernd:
-          type: bool
-        trojaner:
-          type: bool
-        federfuehrung:
-          type: unbekannt
-        initiator:
-          type: string
+          type: "string"
+        datum:
+          type: "string"
+          format: "date"
+        url:
+          type: "string"
+          format: "uri"
+        hash:
+          type: "string"
+        zusammenfassung:
+          type: "string"
+        schlagworte:
+          type: "array"
+          items:
+            type: "string"
+        autoren:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/autor"
         typ:
-          type: string
-        links:
-          type: unbekannt
-        notes:
-          type: unbekannt
-        stationen:
-          type: unbekannt
-    station:
-      type: object
-      
+          type: "string"
+          enum: ["Gesetzesentwurf", "Beschlussempfehlung", "Beschluss", "Protokoll", "Stellungnahme", "Sonstiges"]
 
+    autor:
+      type: "object"
+      properties:
+        name:
+          type: "string"
+        organisation:
+          type: "string"
+    stellungnahme:
+      type: "object"
+      properties:
+        datum:
+          type: "string"
+          format: "date"
+        titel:
+          type: "string"
+        dokument:
+          $ref: "#/components/schemas/dokument"
+        meinung:
+          type: "integer"
+        url:
+          type: "string"
+          format: "uri"
+    station:
+      type: "object"
+      properties:
+        datum:
+          type: "string"
+          format: "date"
+        titel:
+          type: "string"
+        dokumente:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/dokument"
+        url:
+          type: "string"
+          format: "uri"
+        parlament:
+          type: "string"
+          enum:
+            [
+              "BT",
+              "BR",
+              "BV",
+              "EK",
+              "BB",
+              "BY",
+              "BE",
+              "HB",
+              "HH",
+              "HE",
+              "MV",
+              "NI",
+              "NW",
+              "RP",
+              "SL",
+              "SN",
+              "TH",
+              "SH",
+              "BW",
+              "ST",
+            ]
+        schlagworte:
+          type: "array"
+          items:
+            type: "string"
+            format: "lowercase"
+        stellungnahmen:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/stellungnahme"
+        zuordnung:
+          type: "string"
+          example: "Ausschuss für Inneres und Gemüseaufläufe"
+        stationstyp:
+          type: "array"
+          items:
+            type: "string"
+            enum:
+              [
+                "EntwurfReferentenentwurf",
+                "EntwurfEckpunktepapier",
+                "ParlamentInitiative",
+                "ParlamentKabinettsbeschluss",
+                "ParlamentBeschlussempfehlung",
+                "ParlamentPlenarsitzung",
+                "ParlamentBeschluss",
+                "Inkraftgetreten",
+                "Abgelehnt",
+              ]
+    gesetzesvorhaben:
+      type: "object"
+      properties:
+        api_id:
+          type: "string"
+          format: "uuid"
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        titel: 
+          type: "string"
+        verfassungsaendernd:
+          type: "boolean"
+        trojaner:
+          type: "boolean"
+        initiative:
+          type: "string"
+          example: "Staatsministerium für Justiz"
+        typ: 
+          type: "string"
+          enum: ["Einspruchsgesetz", "Zustimmungsgesetz", "Vorklsbegehren", "Sonstig"]
+        ids:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/identifikator"
+        links:
+          type: "array"
+          items:
+            type: "string"
+            format: "uri"
+        stationen:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/station"
+    identifikator:
+      type: "object"
+      properties:
+        id: 
+          type: "string"
+          example: "123e4567-e"
+        typ:
+          type: "string"
+          enum: ["Drucksachennummer", "Vorgansnummer"]
+    stationen:
+      type: "array"
+      items:
+        $ref: "#/components/schemas/station"
+    response:
+      type: "object"
+      properties:
+        payload: 
+          type: "array"
+          items:
+            $ref: "#/components/schemas/gesetzesvorhaben"
