@@ -108,6 +108,11 @@ The following general properties are relevant:
   - Speed
   - An open secure session should be usable for multiple writes, minimizing overhead due to session initialization
 ##### The protocol (Secure Write)
+POST /gesetzesvorhaben...
+secret = "abc123"
+nonce = "a8jr20934u098409230498"
+
+
  | Step | Collector                                                                                            | Database                                                                                                                                         | Method |
  | ---- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
  | 1    | Request to open Session, InitNonce                                                                   | -                                                                                                                                                | GET    |
