@@ -74,10 +74,32 @@ async fn merge_candidates(
     Ok(api_id_filtered)
 }
 
+
+/// generally, the new overrides the old. Thus a warn! is emitted when something is overriden with another point of data
+/// notably, there is an exception to this for: api_id, which remains, and something else
 fn merge_gesvh(
-    _gesvh: api::Gesetzesvorhaben,
-    _conn: &mut diesel::pg::PgConnection,
+    new: api::Gesetzesvorhaben,
+    old_id: i32, 
+    conn: &mut diesel::pg::PgConnection,
 ) -> Result<(), DatabaseError> {
+    // check for merge of main object
+    diesel::update(dbschema::gesetzesvorhaben::table)
+    .set(dbcon::gesetzesvorhaben::Update{
+        initiative: Some(new.initiative),
+        titel: Some(new.titel),
+        trojaner: Some(new.trojaner),
+        typ: Some(dbschema::gesetzestyp::table
+        .filter(dbschema::gesetzestyp::value.eq(format!("{:?}", new.typ)))
+        .select(dbschema::gesetzestyp::id)
+        .first::<i32>(conn)?),
+        verfassungsaendernd: Some(new.verfassungsaendernd),
+        api_id: None
+    })
+    .filter(dbschema::gesetzesvorhaben::id.eq(old_id))
+    .execute(conn)?;
+    // check for merge of documents
+    // check for merge of sw, links, notes
+    // check for merge of stations
     todo!("Not yet implemented!")
 }
 
@@ -318,7 +340,7 @@ pub(crate) async fn post_gesvh(
         conn.transaction(|conn| {
             if merge_candidates.len() == 1 {
                 tracing::info!("Merging new Gesetzesvorhaben with {}", merge_candidates[0]);
-                let _ = merge_gesvh(object, conn)?;
+                merge_gesvh(object, *merge_candidates.first().unwrap(), conn)?;
             } else {
                 tracing::info!("Creating a new Gesetzesvorhaben");
                 let titel = object.titel.clone();
