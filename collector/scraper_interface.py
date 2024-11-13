@@ -8,8 +8,10 @@ when creating new scrapers.
 '''
 
 class Scraper(ABC):
+    list_urls = []
+
     @abstractmethod
-    def __init__(self, db_connector: Any, llm_connector: Any):
+    def __init__(self, db_connector: Any, llm_connector: Any, list_urls: list[str] = []):
         """
         Initialize the Scraper with a database connector and an llm connector.
 
@@ -22,9 +24,10 @@ class Scraper(ABC):
         """
         self.db_connector = db_connector
         self.llm_connector = llm_connector
+        self.list_urls = list_urls
 
     @abstractmethod
-    def fetch_content(self) -> str:
+    def fetch_content(self, callback: function[int[int, int]]) -> str:
         pass
 
     @abstractmethod
