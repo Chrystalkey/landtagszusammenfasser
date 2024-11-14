@@ -5,6 +5,7 @@ VALUES
     ('Zustimmungsgesetz'),
     ('Einspruchsgesetz'),
     ('Volksbegehren'),
+    ('Standard'),
     ('Sonstig');
 
 REVOKE ALL ON TABLE gesetzestyp

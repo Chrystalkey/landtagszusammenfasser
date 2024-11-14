@@ -19,6 +19,7 @@ pub enum Gesetzestyp {
     Einspruchsgesetz,
     Zustimmungsgesetz,
     Volksbegehren,
+    Standard,
     Sonstig,
 }
 
@@ -129,6 +130,7 @@ pub enum Parlament {
 pub struct Station {
     pub stationstyp: Stationstyp,
     pub datum: DateTime<Utc>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
     pub parlament: Parlament,
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -335,7 +337,17 @@ impl Gesetzesvorhaben {
         });
     }
 }
+
+pub enum Mergeability{
+    New,
+    Updated(i32),
+    Equal(i32),
+}
+
 impl Station {
+    pub fn check_mergeability(&self, conn: &mut diesel::pg::PgConnection) 
+    -> Result<Mergeability, DatabaseError> {todo!()}
+
     pub async fn construct_from(
         object: crate::infra::db::connection::Station,
         conn: &mut deadpool_diesel::postgres::Connection,
@@ -388,6 +400,8 @@ impl Station {
     }
 }
 impl Stellungnahme {
+    pub fn check_mergeability(&self, conn: &mut diesel::pg::PgConnection) 
+    -> Result<Mergeability, DatabaseError> {todo!()}
     pub async fn construct_from(
         object: crate::infra::db::connection::Stellungnahme,
         conn: &mut deadpool_diesel::postgres::Connection,
@@ -409,8 +423,9 @@ impl Stellungnahme {
         });
     }
 }
-
 impl Dokument {
+    pub fn check_mergeability(&self, conn: &mut diesel::pg::PgConnection) 
+    -> Result<Mergeability, DatabaseError> {todo!()}
     pub async fn construct_from(
         object: crate::infra::db::connection::Dokument,
         conn: &mut deadpool_diesel::postgres::Connection,

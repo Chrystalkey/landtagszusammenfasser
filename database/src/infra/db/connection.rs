@@ -3,7 +3,6 @@ extern crate diesel_interaction;
 use diesel::*;
 use diesel_interaction_derive::DieselInteraction;
 
-
 #[derive(Debug, Clone, Selectable, Queryable, Identifiable, DieselInteraction)]
 #[connection_type(deadpool_diesel::postgres::Connection)]
 #[diesel(check_for_backend(diesel::pg::Pg))]

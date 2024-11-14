@@ -38,12 +38,14 @@ CREATE TABLE rel_gesvh_id(
 CREATE TABLE rel_gesvh_links(
     id SERIAL PRIMARY KEY,
     gesetzesvorhaben_id INTEGER NOT NULL REFERENCES gesetzesvorhaben(id) ON DELETE CASCADE,
-    link VARCHAR NOT NULL
+    link VARCHAR NOT NULL,
+    CONSTRAINT rel_gesvh_links_unique_combo UNIQUE (gesetzesvorhaben_id, link)
 );
 CREATE TABLE rel_gesvh_notes(
     id SERIAL PRIMARY KEY,
     gesetzesvorhaben_id INTEGER NOT NULL REFERENCES gesetzesvorhaben(id) ON DELETE CASCADE,
-    note VARCHAR NOT NULL
+    note VARCHAR NOT NULL,
+    CONSTRAINT rel_gesvh_notes_unique_combo UNIQUE (gesetzesvorhaben_id, note)
 );
 
 CREATE TABLE station(

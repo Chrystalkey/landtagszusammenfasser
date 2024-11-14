@@ -1,0 +1,14 @@
+{
+    "api_id": "abc123",
+    "titel": "Gesetzentwurf der Staatsregierung zur Änderung des Bayerischen Gesetzes über das Erziehungs- und Unterrichtswesen",
+    "verfassungsaendernd": false,
+    "trojaner": false,
+    "initiative" : "Staatsregierung",
+    "typ": "Standard",
+    "ids": [{"typ": "Drucksachennummer", "id": "19/2012"}, {"typ": "Drucksachennummer", "id": "19/2731"}],
+    "links": ["https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=155494"],
+    "notes": [],
+    "stationen": [
+        {}
+    ]
+}

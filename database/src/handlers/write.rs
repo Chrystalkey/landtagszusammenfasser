@@ -1,4 +1,4 @@
-use crate::infra::api::IdentifikatorTyp;
+use crate::infra::api::{IdentifikatorTyp, Mergeability};
 use diesel::prelude::*;
 use std::sync::Arc;
 
@@ -11,7 +11,7 @@ use crate::{async_db, AppState};
 use axum::http::StatusCode;
 
 /// A gesvh is mergeable if:
-/// new.titel == old.titel || new.ids(vorgang_id) == old.ids(vorgang_id)
+/// new.titel == old.titel || \exists (new.ids(vorgang_id) == old.ids(vorgang_id))
 async fn merge_candidates(
     gesvh: &api::Gesetzesvorhaben,
     conn: &mut deadpool_diesel::postgres::Connection,
@@ -74,33 +74,85 @@ async fn merge_candidates(
     Ok(api_id_filtered)
 }
 
+/// a station considered new if:
+/// the whole documents vector is different by hash and the url differs
+/// 
+fn merge_stations(gvid: i32, stations: Vec<api::Station>, conn: &mut diesel::pg::PgConnection) -> Result<(), DatabaseError> {
+    for station in stations{
+        let state = station.check_mergeability(conn)?;
+        match state {
+            Mergeability::New => {},
+            Mergeability::Equal(id) => {},
+            Mergeability::Updated(id) => {}
+        }
+        todo!();
+    }
+    Ok(())
+} 
 
 /// generally, the new overrides the old. Thus a warn! is emitted when something is overriden with another point of data
 /// notably, there is an exception to this for: api_id, which remains, and something else
 fn merge_gesvh(
-    new: api::Gesetzesvorhaben,
-    old_id: i32, 
+    new_gesvh: api::Gesetzesvorhaben,
+    old_gesvh_id: i32, 
     conn: &mut diesel::pg::PgConnection,
 ) -> Result<(), DatabaseError> {
     // check for merge of main object
     diesel::update(dbschema::gesetzesvorhaben::table)
     .set(dbcon::gesetzesvorhaben::Update{
-        initiative: Some(new.initiative),
-        titel: Some(new.titel),
-        trojaner: Some(new.trojaner),
+        initiative: Some(new_gesvh.initiative),
+        titel: Some(new_gesvh.titel),
+        trojaner: Some(new_gesvh.trojaner),
         typ: Some(dbschema::gesetzestyp::table
-        .filter(dbschema::gesetzestyp::value.eq(format!("{:?}", new.typ)))
+        .filter(dbschema::gesetzestyp::value.eq(format!("{:?}", new_gesvh.typ)))
         .select(dbschema::gesetzestyp::id)
         .first::<i32>(conn)?),
-        verfassungsaendernd: Some(new.verfassungsaendernd),
+        verfassungsaendernd: Some(new_gesvh.verfassungsaendernd),
         api_id: None
     })
-    .filter(dbschema::gesetzesvorhaben::id.eq(old_id))
+    .filter(dbschema::gesetzesvorhaben::id.eq(old_gesvh_id))
     .execute(conn)?;
-    // check for merge of documents
-    // check for merge of sw, links, notes
-    // check for merge of stations
-    todo!("Not yet implemented!")
+    // check for merge of links, notes
+    diesel::insert_into(dbschema::rel_gesvh_links::table).values(
+        new_gesvh.links.iter().map(| element|(
+            dbschema::rel_gesvh_links::gesetzesvorhaben_id.eq(old_gesvh_id),
+            dbschema::rel_gesvh_links::link.eq(element.clone())
+        )).collect::<Vec<_>>()
+    )
+    .on_conflict_do_nothing()
+    .execute(conn)?;
+    diesel::insert_into(dbschema::rel_gesvh_notes::table).values(
+        new_gesvh.links.iter().map(| element|(
+            dbschema::rel_gesvh_notes::gesetzesvorhaben_id.eq(old_gesvh_id),
+            dbschema::rel_gesvh_notes::note.eq(element.clone())
+        )).collect::<Vec<_>>()
+    )
+    .on_conflict_do_nothing()
+    .execute(conn)?;
+
+    let mut id_insert_vec = vec![];
+    for id in new_gesvh.ids {
+        let typ_id = dbschema::identifikatortyp::table
+        .filter(dbschema::identifikatortyp::value.eq(format!("{:?}", id.typ)))
+        .select(dbschema::identifikatortyp::id)
+        .first::<i32>(conn)?;
+        id_insert_vec.push(
+            (
+                dbschema::rel_gesvh_id::gesetzesvorhaben_id.eq(old_gesvh_id),
+                dbschema::rel_gesvh_id::identifikator.eq(id.id),
+                dbschema::rel_gesvh_id::id_typ.eq(typ_id)
+            )
+        );
+    }
+    
+    diesel::insert_into(dbschema::rel_gesvh_id::table)
+    .values(&id_insert_vec)
+    .on_conflict_do_nothing()
+    .execute(conn)?;
+
+    // check for merge of stations(dok())
+    merge_stations(old_gesvh_id, new_gesvh.stationen, conn)?;
+    Ok(())
 }
 
 fn helper_create_dokument(
@@ -109,7 +161,7 @@ fn helper_create_dokument(
 ) -> Result<i32, DatabaseError>{
     let dok_id = diesel::insert_into(dbschema::dokument::table)
             .values(&dbcon::dokument::Insert{
-                dokumenttyp_id: dbschema::dokumenttyp::table
+                dokumenttyp_id: dbschema::dokumenttyp::table 
                 .filter(dbschema::dokumenttyp::value.eq(format!("{:?}", dok.typ)))
                 .select(dbschema::dokumenttyp::id)
                 .first(conn)?,
@@ -240,7 +292,7 @@ fn create_gesvh(
             .select(dbschema::parlament::id)
             .first(conn)?
         })
-        .returning(dbschema::station::id)
+        .returning(dbschema::station::id) 
         .get_result::<i32>(conn)?;
 
         let sw_ids = 
