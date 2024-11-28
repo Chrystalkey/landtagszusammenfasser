@@ -13,6 +13,9 @@ requests = "^2.32.3"
 pydantic = "^2.9.2"
 openapi-client = {path = "oaiclient"}
 
+[tool.poetry.group.test.dependencies]
+pytest = "^7"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

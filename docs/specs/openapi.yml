@@ -146,7 +146,7 @@ components:
       properties:
         zeitpunkt:
           type: "string"
-          format: "datetime"
+          format: "date"
         gremium:
           type: "string"
           example: "Ausschuss für Inneres und Gemüseaufläufe"

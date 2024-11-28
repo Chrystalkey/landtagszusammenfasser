@@ -1,39 +1,50 @@
 from abc import ABC, abstractmethod
 from typing import Any
-
-'''
-The abstract base class for the implementation of a scraper. It will make sure the scrapers all 
-define these methods. They can then be called by the scraper manager or simply provide a better overview
-when creating new scrapers.
-'''
+import openapi_client
+from openapi_client import models
 
 class Scraper(ABC):
-    list_urls = []
+    listing_urls : list[str] = []
+    result_objects: list[models.Gesetzesvorhaben] = []
 
+    oai_config : openapi_client.Configuration = None
+
+    def __init__(self, oai_config: openapi_client.Configuration, listing_urls: list[str]):
+        self.listing_url = listing_urls
+        self.oai_config = oai_config
+    
+    def send(self):
+        with openapi_client.ApiClient(self.oai_config) as api_client:
+            api_instance = openapi_client.GesetzesvorhabenApi(api_client)
+            for gsvh in self.result_objects:
+                api_instance.api_v1_gesetzesvorhaben_post(gsvh)
+
+    """
+    for every listing_url in the object
+        extract the listing page and then extract the individual pages
+        package everything into one or more Gesetzesvorhaben objects and return it
+    """
     @abstractmethod
-    def __init__(self, db_connector: Any, llm_connector: Any, list_urls: list[str] = []):
-        """
-        Initialize the Scraper with a database connector and an llm connector.
-
-        Parameters:
-        -----------
-        db_connector : Any
-            The database connector to interact with the database.
-        llm_connector : Any
-            The database connector to interact with the llm.
-        """
-        self.db_connector = db_connector
-        self.llm_connector = llm_connector
-        self.list_urls = list_urls
-
+    def extract(self):
+        pass
+    
+    # extracts the listing page that is behind self.listing_url into the urls of individual pages
     @abstractmethod
-    def fetch_content(self, callback: function[int[int, int]]) -> str:
+    def listing_page_extractor(self, url: str) -> list[str]:
         pass
 
+    # extracts the individual pages containing all info into a Gesetzesvorhaben object
     @abstractmethod
-    def parse_content(self):
+    def page_extractor(self, url: str) -> models.Gesetzesvorhaben:
         pass
 
+    # classifies an object that comes in. Can be a station or be a `stellungnahme`
+    # and can be a beautifulsoup, a selenium object, text or whatever else
     @abstractmethod
-    def send_data(self, data: dict, server_url: str):
+    def classify_object(self, context) -> str:
+        pass
+
+    # create a document object from a url
+    @abstractmethod
+    def create_document(self, url: str) -> models.Dokument:
         pass
