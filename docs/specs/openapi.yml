@@ -1,14 +1,4 @@
-# flavour:
-# - all component objects are NOT NULL unless marked nullable
-# - format: database_key is NOT NULL UNIQUE and if singular and not in $ref, a primary key
-# - length: length of a string
-# - max-length: maximal length of a string
-# - `has-id: bool` contains a field named id with the default primary key settings, namely:
-# - id:
-#      type: integer
-#      format: database_key
-
-openapi: 3.1.0
+openapi: "3.0.0"
 info:
   title: "Specification for the Landtagszusammenfasser Project"
   version: "0.1.0"
@@ -93,7 +83,7 @@ paths:
                 "SH",
                 "BW",
                 "ST",
-              ]
+              ] 
     post:
       description: "Pushing a new Gesetzesvorhaben"
       requestBody:
@@ -119,7 +109,7 @@ components:
       properties:
         titel:
           type: "string"
-        datum:
+        zeitpunkt:
           type: "string"
           format: "date"
         url:
@@ -136,40 +126,31 @@ components:
         autoren:
           type: "array"
           items:
-            $ref: "#/components/schemas/autor"
+            type: "string"
+            example: "Staatsregierung"
         typ:
           type: "string"
-          enum: ["Gesetzesentwurf", "Beschlussempfehlung", "Beschluss", "Protokoll", "Stellungnahme", "Sonstiges"]
-    autor:
-      type: "object"
-      properties:
-        name:
-          type: "string"
-        organisation:
-          type: "string"
+          enum: ["entwurf", "drucksache", "protokoll", "stellungnahme", "sonstig"]
     stellungnahme:
       type: "object"
       properties:
-        datum:
-          type: "string"
-          format: "date"
-        titel:
-          type: "string"
         dokument:
           $ref: "#/components/schemas/dokument"
         meinung:
           type: "integer"
-        url:
+        lobbyregister_url:
           type: "string"
           format: "uri"
     station:
       type: "object"
       properties:
-        datum:
+        zeitpunkt:
           type: "string"
-          format: "date"
-        titel:
+          format: "datetime"
+        gremium:
           type: "string"
+          example: "Ausschuss für Inneres und Gemüseaufläufe"
+          description: "Name des Gremiums, das die Station durchgeführt hat oder mit ihr assoziiert ist. Kann ein Ausschuss sein, oder \"Plenum\" oder \"Volk\", etc."
         dokumente:
           type: "array"
           items:
@@ -209,27 +190,26 @@ components:
             format: "lowercase"
         stellungnahmen:
           type: "array"
-          items:
+          items: 
             $ref: "#/components/schemas/stellungnahme"
-        zuordnung:
-          type: "string"
-          example: "Ausschuss für Inneres und Gemüseaufläufe"
         stationstyp:
-          type: "array"
-          items:
-            type: "string"
-            enum:
-              [
-                "EntwurfReferentenentwurf",
-                "EntwurfEckpunktepapier",
-                "ParlamentInitiative",
-                "ParlamentKabinettsbeschluss",
-                "ParlamentBeschlussempfehlung",
-                "ParlamentPlenarsitzung",
-                "ParlamentBeschluss",
-                "Inkraftgetreten",
-                "Abgelehnt",
-              ]
+          type: "string"
+          enum: [
+              "preparl-regent", # Referentenentwurf / Regierungsentwurf
+              "preparl-eckpup", # Eckpunktepapier / Parlamentsentwurf
+              "preparl-kabbsl", # Kabinettsbeschluss / Regierungsbeschluss
+              "preparl-vbegde", # Volksbegehren / Diskussionsentwurf
+              "parl-initiativ", # Gesetzesinitiative 
+              "parl-ausschber", # Beratung im Ausschuss
+              "parl-vollvlsgn", # Vollversammlung und Lesung
+              "parl-schlussab", # Schlussabstimmung
+              "parl-akzeptanz", # Akzeptanz des Parlaments
+              "parl-ablehnung", # Ablehnung des Parlaments
+              "parl-ggentwurf", # Gegenentwurf des Parlaments auf abgel. Volksbegehren
+              "potparl-volkse", # Volksentscheid nach Parlamentsbechlus
+              "postparl-gsblt", # Veröffentlichung im Gesetzesblatt
+              "postparl-kraft"  # In Kraft getreten
+            ]
     gesetzesvorhaben:
       type: "object"
       properties:
@@ -243,12 +223,14 @@ components:
           type: "boolean"
         trojaner:
           type: "boolean"
-        initiative:
+        initiatoren:
+          type: "array"
+          items:
+            type: "string"
+            example: "Staatsministerium für Justiz"
+        typ:
           type: "string"
-          example: "Staatsministerium für Justiz"
-        typ: 
-          type: "string"
-          enum: ["Einspruchsgesetz", "Zustimmungsgesetz", "Vorklsbegehren", "Sonstig"]
+          enum: ["bgg-einspruch", "bgg-zustimmung", "volksgg", "landgg", "sonstig"]
         ids:
           type: "array"
           items:
@@ -270,7 +252,7 @@ components:
           example: "123e4567-e"
         typ:
           type: "string"
-          enum: ["Drucksachennummer", "Vorgansnummer"]
+          enum: ["drucksnr", "vorgnr", "sonstig"]
     stationen:
       type: "array"
       items:
