@@ -22,10 +22,6 @@ def test_bylt_pextract():
     for url in urls:
         gsvh = scraper.page_extractor(url)
         assert gsvh is not None
-        print(pprint.pformat(gsvh))
-        print()
-        print()
-    assert False
 
 #def test_bylt_scraper_extract():
 #    # Test the BYLTScraper

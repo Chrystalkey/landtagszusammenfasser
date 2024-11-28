@@ -8,3 +8,4 @@ target/
 __pycache__/
 
 collector/oaiclient
+oai-generator/
