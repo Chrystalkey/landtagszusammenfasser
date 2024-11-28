@@ -34,11 +34,19 @@ class BYLTScraper(Scraper):
         gsvh.api_id = str(uuid.uuid4())
         gsvh.titel = "TODO"
         gsvh.verfassungsaendernd = False
-        gsvh.initiatoren = ["TODO"]
         gsvh.typ = "landgg"
         gsvh.ids = []
         gsvh.links = [url]
         gsvh.stationen = []
+        
+        # Initiatoren
+        init_ptr = soup.find(string="Initiatoren")
+        initiat_lis = init_ptr.find_next("ul").findAll("li")
+        gsvh.initiatoren = []
+        for ini in initiat_lis: 
+            gsvh.initiatoren.append(ini.text)
+        assert len(gsvh.initiatoren) > 0, f"Error: Could not find Initiatoren for url {url}"
+
         print(f"Extracting from {url}")
         for row in rows:
             cells = row.findAll("td")
