@@ -7,3 +7,4 @@ target/
 *.tar.gz
 __pycache__/
 
+collector/oaiclient
