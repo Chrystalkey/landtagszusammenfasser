@@ -1,19 +1,23 @@
+from datetime import date
+import pprint
 from bs4 import BeautifulSoup
 import requests
-from models import gesetzesvorhaben
 from typing import Callable
+import openapi_client
+import openapi_client.models as models
+import uuid
 
 class ListingPage:
     url : str = None
     list_extractor: Callable[[str], list[str]] = None
-    page_extractor: Callable[[str], gesetzesvorhaben.Gesetzesvorhaben] = None
+    page_extractor: Callable[[str], models.Gesetzesvorhaben] = None
 
     def __init__(self, url:str, list_extractor, page_extractor):
         self.url = url
         self.list_extractor = list_extractor
         self.page_extractor = page_extractor
 
-    def fetch_pages(self) -> list[gesetzesvorhaben.Gesetzesvorhaben]:
+    def fetch_pages(self) -> list[models.Gesetzesvorhaben]:
         urls = self.list_extractor(self.url)
         contents = []
         for u in urls:
@@ -91,47 +95,100 @@ def classify_gridcell(cellsoup: BeautifulSoup) -> str:
     else:
         return "unclassified"
 
-def extract_bylt_vorgangspage(url: str) -> gesetzesvorhaben.Gesetzesvorhaben:
+def detect_trojaner(gsvh: models.Gesetzesvorhaben) -> bool:
+    print("Warn: Trojaner detection not implemented")
+    return False
+
+def create_dokument(url: str, datum) -> models.Dokument:
+    dok = models.Dokument()
+    dok.zeitpunkt = datum
+    dok.titel = "TODO"
+    dok.url = url
+    dok.hash = "TODO"
+    dok.typ = "drucksache"
+    dok.zusammenfassung = "TODO"
+    
+    dok.autoren = []
+    return dok
+
+def extract_bylt_vorgangspage(url: str) -> models.Gesetzesvorhaben:
     get_result = requests.get(url)
     soup = BeautifulSoup(get_result.content, "html.parser")
     vorgangs_table = soup.find('tbody', id='vorgangsanzeigedokumente_data')
     rows = vorgangs_table.findAll("tr")
+    gsvh = models.Gesetzesvorhaben()
+    gsvh.api_id = str(uuid.uuid4())
+    gsvh.titel = "TODO"
+    gsvh.verfassungsaendernd = False
+    gsvh.initiatoren = ["TODO"]
+    gsvh.typ = "landgg"
+    gsvh.ids = []
+    gsvh.links = [url]
+    gsvh.stationen = []
     for row in rows:
         cells = row.findAll("td")
-        if len(cells) < 2:
-            print(f"Warning: Unexpectedly found less than two gridcells in: `{row}`")
-            continue
+        assert len(cells) < 2, f"Warning: Unexpectedly found less than two gridcells in: `{row}`"
         # date is in the first cell
-        timestamp = cells[0].text
+        timestamp = cells[0].text.split(".")
+        timestamp = f"{timestamp[2]}-{timestamp[1]}-{timestamp[0]}"
         # content is in the second cell
+        stat = models.Station()
+        stat.zeitpunkt = timestamp
+        stat.parlament = "BY"
+        stat.stellungnahmen = []
         cellclass = classify_gridcell(cells[1])
         print(f"Timestamp: {timestamp} Cellclass: {cellclass}")
-        match cellclass:
-            case "initiativdrucksache": print(extract_singlelink(cells[1]))
-            case "stellungnahme": print(extract_schrstellung(cells[1]))
-            case "plenumsdiskussion-uebrw": print(extract_plenproto(cells[1]))
-            case "plenumsdiskussion-zustm": print(extract_plenproto(cells[1]))
-            case "plenumsdiskussion-ablng": print(extract_plenproto(cells[1]))
-            case "plenumsbeschluss": print(extract_singlelink(cells[1]))
-            case "ausschussbericht": print(extract_singlelink(cells[1]))
-            case "gesetzesblatt": print(extract_gbl_ausz(cells[1]))
-            case "unclassified": print("Unclassifiable cell")
-    # TODO: put this into a Gesetzesvorhaben object
+        if cellclass == "initiativdrucksache":
+            link = extract_singlelink(cells[1])
+            gsvh.links.append(link)
+            stat.stationstyp = "parl-initiativ"
+            stat.dokumente = [create_dokument(link, timestamp)]
+        elif cellclass == "stellungnahme":
+            assert len(gsvh.stationen) > 0, "Error: Stellungnahme ohne Vorhergehenden Gesetzestext"
+            stln = models.Stellungnahme()
+            stln_urls = extract_schrstellung(cells[1])
+            stln.meinung = 0
+            stln.dokument = create_dokument(stln_urls["stellungnahme"], timestamp)
+            stln.lobbyregister_url = stln_urls["lobbyregister"]
+            gsvh.stationen[-1].stellungnahmen.append(stln)
+            continue
+        elif cellclass == "plenumsdiskussion-uebrw":
+            stat.stationstyp = "parl-vollvlsgn"
+            stat.dokumente = [create_dokument(extract_plenproto(cells[1]), timestamp)]
+        elif cellclass == "plenumsdiskussion-zustm":
+            stat.stationstyp = "parl-akzeptanz"
+            stat.dokumente = [create_dokument(extract_plenproto(cells[1]), timestamp)]
+        elif cellclass == "plenumsdiskussion-ablng":
+            stat.stationstyp = "parl-ablehnung"
+        elif cellclass == "plenumsbeschluss":
+            stat.stationstyp = "parl-schlussab"
+            stat.dokumente = [create_dokument(extract_singlelink(cells[1]), timestamp)]
+        elif cellclass == "ausschussbericht":
+            stat.stationstyp = "parl-ausschber"
+            stat.dokumente = [create_dokument(extract_singlelink(cells[1]), timestamp)]
+        elif cellclass == "gesetzesblatt":
+            stat.stationstyp = "postparl-gsblt"
+            stat.dokumente = [create_dokument(extract_singlelink(cells[1]), timestamp)]
+        elif cellclass == "unclassified":
+            print("Warning: Unclassifiable cell")
+        gsvh.stationen.append(stat)
     print(len(rows))
+    pprint.pprint(gsvh)
+    gsvh.trojaner = detect_trojaner(gsvh)
 
 def extract_singlelink(cellsoup: BeautifulSoup) -> str:
     return cellsoup.find("a")["href"]
 
-# returns: {"typ": [links, links, links], ...}
+# returns: {"typ": link, ...}
 def extract_schrstellung(cellsoup: BeautifulSoup) -> dict:
     links = cellsoup.findAll("a")
     return {
-        "lobbyregister": [links[0]["href"]],
-        "stellungnahme": [links[1]["href"]]
+        "lobbyregister": links[0]["href"],
+        "stellungnahme": links[1]["href"]
     }
 
 def extract_plenproto(cellsoup: BeautifulSoup) -> str:
-    cellsoup_ptr = cellsoup.find(text="Protokollauszug")
+    cellsoup_ptr = cellsoup.find(string="Protokollauszug")
     cellsoup_ptr = cellsoup_ptr.find_previous("br")
     return cellsoup_ptr.find_next("a")["href"]
 
@@ -154,3 +211,11 @@ if __name__ == "__main__":
     #URL = urls[0]
     #print(extract_bylt_page(URL))
     extract_bylt_vorgangspage("https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=155494")
+    configuration = openapi_client.Configuration(
+        host = "http://localhost"
+    )
+    with openapi_client.ApiClient(configuration) as api_client:
+        api_instance = openapi_client.DefaultApi(api_client)
+        gesvh = openapi_client.models.Gesetzesvorhaben()
+
+        api_instance.api_v1_gesetzesvorhaben_post("test_collector", gesvh)

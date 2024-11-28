@@ -11,7 +11,7 @@ selenium = "^4.22.0"
 beautifulsoup4 = "^4.12.3"
 requests = "^2.32.3"
 pydantic = "^2.9.2"
-
+openapi-client = {path = "oaiclient"}
 
 [build-system]
 requires = ["poetry-core"]
