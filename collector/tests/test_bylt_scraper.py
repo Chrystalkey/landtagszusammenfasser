@@ -1,6 +1,5 @@
-from collector.scrapers.by_lt import BYLTScraper
+from collector.scrapers.bylt_scraper import BYLTScraper
 from collector.oaiclient.openapi_client import Configuration
-import pprint
 
 
 CURRENT_WP = 19
@@ -45,23 +44,18 @@ pages = ['https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgan
  'https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=153438']
 
 def test_bylt_lextract():
-    global listing
-    scraper = BYLTScraper(Configuration(host="http://localhost"), [listing])
+    global listing, pages
+    scraper = BYLTScraper(Configuration(host="http://localhost"))
     urls = scraper.listing_page_extractor(listing)
     assert len(urls) != 0
+    for u in pages:
+        assert u in urls, "Url `{u}` expected but not found in result set"
 
 def test_bylt_pextract():
     global pages
     assert len(pages) != 0
-    scraper = BYLTScraper(Configuration(host="http://localhost"), [listing])
+    scraper = BYLTScraper(Configuration(host="http://localhost"))
     for url in pages:
-        gsvh = scraper.page_extractor(url)
+        gsvh = scraper.item_extractor(url)
         assert gsvh is not None
-
-#def test_bylt_scraper_extract():
-#    # Test the BYLTScraper
-#    global listing
-#    scraper = BYLTScraper(Configuration(host="http://localhost"), [listing])
-#    scraper.extract()
-#    assert len(scraper.result_objects) != 0
-#    print(pprint.pformat(scraper.result_objects))
+        assert len(gsvh.stationen) != 0

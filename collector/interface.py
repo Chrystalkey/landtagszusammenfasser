@@ -10,7 +10,7 @@ class Scraper(ABC):
     oai_config : openapi_client.Configuration = None
 
     def __init__(self, oai_config: openapi_client.Configuration, listing_urls: list[str]):
-        self.listing_url = listing_urls
+        self.listing_urls = listing_urls
         self.oai_config = oai_config
     
     def send(self):
@@ -24,27 +24,21 @@ class Scraper(ABC):
         extract the listing page and then extract the individual pages
         package everything into one or more Gesetzesvorhaben objects and return it
     """
-    @abstractmethod
     def extract(self):
-        pass
+        item_list = set()
+        for lpage in self.listing_urls:
+            item_list.union(self.listing_page_extractor(lpage))
+        for item in item_list:
+            self.result_objects.append(self.item_extractor(item))
     
     # extracts the listing page that is behind self.listing_url into the urls of individual pages
     @abstractmethod
-    def listing_page_extractor(self, url: str) -> list[str]:
-        pass
+    def listing_page_extractor(self, url: str) -> list:
+        assert False, "Warn: Abstact Method Called"
 
     # extracts the individual pages containing all info into a Gesetzesvorhaben object
     @abstractmethod
-    def page_extractor(self, url: str) -> models.Gesetzesvorhaben:
-        pass
+    def item_extractor(self, listing_item) -> models.Gesetzesvorhaben:
+        assert False, "Warn: Abstact Method Called"
 
-    # classifies an object that comes in. Can be a station or be a `stellungnahme`
-    # and can be a beautifulsoup, a selenium object, text or whatever else
-    @abstractmethod
-    def classify_object(self, context) -> str:
-        pass
-
-    # create a document object from a url
-    @abstractmethod
-    def create_document(self, url: str) -> models.Dokument:
-        pass
+    

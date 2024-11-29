@@ -5,9 +5,17 @@ import openapi_client.models as models
 from datetime import date
 import uuid
 
-from collector.scraper_interface import Scraper
+from collector.interface import Scraper
 
 class BYLTScraper(Scraper):
+    def __init__(self, config):
+        CURRENT_WP = 19
+        RESULT_COUNT = 200
+        listing_urls = [
+            f"https://www.bayern.landtag.de/parlament/dokumente/drucksachen?isInitialCheck=0&q=&dknr=&suchverhalten=AND&dokumentenart=Drucksache&ist_basisdokument=on&sort=date&anzahl_treffer={RESULT_COUNT}&wahlperiodeid%5B%5D={CURRENT_WP}&erfassungsdatum%5Bstart%5D=&erfassungsdatum%5Bend%5D=&dokumentenart=Drucksache&suchvorgangsarten%5B%5D=Gesetze%5C%5CGesetzentwurf&suchvorgangsarten%5B%5D=Gesetze%5C%5CStaatsvertrag&suchvorgangsarten%5B%5D=Gesetze%5C%5CHaushaltsgesetz%2C+Nachtragshaushaltsgesetz"
+        ]
+        super().__init__(config, listing_urls)
+
     def listing_page_extractor(self, url) -> list[str]:
         # assumes a full page without pagination
         get_result = requests.get(url)
@@ -25,8 +33,9 @@ class BYLTScraper(Scraper):
         assert len(vgpage_urls) != 0, "Error: No Entry extracted from listing page"
         return vgpage_urls
 
-    def page_extractor(self, url: str) -> models.Gesetzesvorhaben:
-        get_result = requests.get(url)
+    def item_extractor(self, listing_item) -> models.Gesetzesvorhaben:
+        get_result = requests.get(listing_item)
+        print(f"Extracting from {listing_item}")
         soup = BeautifulSoup(get_result.content, "html.parser")
         vorgangs_table = soup.find('tbody', id='vorgangsanzeigedokumente_data')
         rows = vorgangs_table.findAll("tr")
@@ -36,7 +45,7 @@ class BYLTScraper(Scraper):
         gsvh.verfassungsaendernd = False
         gsvh.typ = "landgg"
         gsvh.ids = []
-        gsvh.links = [url]
+        gsvh.links = [listing_item]
         gsvh.stationen = []
         
         # Initiatoren
@@ -45,19 +54,18 @@ class BYLTScraper(Scraper):
         gsvh.initiatoren = []
         for ini in initiat_lis: 
             gsvh.initiatoren.append(ini.text)
-        assert len(gsvh.initiatoren) > 0, f"Error: Could not find Initiatoren for url {url}"
+        assert len(gsvh.initiatoren) > 0, f"Error: Could not find Initiatoren for url {listing_item}"
 
-        print(f"Extracting from {url}")
         for row in rows:
             cells = row.findAll("td")
 
-            assert len(cells) == 2, f"Warning: Unexpectedly found more or less than exactly two gridcells in: `{row}` of url `{url}`"
+            assert len(cells) == 2, f"Warning: Unexpectedly found more or less than exactly two gridcells in: `{row}` of url `{listing_item}`"
             
             # date is in the first cell
             if cells[0].text == "Beratung / Ergebnis folgt":
                 continue
             timestamp = cells[0].text.split(".")
-            assert len(timestamp) == 3, f"Error: Unexpected date format: `{timestamp}` of url `{url}`"
+            assert len(timestamp) == 3, f"Error: Unexpected date format: `{timestamp}` of url `{listing_item}`"
             timestamp = date(int(timestamp[2]), int(timestamp[1]), int(timestamp[0]))
             # content is in the second cell
             stat = models.Station()
@@ -117,16 +125,6 @@ class BYLTScraper(Scraper):
         dok.autoren = []
         return dok
     
-    def extract(self):
-        lurls = set()
-        for lpurl in self.listing_urls:
-            print(f"Extracting listing from {lpurl}")
-            lurls.union(self.listing_page_extractor(lpurl))
-
-        for url in lurls:
-            print(f"Extracting page from {url}")
-            self.result_objects.append(self.page_extractor(url))
-    
     def classify_object(self, context) -> str:
         cellsoup = context
         if cellsoup.text.find("Initiativdrucksache") != -1:
@@ -181,21 +179,4 @@ def extract_plenproto(cellsoup: BeautifulSoup) -> str:
 
 def extract_gbl_ausz(cellsoup: BeautifulSoup) -> str:
     return cellsoup.findAll("a")[1]["href"]
-
-if __name__ == "__main__":
-    #CURRENT_WP = 19
-    #RESULT_COUNT = 200
-    #collector = BYLTScraper([
-    #        ListingPage(f"https://www.bayern.landtag.de/parlament/dokumente/drucksachen?isInitialCheck=0&q=&dknr=&suchverhalten=AND&dokumentenart=Drucksache&ist_basisdokument=on&sort=date&anzahl_treffer={RESULT_COUNT}&wahlperiodeid%5B%5D={CURRENT_WP}&erfassungsdatum%5Bstart%5D=&erfassungsdatum%5Bend%5D=&dokumentenart=Drucksache&suchvorgangsarten%5B%5D=Gesetze%5C%5CGesetzentwurf&suchvorgangsarten%5B%5D=Gesetze%5C%5CStaatsvertrag&suchvorgangsarten%5B%5D=Gesetze%5C%5CHaushaltsgesetz%2C+Nachtragshaushaltsgesetz",
-    #                    extract_bylt_resultpage,
-    #                    extract_bylt_page
-    #                    )
-    #    ])
-    #urls = extract_bylt_resultpage("https://www.bayern.landtag.de/parlament/dokumente/drucksachen?isInitialCheck=0&q=&dknr=&suchverhalten=AND&dokumentenart=Drucksache&ist_basisdokument=on&sort=date&anzahl_treffer=200&wahlperiodeid%5B%5D=19&erfassungsdatum%5Bstart%5D=&erfassungsdatum%5Bend%5D=&dokumentenart=Drucksache&suchvorgangsarten%5B%5D=Gesetze%5C%5CGesetzentwurf&suchvorgangsarten%5B%5D=Gesetze%5C%5CStaatsvertrag&suchvorgangsarten%5B%5D=Gesetze%5C%5CHaushaltsgesetz%2C+Nachtragshaushaltsgesetz")
-    #print(urls)
-    #print(len(urls))
-    ##
-    #URL = urls[0]
-    #print(extract_bylt_page(URL))
-    link = "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=155494"
 
