@@ -1,27 +1,23 @@
-use std::net::SocketAddr;
+mod api;
+mod db;
+mod error;
+mod router;
+mod utils;
+
+use std::sync::Arc;
 
 use clap::Parser;
 use deadpool_diesel::postgres::{Manager, Pool};
-use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+
 use lettre::{transport::smtp::authentication::Credentials, SmtpTransport};
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use tokio::net::TcpListener;
 
-use crate::router::app_router;
-mod error;
-mod external;
-mod handlers;
-mod infra;
-mod router;
-
-pub use diesel;
-use infra::db::schema;
-
-// Define embedded database migrations
-pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations/");
-
-#[derive(Parser, Clone)]
+pub use api::{LTZFArc, LTZFServer};
+pub use error::Result;
+use utils::{init_tracing, run_migrations, shutdown_signal};
+#[derive(Parser, Clone, Debug)]
 #[command(author, version, about)]
-pub struct Configuration {
+struct Configuration {
     #[arg(long, env = "MAIL_SERVER")]
     mail_server: String,
     #[arg(long, env = "MAIL_USER")]
@@ -39,80 +35,71 @@ pub struct Configuration {
     #[arg(long, short, env = "DATABASE_URL")]
     db_url: String,
     #[arg(long, short)]
-    config : Option<String>,
+    config: Option<String>,
 }
 
-// Struct to hold the application state
-#[derive(Clone)]
-pub struct AppState {
-    pool: Pool,
-    config: Configuration,
-    mailer: SmtpTransport,
+impl Configuration {
+    pub async fn build_pool(&self) -> Result<Pool> {
+        // Create a connection pool to the PostgreSQL database
+        let manager = Manager::new(self.db_url.as_str(), deadpool_diesel::Runtime::Tokio1);
+        let pool = Pool::builder(manager).build()?;
+        Ok(pool)
+    }
+
+    pub async fn build_mailer(&self) -> Result<SmtpTransport> {
+        let mailer = SmtpTransport::relay(&self.mail_server.as_str())?
+            .credentials(Credentials::new(
+                self.mail_user.clone(),
+                self.mail_password.clone(),
+            ))
+            .build();
+        Ok(mailer)
+    }
+    pub fn init() -> Self {
+        let config = Configuration::parse();
+        config
+    }
 }
 
-// Main function, the entry point of the application
 #[tokio::main]
-async fn main() {
-    // Initialize tracing for logging
+async fn main() -> Result<()> {
     init_tracing();
 
-    // Load configuration settings
-    let config = Configuration::parse();
+    let config = Configuration::init();
+    tracing::debug!("Configuration: {:?}", &config);
 
-    // Create a connection pool to the PostgreSQL database
-    let manager = Manager::new(config.db_url.as_str(), deadpool_diesel::Runtime::Tokio1);
-    let pool = Pool::builder(manager).build().unwrap();
+
+    tracing::info!("Starting the Initialisation process");
+    let listener = TcpListener::bind(format!("{}:{}", config.host, config.port)).await?;
+
+    tracing::debug!("Started Listener");
+    let db_pool = config.build_pool().await?;
+    tracing::debug!("Started Database Pool");
+    let mailer = config.build_mailer().await;
+    let mailer= if let Err(e) = mailer {
+        tracing::warn!("Failed to create mailer: {}\nMailer will not be available", e);
+        None
+    }else{
+        tracing::debug!("Started Mailer");
+        Some(mailer.unwrap())
+    };
 
     // Apply pending database migrations
-    run_migrations(&pool).await;
+    run_migrations(&db_pool).await;
+    tracing::debug!("Applied Migrations");
 
-    // Create an instance of the application state
-    let state = AppState {
-        pool,
-        mailer: lettre::SmtpTransport::relay(&config.mail_server.as_str())
-            .unwrap()
-            .credentials(Credentials::new(
-                config.mail_user.clone(),
-                config.mail_password.clone(),
-            ))
-            .build(),
-        config,
-    };
-    let arc_state = std::sync::Arc::new(state);
 
-    // Configure the application router
-    let app = app_router(arc_state.clone()).with_state(arc_state.clone());
-    let address = format!("{}:{}", arc_state.config.host, arc_state.config.port);
+    let state = Arc::new(LTZFServer::new(db_pool, mailer, config));
+    tracing::debug!("Constructed Server State");
 
-    // Parse the socket address
-    let socket_addr: SocketAddr = address.parse().expect(format!("Could not Parse Address: {}", address).as_str());
-    // Log the server's listening address
-    tracing::info!("listening on http://{}", socket_addr);
+    // Init Axum router
+    let app = openapi::server::new(state.clone());
+    tracing::debug!("Constructed Router");
+    tracing::info!("Starting Server on {}:{}", state.config.host, state.config.port);
+    // Run the server with graceful shutdown
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await?;
 
-    // Start the Axum server
-    let listener = tokio::net::TcpListener::bind(socket_addr).await.unwrap();
-    axum::serve(listener, app.into_make_service())
-        .await
-        .map_err(|error| return error)
-        .unwrap();
-}
-
-// Function to initialize tracing for logging
-fn init_tracing() {
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "RUST_LOG=debug".into()),
-        )
-        .with(tracing_subscriber::fmt::layer())
-        .init();
-}
-
-// Function to run database migrations
-async fn run_migrations(pool: &Pool) {
-    let conn: deadpool_diesel::postgres::Connection = pool.get().await.unwrap();
-    conn.interact(|conn| conn.run_pending_migrations(MIGRATIONS).map(|_| ()))
-        .await
-        .unwrap()
-        .unwrap();
+    Ok(())
 }

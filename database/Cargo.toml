@@ -6,6 +6,9 @@ authors = ["Benedikt Schäfer", "Noah Lokocz", "Liv Märtens"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
+
+openapi = {path="./oapicode", features=["server"]}
+
 axum = { version = "0.7", features = ["macros"] }
 axum-macros = "0.4"
 chrono = { version = "0.4", features = ["serde"] }
@@ -26,6 +29,5 @@ clap = { version = "4.5.16", features = ["derive", "env"] }
 lettre = "0.11.7"
 deadpool = "0.12.1"
 
-diesel_interaction = { path = "./diesel-interaction" }
-diesel_interaction_derive = {path = "./diesel-interaction/derive-schema"}
 strum = { version = "0.26.3", features = ["derive"] }
+axum-extra = "0.9.6"

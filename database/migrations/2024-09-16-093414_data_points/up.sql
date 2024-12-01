@@ -33,16 +33,21 @@ SELECT
 INSERT INTO
     stationstyp (value)
 VALUES
-    ('EntwurfReferentenentwurf'),
-    ('EntwurfEckpunktepapier'),
-    ('ParlamentInitiative'),
-    ('ParlamentKabinettsbeschluss'),
-    ('ParlamentStellungnahme'),
-    ('ParlamentBeschlussempfehlung'),
-    ('ParlamentPlenarsitzung'),
-    ('ParlamentBeschluss'),
-    ('Inkraftgetreten'),
-    ('Abgelehnt');
+    ('preparl-regent'),
+    ('preparl-eckpup'),
+    ('preparl-kabbsl'),
+    ('preparl-vbegde'),
+    ('parl-initiativ'),
+    ('parl-ausschber'),
+    ('parl-vollvlsgn'),
+    ('parl-schlussab'),
+    ('parl-akzeptanz'),
+    ('parl-ablehnung'),
+    ('parl-ggentwurf'),
+    ('postparl-vents'),
+    ('postparl-gsblt'),
+    ('postparl-kraft');
+
 REVOKE ALL ON TABLE stationstyp
 FROM
     public;
@@ -67,19 +72,18 @@ SELECT
     ON TABLE parlament TO public;
 
 INSERT INTO
-    dokumenttyp (value)
+    dokumententyp (value)
 VALUES
-    ('Protokoll'),
-    ('Gesetzesentwurf'),
-    ('Stellungnahme'),
-    ('Beschluss'),
-    ('Beschlussempfehlung'),
-    ('Sonstiges');
+    ('entwurf'),
+    ('drucksache'),
+    ('protokoll'),
+    ('stellungnahme'),
+    ('sonstig');
 
-REVOKE ALL ON TABLE dokumenttyp
+REVOKE ALL ON TABLE dokumententyp
 FROM
     public;
 
 GRANT
 SELECT
-    ON TABLE dokumenttyp TO public;
+    ON TABLE dokumententyp TO public;

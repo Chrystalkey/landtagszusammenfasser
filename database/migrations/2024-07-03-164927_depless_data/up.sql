@@ -16,20 +16,13 @@ CREATE TABLE
     );
 
 CREATE TABLE
-    autor (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        organisation VARCHAR(255) NOT NULL
-    );
-
-CREATE TABLE
     schlagwort (
         id SERIAL PRIMARY KEY,
         value VARCHAR(255) NOT NULL
     );
 
 CREATE TABLE
-    dokumenttyp (id SERIAL PRIMARY KEY, value VARCHAR(255) NOT NULL);
+    dokumententyp (id SERIAL PRIMARY KEY, value VARCHAR(255) NOT NULL);
 
 CREATE TABLE
     stationstyp (

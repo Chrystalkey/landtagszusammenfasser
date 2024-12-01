@@ -1,16 +1,17 @@
 CREATE TABLE dokument (
     id SERIAL PRIMARY KEY,
     titel VARCHAR NOT NULL,
-    dokumenttyp_id INTEGER NOT NULL REFERENCES dokumenttyp(id),
+    zeitpunkt TIMESTAMP NOT NULL,
     url VARCHAR NOT NULL,
     hash VARCHAR NOT NULL,
-    zusammenfassung VARCHAR NOT NULL
+    zusammenfassung VARCHAR NOT NULL,
+    dokumententyp INTEGER NOT NULL REFERENCES dokumententyp(id)
 );
 
 CREATE TABLE rel_dok_autor(
     dokument_id INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE,
-    autor_id INTEGER NOT NULL REFERENCES autor(id),
-    PRIMARY KEY (dokument_id, autor_id)
+    autor VARCHAR NOT NULL,
+    PRIMARY KEY (dokument_id, autor)
 );
 
 CREATE TABLE rel_dok_schlagwort(
@@ -25,22 +26,29 @@ CREATE TABLE gesetzesvorhaben(
     titel VARCHAR NOT NULL,
     verfassungsaendernd BOOLEAN NOT NULL,
     trojaner BOOLEAN NOT NULL,
-    initiative VARCHAR NOT NULL,
     typ INTEGER NOT NULL REFERENCES gesetzestyp(id)
 );
-CREATE TABLE rel_gesvh_id(
+CREATE TABLE rel_gesvh_init(
+    gesetzesvorhaben INTEGER NOT NULL REFERENCES gesetzesvorhaben(id) ON DELETE CASCADE,
+    initiator VARCHAR NOT NULL,
+    PRIMARY KEY (gesetzesvorhaben, initiator)
+);
+
+CREATE TABLE rel_gesvh_id (
     id SERIAL PRIMARY KEY,
     gesetzesvorhaben_id INTEGER NOT NULL REFERENCES gesetzesvorhaben(id) ON DELETE CASCADE,
     id_typ INTEGER NOT NULL REFERENCES identifikatortyp(id),
     identifikator VARCHAR NOT NULL,
     zeitpunkt TIMESTAMP NOT NULL
 );
+
 CREATE TABLE rel_gesvh_links(
     id SERIAL PRIMARY KEY,
     gesetzesvorhaben_id INTEGER NOT NULL REFERENCES gesetzesvorhaben(id) ON DELETE CASCADE,
     link VARCHAR NOT NULL,
     CONSTRAINT rel_gesvh_links_unique_combo UNIQUE (gesetzesvorhaben_id, link)
 );
+
 CREATE TABLE rel_gesvh_notes(
     id SERIAL PRIMARY KEY,
     gesetzesvorhaben_id INTEGER NOT NULL REFERENCES gesetzesvorhaben(id) ON DELETE CASCADE,
@@ -48,11 +56,12 @@ CREATE TABLE rel_gesvh_notes(
     CONSTRAINT rel_gesvh_notes_unique_combo UNIQUE (gesetzesvorhaben_id, note)
 );
 
-CREATE TABLE station(
+CREATE TABLE station (
     id SERIAL PRIMARY KEY,
     gesvh_id INTEGER NOT NULL REFERENCES gesetzesvorhaben(id) ON DELETE CASCADE,
     parlament INTEGER NOT NULL REFERENCES parlament(id) ON DELETE CASCADE,
     stationstyp INTEGER NOT NULL REFERENCES stationstyp(id),
+    gremium VARCHAR NOT NULL,
     zeitpunkt TIMESTAMP NOT NULL,
     url VARCHAR,
     zuordnung VARCHAR NOT NULL
@@ -72,10 +81,8 @@ CREATE TABLE rel_station_schlagwort(
 
 CREATE TABLE stellungnahme (
     id SERIAL PRIMARY KEY,
-    titel VARCHAR NOT NULL,
     station_id INTEGER NOT NULL REFERENCES station(id) ON DELETE CASCADE,
     dokument_id INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE,
-    zeitpunkt TIMESTAMP NOT NULL,
     meinung INTEGER NOT NULL,
-    url VARCHAR NOT NULL
+    lobbyregister VARCHAR NOT NULL
 );

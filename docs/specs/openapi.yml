@@ -206,7 +206,7 @@ components:
               "parl-akzeptanz", # Akzeptanz des Parlaments
               "parl-ablehnung", # Ablehnung des Parlaments
               "parl-ggentwurf", # Gegenentwurf des Parlaments auf abgel. Volksbegehren
-              "potparl-volkse", # Volksentscheid nach Parlamentsbechlus
+              "postparl-vents", # Volksentscheid nach Parlamentsbechlus
               "postparl-gsblt", # Veröffentlichung im Gesetzesblatt
               "postparl-kraft"  # In Kraft getreten
             ]
