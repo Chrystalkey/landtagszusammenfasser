@@ -6,6 +6,7 @@ target/
 *.7z
 *.tar.gz
 __pycache__/
+.pytest_cache/
 
-collector/oaiclient
-oai-generator/
+oapi-generator/
+oapicode

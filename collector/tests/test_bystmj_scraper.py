@@ -1,5 +1,5 @@
 from collector.scrapers.bystmj_scraper import BYSTMJScraper
-from collector.oaiclient.openapi_client import Configuration
+from collector.oapicode.openapi_client import Configuration
 
 def test_pextractor():
     scraper = BYSTMJScraper(Configuration(host="http://localhost"))

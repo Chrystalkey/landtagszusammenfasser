@@ -32,7 +32,7 @@ class BYSTMJScraper(Scraper):
         dok.zusammenfassung = "TODO"
         dok.schlagworte = []
         dok.autoren = ["TODO"]
-        dok.typ = "Entwurf"
+        dok.typ = "entwurf"
         return dok
     
     # todo: verschlagwortung

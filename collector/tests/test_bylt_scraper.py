@@ -1,5 +1,5 @@
 from collector.scrapers.bylt_scraper import BYLTScraper
-from collector.oaiclient.openapi_client import Configuration
+from collector.oapicode.openapi_client import Configuration
 
 
 CURRENT_WP = 19
