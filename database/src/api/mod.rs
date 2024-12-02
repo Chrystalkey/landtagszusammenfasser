@@ -58,7 +58,7 @@ impl openapi::apis::default::Default for LTZFServer {
         method: Method,
         host: Host,
         cookies: CookieJar,
-        path_params: models::ApiV1GesetzesvorhabenPostPathParams,
+        query_params: models::ApiV1GesetzesvorhabenPostQueryParams,
         body: models::Gesetzesvorhaben,
     ) -> Result<ApiV1GesetzesvorhabenPostResponse, String> {
         Ok(todo!())

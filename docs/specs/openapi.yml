@@ -60,30 +60,7 @@ paths:
           in: query
           required: false
           schema:
-            type: "string"
-            enum:
-              [
-                "BT",
-                "BR",
-                "BV",
-                "EK",
-                "BB",
-                "BY",
-                "BE",
-                "HB",
-                "HH",
-                "HE",
-                "MV",
-                "NI",
-                "NW",
-                "RP",
-                "SL",
-                "SN",
-                "TH",
-                "SH",
-                "BW",
-                "ST",
-              ] 
+            $ref: "#/components/schemas/parlament"
     post:
       description: "Pushing a new Gesetzesvorhaben"
       requestBody:
@@ -94,18 +71,86 @@ paths:
               $ref: "#/components/schemas/gesetzesvorhaben"
       parameters:
         - name: "collector"
-          in: path
+          in: query
           required: true
           schema:
             type: "string"
             format: "uuid"
       responses:
         "201":
-          description: "Successfully Created or integrated the posted Thing"
+          description: "Successfully Created or Integrated the Object"
 components:
   schemas:
+    parlament:
+      type: "string"
+      enum:
+        - "BT"
+        - "BR"
+        - "BV"
+        - "EK"
+        - "BB"
+        - "BY"
+        - "BE"
+        - "HB"
+        - "HH"
+        - "HE"
+        - "MV"
+        - "NI"
+        - "NW"
+        - "RP"
+        - "SL"
+        - "SN"
+        - "TH"
+        - "SH"
+        - "BW"
+        - "ST"
+    gesetzestyp:
+      type: "string"
+      enum:
+        - "bgg-einspruch"
+        - "bgg-zustimmung"
+        - "volksgg"
+        - "landgg"
+        - "sonstig"
+    stationstyp:
+      type: "string"
+      enum:
+        - "preparl-regent" # Referentenentwurf / Regierungsentwurf
+        - "preparl-eckpup" # Eckpunktepapier / Parlamentsentwurf
+        - "preparl-kabbsl" # Kabinettsbeschluss / Regierungsbeschluss
+        - "preparl-vbegde" # Volksbegehren / Diskussionsentwurf
+        - "parl-initiativ" # Gesetzesinitiative 
+        - "parl-ausschber" # Beratung im Ausschuss
+        - "parl-vollvlsgn" # Vollversammlung und Lesung
+        - "parl-schlussab" # Schlussabstimmung
+        - "parl-akzeptanz" # Akzeptanz des Parlaments
+        - "parl-ablehnung" # Ablehnung des Parlaments
+        - "parl-ggentwurf" # Gegenentwurf des Parlaments auf abgel. Volksbegehren
+        - "postparl-vents" # Volksentscheid nach Parlamentsbechlus
+        - "postparl-gsblt" # Veröffentlichung im Gesetzesblatt
+        - "postparl-kraft"  # In Kraft getreten
+    identifikatortyp:
+      type: "string"
+      enum:
+        - "drucksnr"
+        - "vorgnr"
+        - "sonstig"
+    dokumententyp:
+      type: "string"
+      enum:
+        - "entwurf"
+        - "drucksache"
+        - "protokoll"
+        - "stellungnahme"
+        - "sonstig"
     dokument:
       type: "object"
+      required:
+        - "titel"
+        - "hash"
+        - "typ"
+        - "zeitpunkt"
+        - "url"
       properties:
         titel:
           type: "string"
@@ -129,20 +174,28 @@ components:
             type: "string"
             example: "Staatsregierung"
         typ:
-          type: "string"
-          enum: ["entwurf", "drucksache", "protokoll", "stellungnahme", "sonstig"]
+          $ref: "#/components/schemas/dokumententyp"
     stellungnahme:
       type: "object"
+      required:
+        - "dokument"
       properties:
         dokument:
           $ref: "#/components/schemas/dokument"
         meinung:
           type: "integer"
+          nullable: true
         lobbyregister_url:
           type: "string"
           format: "uri"
     station:
       type: "object"
+      required:
+        - "zeitpunkt"
+        - "dokumente"
+        - "gremium"
+        - "parlament"
+        - "typ"
       properties:
         zeitpunkt:
           type: "string"
@@ -159,30 +212,7 @@ components:
           type: "string"
           format: "uri"
         parlament:
-          type: "string"
-          enum:
-            [
-              "BT",
-              "BR",
-              "BV",
-              "EK",
-              "BB",
-              "BY",
-              "BE",
-              "HB",
-              "HH",
-              "HE",
-              "MV",
-              "NI",
-              "NW",
-              "RP",
-              "SL",
-              "SN",
-              "TH",
-              "SH",
-              "BW",
-              "ST",
-            ]
+          $ref: "#/components/schemas/parlament"
         schlagworte:
           type: "array"
           items:
@@ -192,26 +222,20 @@ components:
           type: "array"
           items: 
             $ref: "#/components/schemas/stellungnahme"
-        stationstyp:
-          type: "string"
-          enum: [
-              "preparl-regent", # Referentenentwurf / Regierungsentwurf
-              "preparl-eckpup", # Eckpunktepapier / Parlamentsentwurf
-              "preparl-kabbsl", # Kabinettsbeschluss / Regierungsbeschluss
-              "preparl-vbegde", # Volksbegehren / Diskussionsentwurf
-              "parl-initiativ", # Gesetzesinitiative 
-              "parl-ausschber", # Beratung im Ausschuss
-              "parl-vollvlsgn", # Vollversammlung und Lesung
-              "parl-schlussab", # Schlussabstimmung
-              "parl-akzeptanz", # Akzeptanz des Parlaments
-              "parl-ablehnung", # Ablehnung des Parlaments
-              "parl-ggentwurf", # Gegenentwurf des Parlaments auf abgel. Volksbegehren
-              "postparl-vents", # Volksentscheid nach Parlamentsbechlus
-              "postparl-gsblt", # Veröffentlichung im Gesetzesblatt
-              "postparl-kraft"  # In Kraft getreten
-            ]
+        typ:
+          $ref: "#/components/schemas/stationstyp"
+        trojaner:
+          type: "boolean"
     gesetzesvorhaben:
       type: "object"
+      required:
+        - "api_id"
+        - "titel"
+        - "verfassungsaendernd"
+        - "trojaner"
+        - "initiatoren"
+        - "typ"
+        - "stationen"
       properties:
         api_id:
           type: "string"
@@ -221,16 +245,13 @@ components:
           type: "string"
         verfassungsaendernd:
           type: "boolean"
-        trojaner:
-          type: "boolean"
         initiatoren:
           type: "array"
           items:
             type: "string"
             example: "Staatsministerium für Justiz"
         typ:
-          type: "string"
-          enum: ["bgg-einspruch", "bgg-zustimmung", "volksgg", "landgg", "sonstig"]
+          $ref: "#/components/schemas/gesetzestyp"
         ids:
           type: "array"
           items:
@@ -246,21 +267,20 @@ components:
             $ref: "#/components/schemas/station"
     identifikator:
       type: "object"
+      required:
+        - "id"
+        - "typ"
       properties:
         id: 
           type: "string"
           example: "123e4567-e"
         typ:
-          type: "string"
-          enum: ["drucksnr", "vorgnr", "sonstig"]
-    stationen:
-      type: "array"
-      items:
-        $ref: "#/components/schemas/station"
+          $ref: "#/components/schemas/identifikatortyp"
+    
     response:
       type: "object"
       properties:
         payload: 
           type: "array"
           items:
-            $ref: "#/components/schemas/station"
+            $ref: "#/components/schemas/gesetzesvorhaben"

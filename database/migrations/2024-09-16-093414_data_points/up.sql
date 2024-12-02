@@ -1,37 +1,22 @@
 -- Your SQL goes here
 INSERT INTO
-    gesetzestyp (value)
+    gesetzestyp (api_key)
 VALUES
-    ('Zustimmungsgesetz'),
-    ('Einspruchsgesetz'),
-    ('Volksbegehren'),
-    ('Standard'),
-    ('Sonstig');
-
-REVOKE ALL ON TABLE gesetzestyp
-FROM
-    public;
-
-GRANT
-SELECT
-    ON TABLE gesetzestyp TO public;
+    ('bgg-einspruch'),
+    ('bgg-zustimmung'),
+    ('volksgg'),
+    ('landgg'),
+    ('sonstig');
 
 INSERT INTO
-    identifikatortyp (value)
+    identifikatortyp (api_key)
 VALUES
-    ('Vorgangsnummer'),
-    ('Drucksachennummer');
-
-REVOKE ALL ON TABLE identifikatortyp
-FROM
-    public;
-
-GRANT
-SELECT
-    ON TABLE identifikatortyp TO public;
+    ('drucksnr'),
+    ('vorgnr'),
+    ('sonstig');
 
 INSERT INTO
-    stationstyp (value)
+    stationstyp (api_key)
 VALUES
     ('preparl-regent'),
     ('preparl-eckpup'),
@@ -48,42 +33,18 @@ VALUES
     ('postparl-gsblt'),
     ('postparl-kraft');
 
-REVOKE ALL ON TABLE stationstyp
-FROM
-    public;
-
-GRANT
-SELECT
-    ON TABLE stationstyp TO public;
-
-INSERT INTO parlament(value) VALUES 
+INSERT INTO parlament(api_key) VALUES 
 ('BT'), ('BR'), ('BV'), ('EK'), 
 ('BB'), ('BY'), ('BE'), ('HB'), 
 ('HH'), ('HE'), ('MV'), ('NI'), 
 ('NW'), ('RP'), ('SL'), ('SN'), 
 ('SH'), ('TH'), ('BW'), ('ST');
 
-REVOKE ALL ON TABLE parlament
-FROM
-    public;
-
-GRANT
-SELECT
-    ON TABLE parlament TO public;
-
 INSERT INTO
-    dokumententyp (value)
+    dokumententyp (api_key)
 VALUES
     ('entwurf'),
     ('drucksache'),
     ('protokoll'),
     ('stellungnahme'),
     ('sonstig');
-
-REVOKE ALL ON TABLE dokumententyp
-FROM
-    public;
-
-GRANT
-SELECT
-    ON TABLE dokumententyp TO public;
