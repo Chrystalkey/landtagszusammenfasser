@@ -4,7 +4,7 @@ CREATE TABLE dokument (
     zeitpunkt TIMESTAMP NOT NULL,
     url VARCHAR NOT NULL,
     hash VARCHAR NOT NULL,
-    zusammenfassung VARCHAR ,
+    zusammenfassung VARCHAR,
     dokumententyp INTEGER NOT NULL REFERENCES dokumententyp(id)
 );
 

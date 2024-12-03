@@ -1,8 +1,10 @@
 use axum::async_trait;
 use axum::extract::Host;
 use axum::http::Method;
+use diesel::Connection;
 use lettre::SmtpTransport;
 
+use crate::error::LTZFError;
 use crate::Configuration;
 use axum_extra::extract::CookieJar;
 use deadpool_diesel::postgres::Pool;
@@ -10,6 +12,7 @@ use openapi::apis::default::*;
 use openapi::models;
 
 mod post;
+mod auth;
 
 pub struct LTZFServer {
     pub database: Pool,
@@ -61,6 +64,10 @@ impl openapi::apis::default::Default for LTZFServer {
         query_params: models::ApiV1GesetzesvorhabenPostQueryParams,
         body: models::Gesetzesvorhaben,
     ) -> Result<ApiV1GesetzesvorhabenPostResponse, String> {
-        Ok(todo!())
+        auth::authenticate().map_err(|e| e.to_string())?;
+        post::api_v1_gesetzesvorhaben_post(self, body).await
+        .map_err(|e| {
+            tracing::warn!("Error Occurred and Is Returned: {:?}", e);e.to_string()})?;
+        Ok(ApiV1GesetzesvorhabenPostResponse::Status201_SuccessfullyCreatedOrIntegratedTheObject)
     }
 }

@@ -20,7 +20,7 @@ CREATE TABLE
 CREATE TABLE
     schlagwort (
         id SERIAL PRIMARY KEY,
-        api_key VARCHAR NOT NULL
+        api_key VARCHAR UNIQUE NOT NULL
     );
 
 CREATE TABLE
