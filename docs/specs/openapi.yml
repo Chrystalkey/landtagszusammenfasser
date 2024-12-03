@@ -184,7 +184,6 @@ components:
           $ref: "#/components/schemas/dokument"
         meinung:
           type: "integer"
-          nullable: true
         lobbyregister_url:
           type: "string"
           format: "uri"
