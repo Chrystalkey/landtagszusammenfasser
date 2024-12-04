@@ -65,8 +65,7 @@ diesel::table! {
 }
 
 diesel::table! {
-    rel_gesvh_id (id) {
-        id -> Int4,
+    rel_gesvh_id (gesetzesvorhaben_id, id_typ, identifikator) {
         gesetzesvorhaben_id -> Int4,
         id_typ -> Int4,
         identifikator -> Varchar,

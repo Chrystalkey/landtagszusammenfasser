@@ -15,8 +15,8 @@ CREATE TABLE rel_dok_autor(
 );
 
 CREATE TABLE rel_dok_schlagwort(
-    dokument_id INTEGER NOT NULL REFERENCES dokument(id),
-    schlagwort_id INTEGER NOT NULL REFERENCES schlagwort(id),
+    dokument_id INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE,
+    schlagwort_id INTEGER NOT NULL REFERENCES schlagwort(id) ON DELETE CASCADE,
     PRIMARY KEY (dokument_id, schlagwort_id)
 );
 
@@ -25,7 +25,7 @@ CREATE TABLE gesetzesvorhaben(
     api_id UUID NOT NULL,
     titel VARCHAR NOT NULL,
     verfassungsaendernd BOOLEAN NOT NULL,
-    typ INTEGER NOT NULL REFERENCES gesetzestyp(id)
+    typ INTEGER NOT NULL REFERENCES gesetzestyp(id) ON DELETE CASCADE
 );
 CREATE TABLE rel_gesvh_init(
     gesetzesvorhaben INTEGER NOT NULL REFERENCES gesetzesvorhaben(id) ON DELETE CASCADE,
@@ -34,11 +34,11 @@ CREATE TABLE rel_gesvh_init(
 );
 
 CREATE TABLE rel_gesvh_id (
-    id SERIAL PRIMARY KEY,
     gesetzesvorhaben_id INTEGER NOT NULL REFERENCES gesetzesvorhaben(id) ON DELETE CASCADE,
-    id_typ INTEGER NOT NULL REFERENCES identifikatortyp(id),
-    identifikator VARCHAR NOT NULL
-);
+    id_typ INTEGER NOT NULL REFERENCES identifikatortyp(id) ON DELETE CASCADE,
+    identifikator VARCHAR NOT NULL,
+    PRIMARY KEY (gesetzesvorhaben_id, id_typ, identifikator)
+); 
 
 CREATE TABLE rel_gesvh_links(
     id SERIAL PRIMARY KEY,
