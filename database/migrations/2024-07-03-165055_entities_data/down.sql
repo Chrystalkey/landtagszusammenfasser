@@ -1,3 +1,9 @@
+DROP TRIGGER trg_delete_orphaned_dokument_stellungnahme ON stellungnahme;
+DROP FUNCTION delete_orphaned_dokument_stellungnahme;
+
+DROP TRIGGER trg_delete_orphaned_dokument_station ON rel_station_dokument;
+DROP FUNCTION delete_orphaned_dokument_station;
+
 DROP TABLE stellungnahme;
 
 DROP TABLE rel_station_schlagwort;

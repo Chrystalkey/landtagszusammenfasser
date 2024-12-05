@@ -77,3 +77,35 @@ CREATE TABLE stellungnahme (
     meinung INTEGER NOT NULL,
     lobbyregister VARCHAR
 );
+
+--- trigger & function to delete orphaned dokument from station reference
+CREATE OR REPLACE FUNCTION delete_orphaned_dokument_station() 
+RETURNS TRIGGER AS $$
+BEGIN
+    DELETE FROM dokument
+    WHERE id = OLD.dokument_id
+      AND NOT EXISTS (SELECT 1 FROM rel_station_dokument WHERE dokument_id = OLD.dokument_id);
+    RETURN OLD;
+END;
+$$
+ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_delete_orphaned_dokument_station
+AFTER DELETE ON rel_station_dokument
+FOR EACH ROW EXECUTE FUNCTION delete_orphaned_dokument_station();
+
+--- trigger & function to delete orphaned dokument from "stellungnahme" reference
+CREATE OR REPLACE FUNCTION delete_orphaned_dokument_stellungnahme() 
+RETURNS TRIGGER AS $$
+BEGIN
+    DELETE FROM dokument
+    WHERE id = OLD.dokument_id
+      AND NOT EXISTS (SELECT 1 FROM stellungnahme WHERE dokument_id = OLD.dokument_id);
+    RETURN OLD;
+END;
+$$
+ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_delete_orphaned_dokument_stellungnahme
+AFTER DELETE ON stellungnahme
+FOR EACH ROW EXECUTE FUNCTION delete_orphaned_dokument_stellungnahme();
