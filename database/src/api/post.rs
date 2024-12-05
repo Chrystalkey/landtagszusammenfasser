@@ -10,7 +10,7 @@ pub async fn api_v1_gesetzesvorhaben_post(
     let res = conn.interact(
         move |conn| 
             conn.transaction(
-                |conn| db::insert_gsvh(&api_gsvh, conn)
+                |conn| db::insert::insert_gsvh(&api_gsvh, conn)
             )
     ).await??;
     Ok(())
