@@ -19,25 +19,25 @@ pub use error::Result;
 use utils::{init_tracing, run_migrations, shutdown_signal};
 #[derive(Parser, Clone, Debug)]
 #[command(author, version, about)]
-struct Configuration {
+pub struct Configuration {
     #[arg(long, env = "MAIL_SERVER")]
-    mail_server: String,
+    pub mail_server: Option<String>,
     #[arg(long, env = "MAIL_USER")]
-    mail_user: String,
+    pub mail_user: Option<String>,
     #[arg(long, env = "MAIL_PASSWORD")]
-    mail_password: String,
+    pub mail_password: Option<String>,
     #[arg(long, env = "MAIL_SENDER")]
-    mail_sender: String,
+    pub mail_sender: Option<String>,
     #[arg(long, env = "MAIL_RECIPIENT")]
-    mail_recipient: String,
+    pub mail_recipient: Option<String>,
     #[arg(long, env = "SERVER_HOST", default_value = "127.0.0.1")]
-    host: String,
+    pub host: String,
     #[arg(long, env = "SERVER_PORT", default_value = "8080")]
-    port: u16,
+    pub port: u16,
     #[arg(long, short, env = "DATABASE_URL")]
-    db_url: String,
+    pub db_url: String,
     #[arg(long, short)]
-    config: Option<String>,
+    pub config: Option<String>,
 }
 
 impl Configuration {
@@ -49,10 +49,21 @@ impl Configuration {
     }
 
     pub async fn build_mailer(&self) -> Result<SmtpTransport> {
-        let mailer = SmtpTransport::relay(&self.mail_server.as_str())?
+        if self.mail_server.is_none()
+            || self.mail_user.is_none()
+            || self.mail_password.is_none()
+            || self.mail_sender.is_none()
+            || self.mail_recipient.is_none()
+        {
+            return Err(error::LTZFError::ConfigurationError(format!(
+                "Mail Configuration is incomplete: {:?}",
+                self
+            )));
+        }
+        let mailer = SmtpTransport::relay(self.mail_server.as_ref().unwrap().as_str())?
             .credentials(Credentials::new(
-                self.mail_user.clone(),
-                self.mail_password.clone(),
+                self.mail_user.clone().unwrap(),
+                self.mail_password.clone().unwrap(),
             ))
             .build();
         Ok(mailer)
@@ -70,7 +81,6 @@ async fn main() -> Result<()> {
     let config = Configuration::init();
     tracing::debug!("Configuration: {:?}", &config);
 
-
     tracing::info!("Starting the Initialisation process");
     let listener = TcpListener::bind(format!("{}:{}", config.host, config.port)).await?;
 
@@ -78,10 +88,13 @@ async fn main() -> Result<()> {
     let db_pool = config.build_pool().await?;
     tracing::debug!("Started Database Pool");
     let mailer = config.build_mailer().await;
-    let mailer= if let Err(e) = mailer {
-        tracing::warn!("Failed to create mailer: {}\nMailer will not be available", e);
+    let mailer = if let Err(e) = mailer {
+        tracing::warn!(
+            "Failed to create mailer: {}\nMailer will not be available",
+            e
+        );
         None
-    }else{
+    } else {
         tracing::debug!("Started Mailer");
         Some(mailer.unwrap())
     };
@@ -90,14 +103,17 @@ async fn main() -> Result<()> {
     run_migrations(&db_pool).await;
     tracing::debug!("Applied Migrations");
 
-
     let state = Arc::new(LTZFServer::new(db_pool, mailer, config));
     tracing::debug!("Constructed Server State");
 
     // Init Axum router
     let app = openapi::server::new(state.clone());
     tracing::debug!("Constructed Router");
-    tracing::info!("Starting Server on {}:{}", state.config.host, state.config.port);
+    tracing::info!(
+        "Starting Server on {}:{}",
+        state.config.host,
+        state.config.port
+    );
     // Run the server with graceful shutdown
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())

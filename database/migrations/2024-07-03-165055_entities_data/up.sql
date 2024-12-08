@@ -74,7 +74,7 @@ CREATE TABLE stellungnahme (
     id SERIAL PRIMARY KEY,
     station_id INTEGER NOT NULL REFERENCES station(id) ON DELETE CASCADE,
     dokument_id INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE,
-    meinung INTEGER NOT NULL,
+    meinung INTEGER,
     lobbyregister VARCHAR
 );
 

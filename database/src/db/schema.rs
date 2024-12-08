@@ -133,7 +133,7 @@ diesel::table! {
         id -> Int4,
         station_id -> Int4,
         dokument_id -> Int4,
-        meinung -> Int4,
+        meinung -> Nullable<Int4>,
         lobbyregister -> Nullable<Varchar>,
     }
 }

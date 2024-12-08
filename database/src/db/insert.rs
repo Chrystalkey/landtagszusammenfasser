@@ -146,7 +146,7 @@ pub fn insert_station(
             diesel::insert_into(schema::stellungnahme::table)
             .values( 
                 (
-                    dsl::meinung.eq(stln.meinung.unwrap_or(0i32)),
+                    dsl::meinung.eq(stln.meinung),
                     dsl::lobbyregister.eq(stln.lobbyregister_url),
                     dsl::station_id.eq(stat_id),
                     dsl::dokument_id.eq(

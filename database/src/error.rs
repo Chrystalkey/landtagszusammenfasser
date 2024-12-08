@@ -53,6 +53,9 @@ pub enum LTZFError {
     
     #[error("Generic String Error: `{0}`")]
     GenericStringError(String),
+    
+    #[error("The Configuration is Incomplete or contains erroneous values: `{0}`")]
+    ConfigurationError(String),
 }
 
 impl IntoResponse for LTZFError {
@@ -74,6 +77,7 @@ impl IntoResponse for LTZFError {
             LTZFError::HardwareError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             LTZFError::MailError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             LTZFError::GenericStringError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            LTZFError::ConfigurationError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             
         }.into_response()
     }

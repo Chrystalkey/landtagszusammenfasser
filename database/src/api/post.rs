@@ -7,7 +7,7 @@ pub async fn api_v1_gesetzesvorhaben_post(
     api_gsvh: models::Gesetzesvorhaben
 )-> Result<()> {
     let conn = server.database.get().await?;
-    let res = conn.interact(
+    let _res = conn.interact(
         move |conn| 
             conn.transaction(
                 |conn| db::insert::insert_gsvh(&api_gsvh, conn)

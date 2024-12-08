@@ -1,10 +1,8 @@
 use axum::async_trait;
 use axum::extract::Host;
 use axum::http::Method;
-use diesel::Connection;
 use lettre::SmtpTransport;
 
-use crate::error::LTZFError;
 use crate::Configuration;
 use axum_extra::extract::CookieJar;
 use deadpool_diesel::postgres::Pool;
@@ -42,7 +40,7 @@ impl openapi::apis::default::Default for LTZFServer {
         host:Host,
         cookies:CookieJar,
         path_params:models::ApiV1GesetzesvorhabenGesvhIdGetPathParams,) -> 
-        Result<ApiV1GesetzesvorhabenGesvhIdGetResponse,()> {
+        Result<ApiV1GesetzesvorhabenGesvhIdGetResponse, String> {
             todo!()
     }
     
@@ -53,7 +51,7 @@ impl openapi::apis::default::Default for LTZFServer {
         method:Method,
         host:Host,
         cookies:CookieJar,
-        query_params:models::ApiV1GesetzesvorhabenGetQueryParams,) ->  Result<ApiV1GesetzesvorhabenGetResponse,()>{
+        query_params:models::ApiV1GesetzesvorhabenGetQueryParams,) ->  Result<ApiV1GesetzesvorhabenGetResponse, String>{
             todo!()
     }
     
@@ -66,12 +64,13 @@ impl openapi::apis::default::Default for LTZFServer {
         cookies:CookieJar,
         query_params:models::ApiV1GesetzesvorhabenPostQueryParams,
         body:models::Gesetzesvorhaben,) ->  
-        Result<ApiV1GesetzesvorhabenPostResponse, ()>{
+        Result<ApiV1GesetzesvorhabenPostResponse, String>{
         auth::authenticate()
-        .map_err(|e| {tracing::error!("{}", e.to_string()); ()})?;
+        .map_err(|e| {tracing::error!("{}", e.to_string()); format!("{}", e)})?;
+
         post::api_v1_gesetzesvorhaben_post(self, body).await
         .map_err(|e| {
-            tracing::warn!("Error Occurred and Is Returned: {:?}", e);()})?;
+            tracing::warn!("Error Occurred and Is Returned: {:?}", e);format!("{}", e)})?;
         Ok(ApiV1GesetzesvorhabenPostResponse::Status201_SuccessfullyCreatedOrIntegratedTheObject)
     }
 }

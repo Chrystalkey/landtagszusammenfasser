@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use deadpool_diesel::postgres::Pool;
 use diesel_migrations::MigrationHarness;
 use lettre::{Message, Transport};
@@ -17,11 +15,11 @@ pub fn send_email(subject: String, body: String, state: LTZFArc) -> Result<()> {
     }
     let email = Message::builder()
         .from(
-            format!("Landtagszusammenfasser <{}>", state.config.mail_sender)
+            format!("Landtagszusammenfasser <{}>", state.config.mail_sender.as_ref().unwrap())
                 .parse()
                 .unwrap(),
         )
-        .to(state.config.mail_recipient.parse().unwrap())
+        .to(state.clone().config.mail_recipient.as_ref().unwrap().parse().unwrap())
         .subject(subject.clone())
         .body(body.clone())
         .unwrap();
