@@ -30,44 +30,48 @@ impl LTZFServer {
     }
 }
 
+
 #[allow(unused_variables)]
 #[async_trait]
 impl openapi::apis::default::Default for LTZFServer {
-    /// ApiV1GesetzesvorhabenGesvhIdGet - GET /api/v1/gesetzesvorhaben/{gesvh_id}
-    async fn api_v1_gesetzesvorhaben_gesvh_id_get(
-        &self,
-        method: Method,
-        host: Host,
-        cookies: CookieJar,
-        path_params: models::ApiV1GesetzesvorhabenGesvhIdGetPathParams,
-    ) -> Result<ApiV1GesetzesvorhabenGesvhIdGetResponse, String> {
-        Ok(todo!())
+    #[doc = " ApiV1GesetzesvorhabenGesvhIdGet - GET /api/v1/gesetzesvorhaben/{gesvh_id}"]
+    #[must_use]
+    #[allow(clippy::type_complexity,clippy::type_repetition_in_bounds)]
+    async fn api_v1_gesetzesvorhaben_gesvh_id_get(&self,
+        method:Method,
+        host:Host,
+        cookies:CookieJar,
+        path_params:models::ApiV1GesetzesvorhabenGesvhIdGetPathParams,) -> 
+        Result<ApiV1GesetzesvorhabenGesvhIdGetResponse,()> {
+            todo!()
     }
-
-    /// ApiV1GesetzesvorhabenGet - GET /api/v1/gesetzesvorhaben
-    async fn api_v1_gesetzesvorhaben_get(
-        &self,
-        method: Method,
-        host: Host,
-        cookies: CookieJar,
-        query_params: models::ApiV1GesetzesvorhabenGetQueryParams,
-    ) -> Result<ApiV1GesetzesvorhabenGetResponse, String> {
-        Ok(todo!())
+    
+    #[doc = " ApiV1GesetzesvorhabenGet - GET /api/v1/gesetzesvorhaben"]
+    #[must_use]
+    #[allow(clippy::type_complexity,clippy::type_repetition_in_bounds)]
+    async fn api_v1_gesetzesvorhaben_get(&self,
+        method:Method,
+        host:Host,
+        cookies:CookieJar,
+        query_params:models::ApiV1GesetzesvorhabenGetQueryParams,) ->  Result<ApiV1GesetzesvorhabenGetResponse,()>{
+            todo!()
     }
-
-    /// ApiV1GesetzesvorhabenPost - POST /api/v1/gesetzesvorhaben
+    
+    #[doc = " ApiV1GesetzesvorhabenPost - POST /api/v1/gesetzesvorhaben"]
+    #[must_use]
+    #[allow(clippy::type_complexity,clippy::type_repetition_in_bounds)]
     async fn api_v1_gesetzesvorhaben_post(
-        &self,
-        method: Method,
-        host: Host,
-        cookies: CookieJar,
-        query_params: models::ApiV1GesetzesvorhabenPostQueryParams,
-        body: models::Gesetzesvorhaben,
-    ) -> Result<ApiV1GesetzesvorhabenPostResponse, String> {
-        auth::authenticate().map_err(|e| e.to_string())?;
+        &self,method:Method,
+        host:Host,
+        cookies:CookieJar,
+        query_params:models::ApiV1GesetzesvorhabenPostQueryParams,
+        body:models::Gesetzesvorhaben,) ->  
+        Result<ApiV1GesetzesvorhabenPostResponse, ()>{
+        auth::authenticate()
+        .map_err(|e| {tracing::error!("{}", e.to_string()); ()})?;
         post::api_v1_gesetzesvorhaben_post(self, body).await
         .map_err(|e| {
-            tracing::warn!("Error Occurred and Is Returned: {:?}", e);e.to_string()})?;
+            tracing::warn!("Error Occurred and Is Returned: {:?}", e);()})?;
         Ok(ApiV1GesetzesvorhabenPostResponse::Status201_SuccessfullyCreatedOrIntegratedTheObject)
     }
 }
