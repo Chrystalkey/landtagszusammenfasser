@@ -1,7 +1,8 @@
 -- This file should undo anything in `up.sql`
-DELETE FROM dokumententyp;
-DELETE FROM parlament;
-DELETE FROM stationstyp;
+DELETE FROM dokument;
+DELETE FROM dokumententyp CASCADE;
+DELETE FROM parlament CASCADE;
+DELETE FROM stationstyp CASCADE;
 
-DELETE FROM identifikatortyp;
-DELETE FROM gesetzestyp;
+DELETE FROM identifikatortyp CASCADE;
+DELETE FROM gesetzestyp CASCADE;

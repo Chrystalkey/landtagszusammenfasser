@@ -22,7 +22,7 @@ CREATE TABLE rel_dok_schlagwort(
 
 CREATE TABLE gesetzesvorhaben(
     id SERIAL PRIMARY KEY,
-    api_id UUID NOT NULL,
+    api_id UUID NOT NULL UNIQUE,
     titel VARCHAR NOT NULL,
     verfassungsaendernd BOOLEAN NOT NULL,
     typ INTEGER NOT NULL REFERENCES gesetzestyp(id) ON DELETE CASCADE

@@ -4,12 +4,14 @@ use axum::http::Method;
 use lettre::SmtpTransport;
 
 use crate::Configuration;
+use crate::error::LTZFError;
 use axum_extra::extract::CookieJar;
 use deadpool_diesel::postgres::Pool;
 use openapi::apis::default::*;
 use openapi::models;
 
 mod post;
+mod get;
 mod auth;
 
 pub struct LTZFServer {
@@ -41,7 +43,22 @@ impl openapi::apis::default::Default for LTZFServer {
         cookies:CookieJar,
         path_params:models::ApiV1GesetzesvorhabenGesvhIdGetPathParams,) -> 
         Result<ApiV1GesetzesvorhabenGesvhIdGetResponse, String> {
-            todo!()
+            tracing::info!("Get By ID endpoint called with ID: {}", path_params.gesvh_id);
+            let gsvh = get::api_v1_gesetzesvorhaben_gesvh_id_get(self, path_params).await;
+
+            match gsvh {
+                Ok(gsvh) => Ok(ApiV1GesetzesvorhabenGesvhIdGetResponse::Status200_SuccessfulOperation(gsvh)),
+                Err(e) => {
+                    tracing::warn!("{}", e.to_string());
+                    match e{
+                        LTZFError::DieselError(diesel::result::Error::NotFound) => {
+                            tracing::warn!("Not Found Error: {:?}", e.to_string());
+                            Ok(ApiV1GesetzesvorhabenGesvhIdGetResponse::Status404_ContentNotFound)
+                        },
+                        _ => Err(format!("{}", e))
+                    }
+                }
+            }
     }
     
     #[doc = " ApiV1GesetzesvorhabenGet - GET /api/v1/gesetzesvorhaben"]
@@ -68,9 +85,21 @@ impl openapi::apis::default::Default for LTZFServer {
         auth::authenticate()
         .map_err(|e| {tracing::error!("{}", e.to_string()); format!("{}", e)})?;
 
-        post::api_v1_gesetzesvorhaben_post(self, body).await
-        .map_err(|e| {
-            tracing::warn!("Error Occurred and Is Returned: {:?}", e);format!("{}", e)})?;
-        Ok(ApiV1GesetzesvorhabenPostResponse::Status201_SuccessfullyCreatedOrIntegratedTheObject)
+        let rval = post::api_v1_gesetzesvorhaben_post(self, body).await;
+        match rval {
+            Ok(_) => Ok(ApiV1GesetzesvorhabenPostResponse::Status201_SuccessfullyIntegratedTheObject),
+            Err(e) => {
+                tracing::warn!("Error Occurred and Is Returned: {:?}", e.to_string());
+                match e{
+                    LTZFError::DieselError(diesel::result::Error::DatabaseError(
+                        diesel::result::DatabaseErrorKind::UniqueViolation,
+                         info)) =>  {
+                            tracing::warn!("Unique Violation Error (Conflict on Input Data): {:?}", info);
+                            Ok(ApiV1GesetzesvorhabenPostResponse::Status409_Conflict)
+                        },
+                    _ => Err(format!("{}", e))
+                }
+            }
+        }
     }
 }

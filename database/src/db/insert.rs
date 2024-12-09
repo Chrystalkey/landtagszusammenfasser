@@ -13,6 +13,7 @@ pub fn insert_gsvh(
     tracing::info!("Inserting complete GSVH into the database");
     use schema::gesetzesvorhaben::dsl;
     use schema::gesetzestyp::dsl as typ_dsl;
+    
     let gsvh_id = 
     diesel::insert_into(schema::gesetzesvorhaben::table)
     .values(
@@ -30,6 +31,7 @@ pub fn insert_gsvh(
     )
     .returning(dsl::id)
     .get_result::<i32>(connection)?;
+
     // insert links, initiatoren, ids
     if let Some(links) = &api_gsvh.links {
         use schema::rel_gesvh_links::dsl as dsl;
@@ -158,7 +160,7 @@ pub fn insert_station(
         }
     }
     if let Some(sw) = stat.schlagworte {
-        let idvec : HashMap<String, i32> = diesel::insert_into(schema::schlagwort::table)
+        diesel::insert_into(schema::schlagwort::table)
         .values(
             sw.iter()
             .map(|s|
@@ -166,9 +168,14 @@ pub fn insert_station(
             .collect::<Vec<_>>()
         )
         .on_conflict_do_nothing()
-        .returning((schema::schlagwort::api_key, schema::schlagwort::id))
+        .execute(connection)?;
+        let idvec : HashMap<String, i32> = 
+        schema::schlagwort::table
+        .filter(schema::schlagwort::api_key.eq_any(&sw))
+        .select((schema::schlagwort::api_key, schema::schlagwort::id))
         .get_results::<(String, i32)>(connection)?
         .drain(..).collect();
+        tracing::debug!("Inserting Schlagworte: {:?} / {:?}", sw, idvec);
 
         diesel::insert_into(schema::rel_station_schlagwort::table)
         .values(

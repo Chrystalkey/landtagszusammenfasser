@@ -78,7 +78,6 @@ impl IntoResponse for LTZFError {
             LTZFError::MailError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             LTZFError::GenericStringError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             LTZFError::ConfigurationError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            
         }.into_response()
     }
 }

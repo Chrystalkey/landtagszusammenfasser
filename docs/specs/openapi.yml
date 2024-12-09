@@ -1,4 +1,4 @@
-openapi: "3.0.0"
+openapi: 3.0.0
 info:
   title: "Specification for the Landtagszusammenfasser Project"
   version: "0.1.0"
@@ -20,6 +20,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/gesetzesvorhaben"
+        "404":
+          description: "Content not found"
+        "500":
+          description: "Internal Server Error"
+        
   /api/v1/gesetzesvorhaben:
     get:
       description: "Returns a filtered List of Gesetzesvorhaben"
@@ -30,6 +35,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/response"
+        "200":
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/response"
+        "204":
+          description: "No Content found for parameters"
+        "416":
+          description: "Request Range not satisfiable"
+        "400":
+          description: "Bad Request"
+        "500":
+          description: "Internal Server Error"
+
       parameters:
         - name: "updated_since"
           in: "query"
@@ -78,7 +98,13 @@ paths:
             format: "uuid"
       responses:
         "201":
-          description: "Successfully Created or Integrated the Object"
+          description: "Successfully Integrated the Object"
+        "400": 
+          description: "Bad Request"
+        "409": 
+          description: "Conflict. The Ressource already exists"
+        "500":
+          description: "Internal Server Error"
 components:
   schemas:
     parlament:
