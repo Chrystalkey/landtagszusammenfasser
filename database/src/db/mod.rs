@@ -4,7 +4,6 @@ pub mod retrieve;
 
 #[cfg(test)]
 mod test{
-    use chrono::NaiveDate;
     use diesel::Connection;
     use openapi::models;
     use crate::Result;
@@ -18,7 +17,7 @@ mod test{
             titel: "Testtitel".to_string(),
             typ: models::Dokumententyp::Entwurf,
             url: "Testurl".to_string(),
-            zeitpunkt: chrono::NaiveDate::from_ymd(2021, 1, 1),
+            zeitpunkt: chrono::NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
             zusammenfassung: Some("Testzusammenfassung".to_string()),
         };
 
@@ -29,7 +28,7 @@ mod test{
             titel: "Testtitel".to_string(),
             typ: models::Dokumententyp::Stellungnahme,
             url: "Testurl".to_string(),
-            zeitpunkt: chrono::NaiveDate::from_ymd(2021, 1, 1),
+            zeitpunkt: chrono::NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
             zusammenfassung: Some("Testzusammenfassung".to_string()),
         };
         let stellungnahme = models::Stellungnahme{
@@ -46,7 +45,7 @@ mod test{
             url: Some("Testurl".to_string()),
             typ: models::Stationstyp::ParlAblehnung,
             schlagworte: Some(vec!["Testschlagwort".to_string()]),
-            zeitpunkt: chrono::NaiveDate::from_ymd(2021, 1, 1),
+            zeitpunkt: chrono::NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
         };
         let gsvh = models::Gesetzesvorhaben{
             api_id: uuid::Uuid::now_v7(),

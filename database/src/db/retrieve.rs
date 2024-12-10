@@ -1,4 +1,3 @@
-
 use std::str::FromStr;
 
 use crate::db::schema;
@@ -22,8 +21,6 @@ mod db_models {
         pub typ: String,
     }
     pub struct Station {
-        pub id: i32,
-        pub gesvh_id: i32,
         pub parlament: i32,
         pub stationstyp: i32,
         pub gremium: String,
@@ -155,7 +152,6 @@ pub async fn station_by_id(id: i32, connection: &Connection) -> Result<models::S
     let rval: (
         i32,
         i32,
-        i32,
         String,
         chrono::NaiveDateTime,
         bool,
@@ -165,7 +161,6 @@ pub async fn station_by_id(id: i32, connection: &Connection) -> Result<models::S
             schema::station::table
                 .filter(schema::station::id.eq(id))
                 .select((
-                    schema::station::gesvh_id,
                     schema::station::parlament,
                     schema::station::stationstyp,
                     schema::station::gremium,
@@ -177,14 +172,12 @@ pub async fn station_by_id(id: i32, connection: &Connection) -> Result<models::S
         })
         .await??;
     let scaffold = db_models::Station {
-        id,
-        gesvh_id: rval.0,
-        parlament: rval.1,
-        stationstyp: rval.2,
-        gremium: rval.3,
-        zeitpunkt: rval.4.date(),
-        trojaner: rval.5,
-        url: rval.6,
+        parlament: rval.0,
+        stationstyp: rval.1,
+        gremium: rval.2,
+        zeitpunkt: rval.3.date(),
+        trojaner: rval.4,
+        url: rval.5,
     };
     let (parl, styp) = connection
         .interact(move |conn| {
@@ -304,29 +297,30 @@ pub async fn gsvh_by_parameter(
     use diesel::prelude::*;
 
     let mut query = schema::gesetzesvorhaben::table
-    .inner_join(
-        schema::station::table.inner_join(schema::parlament::table)
-    )
-    .into_boxed();
+        .inner_join(schema::station::table.inner_join(schema::parlament::table))
+        .into_boxed();
     if let Some(parlament) = params.parlament {
         query = query.filter(schema::parlament::api_key.eq(parlament.to_string()));
     }
-    if let Some(x) = params.updated_since{
+    if let Some(x) = params.updated_since {
         query = query.filter(schema::station::zeitpunkt.gt(chrono::NaiveDateTime::from(x)));
     }
 
-    if let Some(x) = params.updated_until{
+    if let Some(x) = params.updated_until {
         query = query.filter(schema::station::zeitpunkt.lt(chrono::NaiveDateTime::from(x)));
     }
 
-    let gsvh_listing : Vec<i32> = connection
-        .interact(move |conn| query
-            .limit(params.limit.unwrap_or(10) as i64)
-            .offset(params.offset.unwrap_or(0) as i64)
-            .select(schema::gesetzesvorhaben::id).get_results::<i32>(conn))
+    let gsvh_listing: Vec<i32> = connection
+        .interact(move |conn| {
+            query
+                .limit(params.limit.unwrap_or(10) as i64)
+                .offset(params.offset.unwrap_or(0) as i64)
+                .select(schema::gesetzesvorhaben::id)
+                .get_results::<i32>(conn)
+        })
         .await??;
     let mut rval = vec![];
-    for idx in gsvh_listing{
+    for idx in gsvh_listing {
         rval.push(gsvh_by_id(idx, connection).await?);
     }
     Ok(rval)
