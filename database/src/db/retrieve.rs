@@ -1,3 +1,4 @@
+
 use std::str::FromStr;
 
 use crate::db::schema;
@@ -240,49 +241,93 @@ pub async fn stellungnahme_by_id(
 }
 
 pub async fn dokument_by_id(id: i32, connection: &Connection) -> Result<models::Dokument> {
-    let ret : (String, chrono::NaiveDateTime, String, String, Option<String>, String) = connection
+    let ret: (
+        String,
+        chrono::NaiveDateTime,
+        String,
+        String,
+        Option<String>,
+        String,
+    ) = connection
         .interact(move |conn| {
             use schema::dokument::dsl;
             schema::dokument::table
                 .filter(schema::dokument::id.eq(id))
                 .inner_join(schema::dokumententyp::table)
-                .select(
-                    (
-                        dsl::titel,
-                        dsl::zeitpunkt,
-                        dsl::url,
-                        dsl::hash,
-                        dsl::zusammenfassung,
-                        schema::dokumententyp::dsl::api_key,
-                    )
-                )
+                .select((
+                    dsl::titel,
+                    dsl::zeitpunkt,
+                    dsl::url,
+                    dsl::hash,
+                    dsl::zusammenfassung,
+                    schema::dokumententyp::dsl::api_key,
+                ))
                 .first(conn)
-        }).await??;
-    let sw: Vec<String> = connection.interact(move |conn|{
-        schema::rel_dok_schlagwort::table
-        .filter(schema::rel_dok_schlagwort::dokument_id.eq(id))
-        .inner_join(schema::schlagwort::table)
-        .select(schema::schlagwort::api_key)
-        .distinct()
-        .get_results(conn)
-    }).await??;
-    let autoren : Vec<String> = connection.interact(move |conn|{
-        schema::rel_dok_autor::table
-        .filter(schema::rel_dok_autor::dokument_id.eq(id))
-        .select(schema::rel_dok_autor::autor)
-        .get_results(conn)
-    }).await??;
+        })
+        .await??;
+    let sw: Vec<String> = connection
+        .interact(move |conn| {
+            schema::rel_dok_schlagwort::table
+                .filter(schema::rel_dok_schlagwort::dokument_id.eq(id))
+                .inner_join(schema::schlagwort::table)
+                .select(schema::schlagwort::api_key)
+                .distinct()
+                .get_results(conn)
+        })
+        .await??;
+    let autoren: Vec<String> = connection
+        .interact(move |conn| {
+            schema::rel_dok_autor::table
+                .filter(schema::rel_dok_autor::dokument_id.eq(id))
+                .select(schema::rel_dok_autor::autor)
+                .get_results(conn)
+        })
+        .await??;
 
-    return Ok(
-        models::Dokument{
-            titel: ret.0,
-            zeitpunkt: ret.1.date(),
-            url: ret.2,
-            hash: ret.3,
-            zusammenfassung: ret.4,
-            schlagworte: Some(sw),
-            autoren: Some(autoren),
-            typ: models::Dokumententyp::from_str(ret.5.as_str()).map_err(|e| LTZFError::GenericStringError(e))?,
-        }
+    return Ok(models::Dokument {
+        titel: ret.0,
+        zeitpunkt: ret.1.date(),
+        url: ret.2,
+        hash: ret.3,
+        zusammenfassung: ret.4,
+        schlagworte: Some(sw),
+        autoren: Some(autoren),
+        typ: models::Dokumententyp::from_str(ret.5.as_str())
+            .map_err(|e| LTZFError::GenericStringError(e))?,
+    });
+}
+
+pub async fn gsvh_by_parameter(
+    params: models::ApiV1GesetzesvorhabenGetQueryParams,
+    connection: &Connection,
+) -> Result<Vec<models::Gesetzesvorhaben>> {
+    use diesel::prelude::*;
+
+    let mut query = schema::gesetzesvorhaben::table
+    .inner_join(
+        schema::station::table.inner_join(schema::parlament::table)
     )
+    .into_boxed();
+    if let Some(parlament) = params.parlament {
+        query = query.filter(schema::parlament::api_key.eq(parlament.to_string()));
+    }
+    if let Some(x) = params.updated_since{
+        query = query.filter(schema::station::zeitpunkt.gt(chrono::NaiveDateTime::from(x)));
+    }
+
+    if let Some(x) = params.updated_until{
+        query = query.filter(schema::station::zeitpunkt.lt(chrono::NaiveDateTime::from(x)));
+    }
+
+    let gsvh_listing : Vec<i32> = connection
+        .interact(move |conn| query
+            .limit(params.limit.unwrap_or(10) as i64)
+            .offset(params.offset.unwrap_or(0) as i64)
+            .select(schema::gesetzesvorhaben::id).get_results::<i32>(conn))
+        .await??;
+    let mut rval = vec![];
+    for idx in gsvh_listing{
+        rval.push(gsvh_by_id(idx, connection).await?);
+    }
+    Ok(rval)
 }

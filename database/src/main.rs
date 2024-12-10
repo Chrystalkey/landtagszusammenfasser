@@ -1,4 +1,4 @@
-#![recursion_limit = "256"]
+#![recursion_limit = "1024"]
 
 mod api;
 mod db;
@@ -76,6 +76,7 @@ impl Configuration {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    dotenv::dotenv().ok();
     init_tracing();
 
     let config = Configuration::init();

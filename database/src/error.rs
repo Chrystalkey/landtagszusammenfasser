@@ -53,6 +53,9 @@ pub enum LTZFError {
     
     #[error("Generic String Error: `{0}`")]
     GenericStringError(String),
+
+    #[error("Environment Variable Error: '{0}'")]
+    EnvironmentError(#[from] std::env::VarError),
     
     #[error("The Configuration is Incomplete or contains erroneous values: `{0}`")]
     ConfigurationError(String),
@@ -78,6 +81,7 @@ impl IntoResponse for LTZFError {
             LTZFError::MailError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             LTZFError::GenericStringError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             LTZFError::ConfigurationError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            LTZFError::EnvironmentError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }.into_response()
     }
 }

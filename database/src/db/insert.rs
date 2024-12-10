@@ -197,7 +197,7 @@ pub fn insert_dokument(
     dok: models::Dokument,
     connection: &mut diesel::PgConnection) -> Result<i32> {
     use schema::dokument::dsl;
-    let did = diesel::insert_into(schema::dokument::table)
+    let did: i32 = diesel::insert_into(schema::dokument::table)
     .values(
         (
             dsl::titel.eq(dok.titel),
@@ -214,5 +214,49 @@ pub fn insert_dokument(
     )
     .returning(dsl::id)
     .get_result::<i32>(connection)?;
+    if let Some(sw) = dok.schlagworte{
+        diesel::insert_into(schema::schlagwort::table)
+        .values(
+            sw.iter()
+            .map(|s|
+                schema::schlagwort::api_key.eq(s))
+            .collect::<Vec<_>>()
+        )
+        .on_conflict_do_nothing()
+        .execute(connection)?;
+        let idvec : HashMap<String, i32> = 
+        schema::schlagwort::table
+        .filter(schema::schlagwort::api_key.eq_any(&sw))
+        .select((schema::schlagwort::api_key, schema::schlagwort::id))
+        .get_results::<(String, i32)>(connection)?
+        .drain(..).collect();
+        tracing::debug!("Inserting Schlagworte: {:?} / {:?}", sw, idvec);
+
+        diesel::insert_into(schema::rel_dok_schlagwort::table)
+        .values(
+            sw.iter()
+            .map(|s| {
+                (
+                    schema::rel_dok_schlagwort::dokument_id.eq(did),
+                    schema::rel_dok_schlagwort::schlagwort_id.eq(idvec.get(s).unwrap())
+                )}
+            )
+            .collect::<Vec<_>>()
+        ).execute(connection)?;
+    }
+    if let Some(auth) = dok.autoren{
+        diesel::insert_into(schema::rel_dok_autor::table)
+        .values(
+            auth.iter()
+            .map(|s|
+                (
+                    schema::rel_dok_autor::dokument_id.eq(did),
+                    schema::rel_dok_autor::autor.eq(s)
+                )
+            )
+            .collect::<Vec<_>>()
+        )
+        .execute(connection)?;
+    }
     return Ok(did);
 }
