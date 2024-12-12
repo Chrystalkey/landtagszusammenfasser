@@ -5,11 +5,11 @@ use tokio::signal;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations};
 
-use crate::{LTZFArc, Result};
+use crate::{LTZFServer, Result};
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations/");
 
-pub fn send_email(subject: String, body: String, state: LTZFArc) -> Result<()> {
+pub fn send_email(subject: String, body: String, state: &LTZFServer) -> Result<()> {
     if state.mailer.is_none() {
         return Ok(());
     }
@@ -19,7 +19,7 @@ pub fn send_email(subject: String, body: String, state: LTZFArc) -> Result<()> {
                 .parse()
                 .unwrap(),
         )
-        .to(state.clone().config.mail_recipient.as_ref().unwrap().parse().unwrap())
+        .to(state.config.mail_recipient.as_ref().unwrap().parse().unwrap())
         .subject(subject.clone())
         .body(body.clone())
         .unwrap();

@@ -50,29 +50,29 @@ pub async fn gsvh_by_id(id: i32, connection: &Connection) -> Result<models::Gese
 
     let links = connection
         .interact(move |conn| {
-            schema::rel_gesvh_links::table
-                .select(schema::rel_gesvh_links::link)
-                .filter(schema::rel_gesvh_links::gesetzesvorhaben_id.eq(res.id))
+            schema::rel_gsvh_links::table
+                .select(schema::rel_gsvh_links::link)
+                .filter(schema::rel_gsvh_links::gesetzesvorhaben_id.eq(res.id))
                 .get_results::<String>(conn)
         })
         .await??;
     let initiatoren = connection
         .interact(move |conn| {
-            schema::rel_gesvh_init::table
-                .select(schema::rel_gesvh_init::initiator)
-                .filter(schema::rel_gesvh_init::gesetzesvorhaben.eq(res.id))
+            schema::rel_gsvh_init::table
+                .select(schema::rel_gsvh_init::initiator)
+                .filter(schema::rel_gsvh_init::gesetzesvorhaben.eq(res.id))
                 .get_results::<String>(conn)
         })
         .await??;
 
     let ids = connection
         .interact(move |conn| {
-            schema::rel_gesvh_id::table
-                .filter(schema::rel_gesvh_id::gesetzesvorhaben_id.eq(id))
+            schema::rel_gsvh_id::table
+                .filter(schema::rel_gsvh_id::gesetzesvorhaben_id.eq(id))
                 .inner_join(schema::identifikatortyp::table)
                 .select((
                     schema::identifikatortyp::api_key,
-                    schema::rel_gesvh_id::identifikator,
+                    schema::rel_gsvh_id::identifikator,
                 ))
                 .get_results::<(String, String)>(conn)
         })
@@ -87,7 +87,7 @@ pub async fn gsvh_by_id(id: i32, connection: &Connection) -> Result<models::Gese
     let stat_ids: Vec<i32> = connection
         .interact(move |conn| {
             schema::station::table
-                .filter(schema::station::gesvh_id.eq(id))
+                .filter(schema::station::gsvh_id.eq(id))
                 .select(schema::station::id)
                 .get_results::<i32>(conn)
         })

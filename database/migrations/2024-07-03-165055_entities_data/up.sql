@@ -27,29 +27,29 @@ CREATE TABLE gesetzesvorhaben(
     verfassungsaendernd BOOLEAN NOT NULL,
     typ INTEGER NOT NULL REFERENCES gesetzestyp(id) ON DELETE CASCADE
 );
-CREATE TABLE rel_gesvh_init(
+CREATE TABLE rel_gsvh_init(
     gesetzesvorhaben INTEGER NOT NULL REFERENCES gesetzesvorhaben(id) ON DELETE CASCADE,
     initiator VARCHAR NOT NULL,
     PRIMARY KEY (gesetzesvorhaben, initiator)
 );
 
-CREATE TABLE rel_gesvh_id (
+CREATE TABLE rel_gsvh_id (
     gesetzesvorhaben_id INTEGER NOT NULL REFERENCES gesetzesvorhaben(id) ON DELETE CASCADE,
     id_typ INTEGER NOT NULL REFERENCES identifikatortyp(id) ON DELETE CASCADE,
     identifikator VARCHAR NOT NULL,
     PRIMARY KEY (gesetzesvorhaben_id, id_typ, identifikator)
 ); 
 
-CREATE TABLE rel_gesvh_links(
+CREATE TABLE rel_gsvh_links(
     id SERIAL PRIMARY KEY,
     gesetzesvorhaben_id INTEGER NOT NULL REFERENCES gesetzesvorhaben(id) ON DELETE CASCADE,
     link VARCHAR NOT NULL,
-    CONSTRAINT rel_gesvh_links_unique_combo UNIQUE (gesetzesvorhaben_id, link)
+    CONSTRAINT rel_gsvh_links_unique_combo UNIQUE (gesetzesvorhaben_id, link)
 );
 
 CREATE TABLE station (
     id SERIAL PRIMARY KEY,
-    gesvh_id INTEGER NOT NULL REFERENCES gesetzesvorhaben(id) ON DELETE CASCADE,
+    gsvh_id INTEGER NOT NULL REFERENCES gesetzesvorhaben(id) ON DELETE CASCADE,
     parlament INTEGER NOT NULL REFERENCES parlament(id) ON DELETE CASCADE,
     stationstyp INTEGER NOT NULL REFERENCES stationstyp(id) ON DELETE CASCADE,
     gremium VARCHAR NOT NULL,

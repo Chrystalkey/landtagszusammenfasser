@@ -65,7 +65,7 @@ diesel::table! {
 }
 
 diesel::table! {
-    rel_gesvh_id (gesetzesvorhaben_id, id_typ, identifikator) {
+    rel_gsvh_id (gesetzesvorhaben_id, id_typ, identifikator) {
         gesetzesvorhaben_id -> Int4,
         id_typ -> Int4,
         identifikator -> Varchar,
@@ -73,14 +73,14 @@ diesel::table! {
 }
 
 diesel::table! {
-    rel_gesvh_init (gesetzesvorhaben, initiator) {
+    rel_gsvh_init (gesetzesvorhaben, initiator) {
         gesetzesvorhaben -> Int4,
         initiator -> Varchar,
     }
 }
 
 diesel::table! {
-    rel_gesvh_links (id) {
+    rel_gsvh_links (id) {
         id -> Int4,
         gesetzesvorhaben_id -> Int4,
         link -> Varchar,
@@ -111,7 +111,7 @@ diesel::table! {
 diesel::table! {
     station (id) {
         id -> Int4,
-        gesvh_id -> Int4,
+        gsvh_id -> Int4,
         parlament -> Int4,
         stationstyp -> Int4,
         gremium -> Varchar,
@@ -143,15 +143,15 @@ diesel::joinable!(gesetzesvorhaben -> gesetzestyp (typ));
 diesel::joinable!(rel_dok_autor -> dokument (dokument_id));
 diesel::joinable!(rel_dok_schlagwort -> dokument (dokument_id));
 diesel::joinable!(rel_dok_schlagwort -> schlagwort (schlagwort_id));
-diesel::joinable!(rel_gesvh_id -> gesetzesvorhaben (gesetzesvorhaben_id));
-diesel::joinable!(rel_gesvh_id -> identifikatortyp (id_typ));
-diesel::joinable!(rel_gesvh_init -> gesetzesvorhaben (gesetzesvorhaben));
-diesel::joinable!(rel_gesvh_links -> gesetzesvorhaben (gesetzesvorhaben_id));
+diesel::joinable!(rel_gsvh_id -> gesetzesvorhaben (gesetzesvorhaben_id));
+diesel::joinable!(rel_gsvh_id -> identifikatortyp (id_typ));
+diesel::joinable!(rel_gsvh_init -> gesetzesvorhaben (gesetzesvorhaben));
+diesel::joinable!(rel_gsvh_links -> gesetzesvorhaben (gesetzesvorhaben_id));
 diesel::joinable!(rel_station_dokument -> dokument (dokument_id));
 diesel::joinable!(rel_station_dokument -> station (station_id));
 diesel::joinable!(rel_station_schlagwort -> schlagwort (schlagwort_id));
 diesel::joinable!(rel_station_schlagwort -> station (station_id));
-diesel::joinable!(station -> gesetzesvorhaben (gesvh_id));
+diesel::joinable!(station -> gesetzesvorhaben (gsvh_id));
 diesel::joinable!(station -> parlament (parlament));
 diesel::joinable!(station -> stationstyp (stationstyp));
 diesel::joinable!(stellungnahme -> dokument (dokument_id));
@@ -166,9 +166,9 @@ diesel::allow_tables_to_appear_in_same_query!(
     parlament,
     rel_dok_autor,
     rel_dok_schlagwort,
-    rel_gesvh_id,
-    rel_gesvh_init,
-    rel_gesvh_links,
+    rel_gsvh_id,
+    rel_gsvh_init,
+    rel_gsvh_links,
     rel_station_dokument,
     rel_station_schlagwort,
     schlagwort,

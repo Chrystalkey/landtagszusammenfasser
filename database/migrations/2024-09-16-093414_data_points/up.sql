@@ -48,3 +48,6 @@ VALUES
     ('protokoll'),
     ('stellungnahme'),
     ('sonstig');
+
+
+CREATE EXTENSION pg_trgm;

@@ -34,8 +34,8 @@ pub fn insert_gsvh(
 
     // insert links, initiatoren, ids
     if let Some(links) = &api_gsvh.links {
-        use schema::rel_gesvh_links::dsl as dsl;
-        diesel::insert_into(schema::rel_gesvh_links::table)
+        use schema::rel_gsvh_links::dsl as dsl;
+        diesel::insert_into(schema::rel_gsvh_links::table)
         .values(
             links.iter()
             .cloned()
@@ -50,8 +50,8 @@ pub fn insert_gsvh(
     }
 
     if !api_gsvh.initiatoren.is_empty() {
-        use schema::rel_gesvh_init::dsl as dsl;
-        diesel::insert_into(schema::rel_gesvh_init::table)
+        use schema::rel_gsvh_init::dsl as dsl;
+        diesel::insert_into(schema::rel_gsvh_init::table)
         .values(
             api_gsvh.initiatoren.iter()
             .map(|s|
@@ -64,7 +64,7 @@ pub fn insert_gsvh(
     }
 
     if let Some(ids) = api_gsvh.ids.as_ref() {
-        use schema::rel_gesvh_id::dsl as dsl;
+        use schema::rel_gsvh_id::dsl as dsl;
         let mut value_vec = vec![];
 
         for id_entry in ids.iter(){
@@ -82,7 +82,7 @@ pub fn insert_gsvh(
             );
             value_vec.push(value);
         }
-        diesel::insert_into(schema::rel_gesvh_id::table)
+        diesel::insert_into(schema::rel_gsvh_id::table)
         .values(&value_vec)
         .execute(connection)?;
     }
@@ -104,7 +104,7 @@ pub fn insert_station(
     use schema::station::dsl;
     let stat_id = diesel::insert_into(schema::station::table)
     .values(
-        (dsl::gesvh_id.eq(gsvh_id),
+        (dsl::gsvh_id.eq(gsvh_id),
         dsl::gremium.eq(stat.gremium),
         dsl::trojaner.eq(stat.trojaner.unwrap_or(false)),
         dsl::zeitpunkt.eq(chrono::NaiveDateTime::from(stat.zeitpunkt)),

@@ -1,4 +1,3 @@
-use axum::{http::StatusCode, response::IntoResponse};
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -59,29 +58,4 @@ pub enum LTZFError {
     
     #[error("The Configuration is Incomplete or contains erroneous values: `{0}`")]
     ConfigurationError(String),
-}
-
-impl IntoResponse for LTZFError {
-    fn into_response(self) -> axum::response::Response {
-        tracing::warn!("Error Occurred: {:?}", self);
-        match self{
-            LTZFError::UuidError(_) => StatusCode::UNPROCESSABLE_ENTITY,
-            LTZFError::HeaderToStringError(_) => StatusCode::UNPROCESSABLE_ENTITY,
-            LTZFError::MissingFieldForInsert(_) => StatusCode::UNPROCESSABLE_ENTITY,
-            LTZFError::ApiIDEqual(_) => StatusCode::BAD_REQUEST,
-            LTZFError::MultipleMergeCandidates(_) => StatusCode::BAD_REQUEST,
-            
-            LTZFError::DieselError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            LTZFError::DeadpoolDieselError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            LTZFError::DeadpoolPoolError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            LTZFError::DieselMigrationsError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            LTZFError::DeadpoolBuildError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            LTZFError::ServerError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            LTZFError::HardwareError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            LTZFError::MailError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            LTZFError::GenericStringError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            LTZFError::ConfigurationError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            LTZFError::EnvironmentError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-        }.into_response()
-    }
 }

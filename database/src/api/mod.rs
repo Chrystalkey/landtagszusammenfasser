@@ -125,6 +125,10 @@ impl openapi::apis::default::Default for LTZFServer {
                             info
                         );
                         Ok(ApiV1GesetzesvorhabenPostResponse::Status409_Conflict)
+                    },
+                    LTZFError::ApiIDEqual(id) => {
+                        tracing::warn!("ApiID Equal Error: {:?}", id);
+                        Ok(ApiV1GesetzesvorhabenPostResponse::Status409_Conflict)
                     }
                     _ => Err(format!("{}", e)),
                 }
