@@ -3,7 +3,6 @@
 mod api;
 mod db;
 mod error;
-mod router;
 mod utils;
 
 use std::sync::Arc;
