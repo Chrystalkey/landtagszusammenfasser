@@ -10,7 +10,7 @@ if (-Not (Test-Path -Path "oapi-generator" -PathType Container)) {
     Set-Location -Path "oapi-generator"
     
     # Download the openapi-generator-cli script
-    & Invoke-WebRequest -OutFile openapi-generator-cli.jar https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.9.0/openapi-generator-cli-7.9.0.jar
+    & Invoke-WebRequest -OutFile openapi-generator-cli.jar https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.10.0/openapi-generator-cli-7.10.0.jar
     
     Set-Location -Path ".."
 }

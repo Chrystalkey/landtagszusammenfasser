@@ -42,7 +42,7 @@ impl openapi::apis::default::Default for LTZFServer {
         host: Host,
         cookies: CookieJar,
         path_params: models::ApiV1GesetzesvorhabenGesvhIdGetPathParams,
-    ) -> Result<ApiV1GesetzesvorhabenGesvhIdGetResponse, String> {
+    ) -> Result<ApiV1GesetzesvorhabenGesvhIdGetResponse, ()> {
         tracing::info!(
             "Get By ID endpoint called with ID: {}",
             path_params.gesvh_id
@@ -60,7 +60,7 @@ impl openapi::apis::default::Default for LTZFServer {
                         tracing::warn!("Not Found Error: {:?}", e.to_string());
                         Ok(ApiV1GesetzesvorhabenGesvhIdGetResponse::Status404_ContentNotFound)
                     }
-                    _ => Err(format!("{}", e)),
+                    _ => Err(()),
                 }
             }
         }
@@ -77,7 +77,7 @@ impl openapi::apis::default::Default for LTZFServer {
         host: Host,
         cookies: CookieJar,
         query_params: models::ApiV1GesetzesvorhabenGetQueryParams,
-    ) -> Result<ApiV1GesetzesvorhabenGetResponse, String> {
+    ) -> Result<ApiV1GesetzesvorhabenGetResponse, ()> {
         tracing::info!(
             "GET GSVHByParam endpoint called with query params: {:?}",
             query_params
@@ -87,7 +87,7 @@ impl openapi::apis::default::Default for LTZFServer {
             Ok(x) => Ok(ApiV1GesetzesvorhabenGetResponse::Status200_SuccessfulOperation(x)),
             Err(e) => {
                 tracing::warn!("{}", e.to_string());
-                Err(e.to_string())
+                Err(())
             }
         }
     }
@@ -102,10 +102,9 @@ impl openapi::apis::default::Default for LTZFServer {
         cookies: CookieJar,
         query_params: models::ApiV1GesetzesvorhabenPostQueryParams,
         body: models::Gesetzesvorhaben,
-    ) -> Result<ApiV1GesetzesvorhabenPostResponse, String> {
+    ) -> Result<ApiV1GesetzesvorhabenPostResponse, ()> {
         auth::authenticate().map_err(|e| {
             tracing::error!("{}", e.to_string());
-            format!("{}", e)
         })?;
 
         let rval = post::api_v1_gesetzesvorhaben_post(self, body).await;
@@ -133,7 +132,9 @@ impl openapi::apis::default::Default for LTZFServer {
                     LTZFError::AmbiguousMatch(_) =>{
                         Ok(ApiV1GesetzesvorhabenPostResponse::Status409_Conflict)
                     }
-                    _ => Err(format!("{}", e)),
+                    _ => {
+                        Err(())
+                    },
                 }
             }
         }
