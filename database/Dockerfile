@@ -1,11 +1,12 @@
-FROM rust:1.83-alpine AS builder
+FROM rust:1.83 AS builder
 
-RUN apk add openssl-dev musl-dev
+RUN apt install -y libpq-dev
 
 COPY ./Cargo.toml ./Cargo.toml
 COPY ./src ./src
 COPY ./oapicode ./oapicode
 COPY ./Cargo.lock ./Cargo.lock
+COPY ./migrations ./migrations
 
 RUN adduser \
     --disabled-password \
@@ -18,13 +19,12 @@ RUN adduser \
 
 RUN cargo build --release
 
-
-FROM scratch
+FROM debian:bullseye-slim
 
 
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /etc/group /etc/group
-COPY --from=builder --chown=ltzf-database:ltzf-databaes /target/x86_64-unknown-linux-musl/release/database ./ltzf-database
+COPY --from=builder --chown=ltzf-database:ltzf-database /target/release/ltzusfas-db ./ltzf-database
 
 USER ltzf-database
 
