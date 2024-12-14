@@ -195,7 +195,8 @@ pub fn insert_station(
 
 pub fn insert_dokument(
     dok: models::Dokument,
-    connection: &mut diesel::PgConnection) -> Result<i32> {
+    connection: &mut diesel::PgConnection) 
+    -> Result<i32> {
     use schema::dokument::dsl;
     let did: i32 = diesel::insert_into(schema::dokument::table)
     .values(
