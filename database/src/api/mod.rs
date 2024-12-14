@@ -129,6 +129,9 @@ impl openapi::apis::default::Default for LTZFServer {
                     LTZFError::ApiIDEqual(id) => {
                         tracing::warn!("ApiID Equal Error: {:?}", id);
                         Ok(ApiV1GesetzesvorhabenPostResponse::Status409_Conflict)
+                    },
+                    LTZFError::AmbiguousMatch(_) =>{
+                        Ok(ApiV1GesetzesvorhabenPostResponse::Status409_Conflict)
                     }
                     _ => Err(format!("{}", e)),
                 }

@@ -24,6 +24,9 @@ pub enum LTZFError {
     #[error("The same API Id was already supplied: {0}")]
     ApiIDEqual(uuid::Uuid),
 
+    #[error("The Object has multiple matching candidates: {0}")]
+    AmbiguousMatch(String),
+
     #[error("Multiple Merge Candidates found: {0:?}")]
     MultipleMergeCandidates(Vec<Uuid>),
 

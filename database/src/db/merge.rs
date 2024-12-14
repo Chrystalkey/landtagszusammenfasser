@@ -75,16 +75,16 @@ pub async fn gsvh_merge_candidates(
         WHERE NOT EXISTS  (SELECT 1 FROM station, parlament 
             WHERE station.gsvh_id = gesetzesvorhaben.id 
             AND station.parlament = parlament.id 
-            AND parlament.api_key <> '$1'
+            AND parlament.api_key <> $1
             AND parlament.api_key NOT IN ('BT', 'BR'))
-        AND (SIMILARITY(titel, '$2') > 0.3 
+        AND (SIMILARITY(titel, $2) > 0.3 
             OR EXISTS
             (SELECT 1 FROM rel_gsvh_id as rid, identifikatortyp as idt 
                 WHERE 
                 idt.id = rid.id_typ AND 
                 rid.gesetzesvorhaben_id = gesetzesvorhaben.id AND 
-                idt.api_key = '$3' AND 
-                rid.identifikator = '$4')
+                idt.api_key = $3 AND 
+                rid.identifikator = $4)
             )";
         tracing::debug!("Executing Query: {}", query);
         let mut result: HashSet<GSVHID> = HashSet::new();
@@ -111,9 +111,9 @@ pub async fn gsvh_merge_candidates(
         WHERE NOT EXISTS  (SELECT 1 FROM station, parlament 
             WHERE station.gsvh_id = gesetzesvorhaben.id 
             AND station.parlament = parlament.id 
-            AND parlament.api_key <> '$1'
+            AND parlament.api_key <> $1
             AND parlament.api_key NOT IN ('BT', 'BR'))
-        AND SIMILARITY(titel, '$2') > 0.3";
+        AND SIMILARITY(titel, $2) > 0.3";
         tracing::debug!("Executing Query: {}", query);
         let stat = model.stationen[0].parlament.to_string();
         let titel = model.titel.clone();
@@ -207,9 +207,9 @@ pub fn update_gsvh(
         WHERE
         station.stationstyp = stationstyp.id AND
         station.parlament = parlament.id AND
-        stationstyp.api_key = '$1' AND
-        parlament.api_key = '$2' AND
-        (SIMILARITY(station.gremium, '$3') > 0.5
+        stationstyp.api_key = $1 AND
+        parlament.api_key = $2 AND
+        (SIMILARITY(station.gremium, $3) > 0.5
         OR EXISTS (
             SELECT 1 FROM dokument, rel_station_dokument WHERE 
             rel_station_dokument.station_id = station.id AND
@@ -386,6 +386,7 @@ pub async fn run(model: &models::Gesetzesvorhaben, server: &LTZFServer) -> Resul
                 "Ambiguous Match for Merge".to_string(), 
                 "Fresh GSVH entered the database, producing ambiguous matches. The new GSVH is: \n\n {:?} \n\n The matches are: \n\n {:?}\n please provide guidance.".to_string(),
             server)?;
+            return Err(LTZFError::AmbiguousMatch(format!("Merge Candidates: {:?}", many.iter().map(|e| e.1.api_id).collect::<Vec<_>>())));
         }
         MergeState::ExactlyEqualMatch => {
             return Err(LTZFError::ApiIDEqual(model.api_id));
