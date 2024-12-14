@@ -11,11 +11,11 @@ if [ -d "$DIRECTORY" ]; then
     echo "Directory $DIRECTORY found!"
 else
     echo "Creating $DIRECTORY directory"
-    #mkdir "$DIRECTORY"
-    #cd "$DIRECTORY"
-    #curl https://raw.githubusercontent.com/OpenAPITools/openapi-generator/master/bin/utils/openapi-generator-cli.sh > openapi-generator-cli
-    #chmod u+x openapi-generator-cli
-    #cd ..
+    mkdir "$DIRECTORY"
+    cd "$DIRECTORY"
+    curl https://raw.githubusercontent.com/OpenAPITools/openapi-generator/master/bin/utils/openapi-generator-cli.sh > openapi-generator-cli
+    chmod u+x openapi-generator-cli
+    cd ..
 fi
 
 

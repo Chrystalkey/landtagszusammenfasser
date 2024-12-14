@@ -32,3 +32,4 @@ deadpool = "0.12.1"
 strum = { version = "0.26.3", features = ["derive"] }
 axum-extra = "0.9.6"
 dotenv = "0.15.0"
+openssl = { version="0.10", features = ["vendored"]}

@@ -1,12 +1,14 @@
-FROM rust:1.83-slim AS builder
+FROM rust:1.83 AS builder
 
 RUN rustup target add x86_64-unknown-linux-musl && \
     apt update && \
     apt install -y musl-tools musl-dev && \
-    update-ca-certificates
+    update-ca-certificates && openssl
+
 
 COPY ./Cargo.toml ./Cargo.toml
 COPY ./src ./src
+COPY ./oapicode ./oapicode
 COPY ./Cargo.lock ./Cargo.lock
 
 RUN adduser \
@@ -18,10 +20,11 @@ RUN adduser \
     --uid 10001 \
     "ltzf-database"
 
-RUN cargo build --target x86_64-unknown-linux-musl --release
+RUN cargo build --release --target x86_64-unknown-linux-musl
 
 
 FROM scratch
+
 
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /etc/group /etc/group
