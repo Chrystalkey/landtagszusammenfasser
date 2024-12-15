@@ -12,16 +12,22 @@ class Scraper(ABC):
     oai_config : openapi_client.Configuration = None
 
     def __init__(self, oai_config: openapi_client.Configuration, collector_id: UUID, listing_urls: list[str]):
+        self.collector_id = collector_id
         self.listing_urls = listing_urls
         self.oai_config = oai_config
     
     def send(self):
         with openapi_client.ApiClient(self.oai_config) as api_client:
             api_instance = openapi_client.DefaultApi(api_client)
+            print("Sending to API")
+            print("Collector ID: " + str(self.collector_id))
             for gsvh in self.result_objects:
-                api_instance.api_v1_gesetzesvorhaben_post(
-                    str(self.collector_id),
-                    gsvh)
+                try:
+                    api_instance.api_v1_gesetzesvorhaben_post(
+                        str(self.collector_id),
+                        gsvh)
+                except openapi_client.ApiException as e:
+                    print("Exception when calling DefaultApi->api_v1_gesetzesvorhaben_post: %s\n" % e)
 
     """
     for every listing_url in the object
