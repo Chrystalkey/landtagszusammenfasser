@@ -1,11 +1,33 @@
 version: "3.7"
 
 services:
-  postgres-test:
+  ltzf-db:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    image: ltzf-db:test
+    container_name: ltzf-db
+    depends_on:
+      - postgres
+    networks:
+      - ltzf-network
+    ports:
+      - 8080:8080
+    environment:
+      DATABASE_URL: "postgres://postgres:blub@pg-server:5432/postgres"
+      LTZF_HOST: "localhost"
+      LTZF_PORT: 8080
+      RUST_LOG: "debug"
+
+  postgres:
     image: postgres:latest
     container_name: pg-server
     restart: unless-stopped
-    ports:
-      - 5432:5432
+    networks:
+      - ltzf-network
     environment:
-      - POSTGRES_HOST_AUTH_METHOD=trust
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_PASSWORD=blub
+networks:
+  ltzf-network:

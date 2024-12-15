@@ -16,17 +16,22 @@ RUN adduser \
     --no-create-home \
     --uid 10001 \
     "ltzf-database"
-
+    
 RUN cargo build --release
 
-FROM debian:bullseye-slim
+RUN cp ./target/release/ltzusfas-db ltzf-db
 
+RUN rm -rf target src migrations oapicode
 
-COPY --from=builder /etc/passwd /etc/passwd
-COPY --from=builder /etc/group /etc/group
-COPY --from=builder --chown=ltzf-database:ltzf-database /target/release/ltzusfas-db ./ltzf-database
+#FROM debian:bullseye-slim
+
+#RUN apt update && apt install -y libpq-dev openssl
+
+#COPY --from=builder /etc/passwd /etc/passwd
+#COPY --from=builder /etc/group /etc/group
+#COPY --from=builder --chown=ltzf-database:ltzf-database /target/release/ltzusfas-db ./ltzf-database
 
 USER ltzf-database
 
-ENTRYPOINT ["./ltzf-database"]
+ENTRYPOINT ["./ltzf-db"]
 

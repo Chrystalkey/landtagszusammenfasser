@@ -29,9 +29,9 @@ pub struct Configuration {
     pub mail_sender: Option<String>,
     #[arg(long, env = "MAIL_RECIPIENT")]
     pub mail_recipient: Option<String>,
-    #[arg(long, env = "SERVER_HOST", default_value = "127.0.0.1")]
+    #[arg(long, env = "LTZF_HOST", default_value = "127.0.0.1")]
     pub host: String,
-    #[arg(long, env = "SERVER_PORT", default_value = "8080")]
+    #[arg(long, env = "LTZF_PORT", default_value = "8080")]
     pub port: u16,
     #[arg(long, short, env = "DATABASE_URL")]
     pub db_url: String,
@@ -75,6 +75,7 @@ impl Configuration {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    use diesel::prelude::*;
     dotenv::dotenv().ok();
     init_tracing();
 
@@ -86,6 +87,27 @@ async fn main() -> Result<()> {
 
     tracing::debug!("Started Listener");
     let db_pool = config.build_pool().await?;
+
+    let mut available = false;
+    for i in 0..14 {
+        let r = db_pool.get().await;
+        match r {
+            Ok(_) => {available = true;break;}
+            Err(deadpool_diesel::PoolError::Backend(deadpool_diesel::Error::Connection(
+                ConnectionError::BadConnection(e)
+            ))) => {
+                tracing::warn!("{}", e);
+            },
+            _ => {let _ = r?;}
+        }
+        let milliseconds = 2i32.pow(i) as u64;
+        tracing::info!("DB Unavailable, Retrying in {} ms...", milliseconds);
+        std::thread::sleep(std::time::Duration::from_millis(milliseconds));
+    };
+    if !available{
+        return Err(error::LTZFError::GenericStringError(format!("Server Connection failed after 10 retries")));
+    }
+    
     tracing::debug!("Started Database Pool");
     let mailer = config.build_mailer().await;
     let mailer = if let Err(e) = mailer {
@@ -100,7 +122,7 @@ async fn main() -> Result<()> {
     };
 
     // Apply pending database migrations
-    run_migrations(&db_pool).await;
+    run_migrations(&db_pool).await?;
     tracing::debug!("Applied Migrations");
 
     let state = Arc::new(LTZFServer::new(db_pool, mailer, config));

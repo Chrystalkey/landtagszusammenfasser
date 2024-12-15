@@ -12,7 +12,9 @@ pub enum DataValidationError{
 #[derive(Error, Debug)]
 #[allow(dead_code)]
 pub enum LTZFError {
-        
+    #[error("Fallback Error: Unknown error Type: {0}")]
+    FallbackError(#[from] Box<dyn std::error::Error + Sync + Send>),
+    
     #[error("Uuid data was received in the wrong format: {0}")]
     UuidError(#[from] uuid::Error),
     #[error("Header Could not be converted to String{0}")]

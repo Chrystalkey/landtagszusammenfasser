@@ -5,7 +5,7 @@ use tokio::signal;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations};
 
-use crate::{LTZFServer, Result};
+use crate::{error::LTZFError, LTZFServer, Result};
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations/");
 
@@ -65,10 +65,11 @@ pub fn init_tracing() {
 }
 
 // Function to run database migrations
-pub async fn run_migrations(pool: &Pool) {
-    let conn: deadpool_diesel::postgres::Connection = pool.get().await.unwrap();
-    conn.interact(|conn| conn.run_pending_migrations(MIGRATIONS).map(|_| ()))
-        .await
-        .unwrap()
-        .unwrap();
+pub async fn run_migrations(pool: &Pool) -> Result<()> {
+    let conn: deadpool_diesel::postgres::Connection = pool.get().await?;
+    conn.interact(|conn| 
+        conn.run_pending_migrations(MIGRATIONS).map(|_| ()))
+        .await?
+        .map_err(|e| LTZFError::FallbackError(e))?;
+    Ok(())
 }
