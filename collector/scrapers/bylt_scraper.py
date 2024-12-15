@@ -41,7 +41,7 @@ class BYLTScraper(Scraper):
         rows = vorgangs_table.findAll("tr")
         gsvh = models.Gesetzesvorhaben.from_dict({
             "api_id": str(uuid.uuid4()),
-            "titel": "TODO",
+            "titel": soup.find("span", id="betreff").text,
             "verfassungsaendernd" : False,
             "initiatoren": [],
             "typ": models.Gesetzestyp.LANDGG,
@@ -49,6 +49,7 @@ class BYLTScraper(Scraper):
             "links" : [],
             "stationen": []
         })
+
         
         # Initiatoren
         init_ptr = soup.find(string="Initiatoren")
