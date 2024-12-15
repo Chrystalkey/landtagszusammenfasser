@@ -9,7 +9,7 @@ def main():
     print ("Starting collector manager.")
 
     # Load all the scrapers from the scrapers dir
-    oapiconfig = Configuration(host="http://localhost")
+    oapiconfig = Configuration(host="http://localhost:8080")
 
     scrapers: list[Scraper] = load_scrapers(oapiconfig)
 

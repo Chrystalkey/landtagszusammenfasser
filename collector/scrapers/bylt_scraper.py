@@ -14,7 +14,7 @@ class BYLTScraper(Scraper):
         listing_urls = [
             f"https://www.bayern.landtag.de/parlament/dokumente/drucksachen?isInitialCheck=0&q=&dknr=&suchverhalten=AND&dokumentenart=Drucksache&ist_basisdokument=on&sort=date&anzahl_treffer={RESULT_COUNT}&wahlperiodeid%5B%5D={CURRENT_WP}&erfassungsdatum%5Bstart%5D=&erfassungsdatum%5Bend%5D=&dokumentenart=Drucksache&suchvorgangsarten%5B%5D=Gesetze%5C%5CGesetzentwurf&suchvorgangsarten%5B%5D=Gesetze%5C%5CStaatsvertrag&suchvorgangsarten%5B%5D=Gesetze%5C%5CHaushaltsgesetz%2C+Nachtragshaushaltsgesetz"
         ]
-        super().__init__(config, listing_urls)
+        super().__init__(config, uuid.uuid4(), listing_urls)
 
     def listing_page_extractor(self, url) -> list[str]:
         # assumes a full page without pagination
@@ -39,14 +39,16 @@ class BYLTScraper(Scraper):
         soup = BeautifulSoup(get_result.content, "html.parser")
         vorgangs_table = soup.find('tbody', id='vorgangsanzeigedokumente_data')
         rows = vorgangs_table.findAll("tr")
-        gsvh = models.Gesetzesvorhaben()
-        gsvh.api_id = str(uuid.uuid4())
-        gsvh.titel = "TODO"
-        gsvh.verfassungsaendernd = False
-        gsvh.typ = "landgg"
-        gsvh.ids = []
-        gsvh.links = [listing_item]
-        gsvh.stationen = []
+        gsvh = models.Gesetzesvorhaben.from_dict({
+            "api_id": str(uuid.uuid4()),
+            "titel": "TODO",
+            "verfassungsaendernd" : False,
+            "initiatoren": [],
+            "typ": models.Gesetzestyp.LANDGG,
+            "ids" : [],
+            "links" : [],
+            "stationen": []
+        })
         
         # Initiatoren
         init_ptr = soup.find(string="Initiatoren")
@@ -68,62 +70,70 @@ class BYLTScraper(Scraper):
             assert len(timestamp) == 3, f"Error: Unexpected date format: `{timestamp}` of url `{listing_item}`"
             timestamp = date(int(timestamp[2]), int(timestamp[1]), int(timestamp[0]))
             # content is in the second cell
-            stat = models.Station()
-            stat.zeitpunkt = timestamp
-            stat.parlament = "BY"
-            stat.stellungnahmen = []
+            stat = models.Station.from_dict({
+                "zeitpunkt": timestamp,
+                "gremium": "",
+                "dokumente": [],
+                "url": "",
+                "parlament": "BY",
+                "schlagworte": [],
+                "stellungnahmen": [],
+                "typ": models.Stationstyp.POSTPARL_MINUS_KRAFT,
+                "trojaner": False,
+            })
             cellclass = self.classify_object(cells[1])
             print(f"Timestamp: {timestamp} Cellclass: {cellclass}")
             if cellclass == "initiativdrucksache":
                 link = extract_singlelink(cells[1])
                 gsvh.links.append(link)
-                stat.stationstyp = "parl-initiativ"
+                stat.typ = models.Stationstyp.PARL_MINUS_INITIATIV
                 stat.dokumente = [self.create_document(link)]
             elif cellclass == "stellungnahme":
                 assert len(gsvh.stationen) > 0, "Error: Stellungnahme ohne Vorhergehenden Gesetzestext"
-                stln = models.Stellungnahme()
                 stln_urls = extract_schrstellung(cells[1])
-                stln.meinung = 0
-                stln.dokument = self.create_document(stln_urls["stellungnahme"])
-                stln.lobbyregister_url = stln_urls["lobbyregister"]
-                gsvh.stationen[-1].stellungnahmen.append(stln)
+                stln = models.Stellungnahme.from_dict({
+                    "meinung": 0,
+                    "dokument": self.create_document(stln_urls["stellungnahme"]),
+                    "lobbyregister_url": stln_urls["lobbyregister"]
+                })
                 continue
             elif cellclass == "plenumsdiskussion-uebrw":
-                stat.stationstyp = "parl-vollvlsgn"
+                stat.typ = "parl-vollvlsgn"
                 stat.dokumente = [self.create_document(extract_plenproto(cells[1]))]
             elif cellclass == "plenumsdiskussion-zustm":
-                stat.stationstyp = "parl-akzeptanz"
+                stat.typ = "parl-akzeptanz"
                 stat.dokumente = [self.create_document(extract_plenproto(cells[1]))]
             elif cellclass == "plenumsdiskussion-ablng":
-                stat.stationstyp = "parl-ablehnung"
+                stat.typ = "parl-ablehnung"
             elif cellclass == "plenumsbeschluss":
-                stat.stationstyp = "parl-schlussab"
+                stat.typ = "parl-schlussab"
                 stat.dokumente = [self.create_document(extract_singlelink(cells[1]))]
             elif cellclass == "ausschussbericht":
-                stat.stationstyp = "parl-ausschber"
+                stat.typ = "parl-ausschber"
                 stat.dokumente = [self.create_document(extract_singlelink(cells[1]))]
             elif cellclass == "gesetzesblatt":
-                stat.stationstyp = "postparl-gsblt"
+                stat.typ = "postparl-gsblt"
                 stat.dokumente = [self.create_document(extract_singlelink(cells[1]))]
             elif cellclass == "unclassified":
                 print("Warning: Unclassifiable cell")
+            
+            stat.trojaner = detect_trojaner(gsvh)
             gsvh.stationen.append(stat)
         print(len(rows))
-        pprint.pprint(gsvh)
-        gsvh.trojaner = detect_trojaner(gsvh)
         return gsvh
 
     def create_document(self, url: str) -> models.Dokument:
-        dok = models.Dokument()
-        dok.zeitpunkt = date.today()
-        dok.titel = "TODO"
-        dok.url = url
-        dok.hash = "TODO"
-        dok.typ = "drucksache"
-        dok.zusammenfassung = "TODO"
-        
-        dok.autoren = []
-        return dok
+        dok_dic = {
+            "zeitpunkt": date.today(),
+            "titel": "TODO",
+            "url": url,
+            "hash": "TODO",
+            "typ": "drucksache",
+            "zusammenfassung": "TODO",
+            "autoren": [],
+            "schlagworte": [],
+        }
+        return models.Dokument.from_dict(dok_dic)
     
     def classify_object(self, context) -> str:
         cellsoup = context

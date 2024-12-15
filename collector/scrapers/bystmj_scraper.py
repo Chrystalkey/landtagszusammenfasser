@@ -8,7 +8,7 @@ import uuid
 class BYSTMJScraper(Scraper):
     def __init__(self, config):
         listings = ["https://www.justiz.bayern.de/ministerium/gesetzgebung/"]
-        super().__init__(config, listings)
+        super().__init__(config, uuid.uuid4(), listings)
     
     def listing_page_extractor(self, url: str) -> list:
         page_text = requests.get(url)
@@ -24,35 +24,39 @@ class BYSTMJScraper(Scraper):
         return result
     
     def build_document(self, url: str):
-        dok = models.Dokument()
-        dok.titel = "TODO"
-        dok.zeitpunkt = date.today()
-        dok.url = url
-        dok.hash = "TODO"
-        dok.zusammenfassung = "TODO"
-        dok.schlagworte = []
-        dok.autoren = ["TODO"]
-        dok.typ = "entwurf"
+        dok = models.Dokument.from_dict({
+            "titel" : "TODO",
+            "zeitpunkt" : date.today(),
+            "url" : url,
+            "hash" : "TODO",
+            "zusammenfassung" : "TODO",
+            "schlagworte" : [],
+            "autoren" : ["TODO"],
+            "typ" : "entwurf",
+        })
         return dok
     
     # todo: verschlagwortung
     def item_extractor(self, listing_item: tuple[str, str]) -> models.Gesetzesvorhaben:
-        gsvh = models.Gesetzesvorhaben()
-        gsvh.api_id = str(uuid.uuid4())
-        gsvh.verfassungsaendernd = False
-        gsvh.trojaner = False
-        gsvh.typ = "landgg"
-        gsvh.links = []
-        gsvh.titel = listing_item[0]
-        gsvh.initiatoren = ["Bayerisches Staatsministerium der Justiz"]
+        gsvh = models.Gesetzesvorhaben.from_dict({
+            "api_id" : str(uuid.uuid4()),
+            "verfassungsaendernd" : False,
+            "typ" : "landgg",
+            "links" : [],
+            "titel" : listing_item[0],
+            "initiatoren" : ["Bayerisches Staatsministerium der Justiz"],
+            "stationen": []
+        })
         
-        stat = models.Station()
-        stat.zeitpunkt = date.today() # fix and extract from pdf
-        stat.gremium = "Bayerisches Staatsministerium der Justiz"
-        stat.parlament = "BY"
-        stat.url = listing_item[1]
-        stat.stationstyp = "preparl-regent"
-        stat.dokument = self.build_document(listing_item[1])
+        stat = models.Station.from_dict({
+            "zeitpunkt" : date.today(), # fix and extract from pdf
+            "gremium" : "Bayerisches Staatsministerium der Justiz",
+            "parlament" : "BY",
+            "url" : listing_item[1],
+            "typ" : "preparl-regent",
+            "dokumente" : [self.build_document(listing_item[1])]
+            }
+        )
 
         gsvh.stationen = [stat]
         return gsvh

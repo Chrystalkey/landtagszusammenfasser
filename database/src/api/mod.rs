@@ -106,6 +106,7 @@ impl openapi::apis::default::Default for LTZFServer {
         auth::authenticate().map_err(|e| {
             tracing::error!("{}", e.to_string());
         })?;
+        tracing::info!("api_v1_gesetzesvorhaben_post called by {:?}", query_params);
 
         let rval = post::api_v1_gesetzesvorhaben_post(self, body).await;
         match rval {

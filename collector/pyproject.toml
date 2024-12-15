@@ -1,9 +1,12 @@
 [tool.poetry]
 name = "collector"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
+packages =[
+    {include="collector", from=".."}
+]
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -11,7 +14,7 @@ selenium = "^4.22.0"
 beautifulsoup4 = "^4.12.3"
 requests = "^2.32.3"
 pydantic = "^2.9.2"
-openapi-client = {path = "oaiclient"}
+openapi-client = {path = "oapicode"}
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7"
