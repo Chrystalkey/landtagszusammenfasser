@@ -15,11 +15,18 @@ class Scraper(ABC):
         self.collector_id = collector_id
         self.listing_urls = listing_urls
         self.oai_config = oai_config
+        self.result_objects = []
     
+    def hash_pdf(self, pdf_url: str) -> str:
+        import hashlib
+        import requests
+        pdf = requests.get(pdf_url)
+        return hashlib.sha256(pdf.content).hexdigest()
+
     def send(self):
         with openapi_client.ApiClient(self.oai_config) as api_client:
             api_instance = openapi_client.DefaultApi(api_client)
-            print("Sending to API")
+            print(f"Sending {len(self.result_objects)} entries to API")
             print("Collector ID: " + str(self.collector_id))
             for gsvh in self.result_objects:
                 try:
@@ -39,10 +46,10 @@ class Scraper(ABC):
         for lpage in self.listing_urls:
             print(lpage)
             item_list.extend(self.listing_page_extractor(lpage))
-        item_list = set(item_list)
+        iset = set(item_list)
         
-        for item in item_list:
-            print(item)
+        for item in iset:
+            print(f"`{item}`")
             self.result_objects.append(self.item_extractor(item))
     
     # extracts the listing page that is behind self.listing_url into the urls of individual pages

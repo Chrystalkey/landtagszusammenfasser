@@ -11,6 +11,7 @@ class BYSTMJScraper(Scraper):
         super().__init__(config, uuid.uuid4(), listings)
     
     def listing_page_extractor(self, url: str) -> list:
+        base_url = "https://www.justiz.bayern.de"
         page_text = requests.get(url)
         soup = BeautifulSoup(page_text.content, "html.parser")
         cut_ptr = soup.find("div", class_="cut")
@@ -19,16 +20,16 @@ class BYSTMJScraper(Scraper):
         result = []
         for disk in disksoup:
             title = disk.find("h2").text
-            doclink = disk.find("li", class_="pdf").find("a")["href"]
+            doclink = base_url+disk.find("li", class_="pdf").find("a")["href"]
             result.append((title, doclink))
         return result
-    
+
     def build_document(self, url: str):
         dok = models.Dokument.from_dict({
             "titel" : "TODO",
             "zeitpunkt" : date.today(),
             "url" : url,
-            "hash" : "TODO",
+            "hash" : self.hash_pdf(url),
             "zusammenfassung" : "TODO",
             "schlagworte" : [],
             "autoren" : ["TODO"],
