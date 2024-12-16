@@ -2,28 +2,34 @@ from collector.interface import Scraper
 import os
 import importlib.util
 from openapi_client import Configuration
+import aiohttp
+import asyncio
+import logging
 
 scrapers_dir = "./scrapers"
+logger = logging.getLogger(__name__)
 
-def main():
+async def main():
+    global logger
+    logging.basicConfig(level=logging.DEBUG)
     print ("Starting collector manager.")
 
     # Load all the scrapers from the scrapers dir
     oapiconfig = Configuration(host="http://localhost:8080")
 
-    scrapers: list[Scraper] = load_scrapers(oapiconfig)
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit_per_host=1)) as session:
+        scrapers: list[Scraper] = load_scrapers(oapiconfig, session)
+        for scraper in scrapers:
+            logger.info(f"Running scraper: {scraper.__class__.__name__}")
+            try:
+                # Actually run the scraper instance
+                await scraper.extract()
+                scraper.send()
 
-    for scraper in scrapers:
-        print(f"Running scraper: {scraper.__class__.__name__}")
-        try:
-            # Actually run the scraper instance
-            scraper.extract()
-            scraper.send()
+            except Exception as e:
+                print(f"Error running scraper {scraper.__class__.__name__}: {e}")
 
-        except Exception as e:
-            print(f"Error running scraper {scraper.__class__.__name__}: {e}")
-
-def load_scrapers(config):
+def load_scrapers(config, session):
     scrapers = []
     for filename in os.listdir(scrapers_dir):
         if filename.endswith("_scraper.py"):
@@ -35,8 +41,8 @@ def load_scrapers(config):
             for attr in dir(module):
                 cls = getattr(module, attr)
                 if isinstance(cls, type) and issubclass(cls, Scraper) and cls is not Scraper:
-                    scrapers.append(cls(config))
+                    scrapers.append(cls(config, session))
     return scrapers
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

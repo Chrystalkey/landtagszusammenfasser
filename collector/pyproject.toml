@@ -16,6 +16,7 @@ requests = "^2.32.3"
 pydantic = "^2.9.2"
 openapi-client = {path = "oapicode"}
 pypdf2 = "^3.0.1"
+aiohttp = "^3.11.10"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7"
