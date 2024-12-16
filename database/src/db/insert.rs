@@ -175,7 +175,7 @@ pub fn insert_station(
         .select((schema::schlagwort::api_key, schema::schlagwort::id))
         .get_results::<(String, i32)>(connection)?
         .drain(..).collect();
-        tracing::debug!("Inserting Schlagworte: {:?} / {:?}", sw, idvec);
+        tracing::trace!("Inserting Schlagworte: {:?} / {:?}", sw, idvec);
 
         diesel::insert_into(schema::rel_station_schlagwort::table)
         .values(
@@ -231,7 +231,7 @@ pub fn insert_dokument(
         .select((schema::schlagwort::api_key, schema::schlagwort::id))
         .get_results::<(String, i32)>(connection)?
         .drain(..).collect();
-        tracing::debug!("Inserting Schlagworte: {:?} / {:?}", sw, idvec);
+        tracing::trace!("Inserting Schlagworte: {:?} / {:?}", sw, idvec);
 
         diesel::insert_into(schema::rel_dok_schlagwort::table)
         .values(

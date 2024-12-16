@@ -86,7 +86,7 @@ pub async fn gsvh_merge_candidates(
 				AND idt.api_key = $3
 				AND rid.identifikator = $4)
             )";
-        tracing::debug!("Executing Query: {}", query);
+        tracing::trace!("Executing Query: {}", query);
         let mut result: HashSet<GSVHID> = HashSet::new();
 
         for id in ids {
@@ -114,7 +114,7 @@ pub async fn gsvh_merge_candidates(
             AND (parlament.api_key <> $1
                 OR parlament.api_key NOT IN ('BT', 'BR') AND $1 NOT IN ('BT', 'BR')))
         AND SIMILARITY(gesetzesvorhaben.titel, $2) > 0.3";
-        tracing::debug!("Executing Query: {}", query);
+        tracing::trace!("Executing Query: {}", query);
         let stat = model.stationen[0].parlament.to_string();
         let titel = model.titel.clone();
         let result = connection

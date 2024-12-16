@@ -46,7 +46,6 @@ class BYLTScraper(Scraper):
             btext_soup = soup.find("span", id="basistext")
             assert btext_soup != None, f"Error: Could not find Basistext for url {listing_item}"
             inds = btext_soup.text.split("Nr. ")[1].split(" vom")[0]
-            logger.debug(f"GSVH mit Initiativdrucksache: {inds}")
             gsvh = models.Gesetzesvorhaben.from_dict({
                 "api_id": str(uuid.uuid4()),
                 "titel": soup.find("span", id="betreff").text,
@@ -57,6 +56,7 @@ class BYLTScraper(Scraper):
                 "links" : [listing_item],
                 "stationen": []
             })
+            logger.info(f"New GSVH mit Initiativdrucksache: {inds}, ApiID: {gsvh.api_id}")
 
             # Initiatoren
             init_ptr = soup.find(string="Initiatoren")
@@ -136,8 +136,9 @@ class BYLTScraper(Scraper):
                     logger.warning("Warning: Unclassified cell. Discarded.")
                 
                 stat.trojaner = detect_trojaner(stat)
+                logger.info(f"Adding New Station of class {stat.typ}")
                 gsvh.stationen.append(stat)
-            #print(len(rows))
+                
             return gsvh
 
     async def create_document(self, url: str, type_hint : str) -> models.Dokument:
@@ -196,7 +197,8 @@ class BYLTScraper(Scraper):
             return "unclassified"
 
 def detect_trojaner(stat: models.Station) -> bool:
-    print("Warn: Trojaner detection not implemented")
+    global logger
+    logger.warning("Trojaner detection not implemented")
     return False
 
 def extract_singlelink(cellsoup: BeautifulSoup) -> str:

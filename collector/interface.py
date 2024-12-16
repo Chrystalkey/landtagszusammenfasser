@@ -32,20 +32,18 @@ class Scraper(ABC):
         pdf = requests.get(pdf_url)
         return hashlib.sha256(pdf.content).hexdigest()
 
-    def send(self):
-        
+    def send(self, item: models.Gesetzesvorhaben):
         global logger
-        logger.info(f"Sending {len(self.result_objects)} entries to API")
+        logger.info(f"Sending Item with id `{item.api_id}` to Database")
         logger.debug(f"Collector ID: {self.collector_id}")
         with openapi_client.ApiClient(self.oai_config) as api_client:
             api_instance = openapi_client.DefaultApi(api_client)
-            for gsvh in self.result_objects:
-                try:
-                    api_instance.api_v1_gesetzesvorhaben_post(
-                        str(self.collector_id),
-                        gsvh)
-                except openapi_client.ApiException as e:
-                    logger.error(f"Exception when calling DefaultApi->api_v1_gesetzesvorhaben_post: {e}")
+            try:
+                api_instance.api_v1_gesetzesvorhaben_post(
+                    str(self.collector_id), item)
+            except openapi_client.ApiException as e:
+                logger.error(f"Exception when calling DefaultApi->api_v1_gesetzesvorhaben_post: {e}")
+        return item
 
     """
     for every listing_url in the object
@@ -56,7 +54,6 @@ class Scraper(ABC):
         global logger
         item_list = []
         tasks = []
-        logger.debug("Starting extract")
         for lpage in self.listing_urls:
             logger.debug(f"Initializing listing page extractor for {lpage}")
             tasks.append(self.listing_page_extractor(lpage))
@@ -66,7 +63,7 @@ class Scraper(ABC):
         tasks = []
         for item in iset:
             logger.debug(f"Initializing item extractor for {item}")
-            tasks.append(self.item_extractor(item))
+            tasks.append(self.send(await self.item_extractor(item)))
 
         temp_res = []
         try:

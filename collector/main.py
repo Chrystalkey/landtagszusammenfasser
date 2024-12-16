@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 
 async def main():
     global logger
-    logging.basicConfig(level=logging.DEBUG)
-    print ("Starting collector manager.")
+    logging.basicConfig(level=logging.INFO)
+    logger.info("Starting collector manager.")
 
     # Load all the scrapers from the scrapers dir
     oapiconfig = Configuration(host="http://localhost:8080")
@@ -24,10 +24,9 @@ async def main():
             try:
                 # Actually run the scraper instance
                 await scraper.extract()
-                scraper.send()
 
             except Exception as e:
-                print(f"Error running scraper {scraper.__class__.__name__}: {e}")
+                logger.error(f"Error while running scraper {scraper.__class__.__name__}: {e}")
 
 def load_scrapers(config, session):
     scrapers = []
@@ -41,6 +40,7 @@ def load_scrapers(config, session):
             for attr in dir(module):
                 cls = getattr(module, attr)
                 if isinstance(cls, type) and issubclass(cls, Scraper) and cls is not Scraper:
+                    logger.info(f"Found scraper: {cls.__name__}")
                     scrapers.append(cls(config, session))
     return scrapers
 
