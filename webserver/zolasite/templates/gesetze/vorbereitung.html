@@ -24,12 +24,12 @@
                 <th width="5%"></th>
                 <th width="15%">Letzte Änderung</th>
                 <th>Titel</th>
-                <th width="10%">Initiator</th>
+                <th width="10%">Initiator(en)</th>
             </tr>
         </thead>
         <tbody>
             {% for element in paginator.pages %}
-            {% if element.extra.state == "eckpunkt" %}
+            {% if element.extra.state == "preparl-eckpup" %}
             {% include "partials/short-list-element.html" %}
             {% endif %}
             {% endfor %}
@@ -39,15 +39,15 @@
 
 <div class="table-container" onclick="toggleExplanation(this)">
     <div class="table-title">
-        Referentenentwürfe
+        Diskussionsentwürfe
         <span class="arrow"></span>
     </div>
     <div class="table-explanation">
-        Ein Referentenentwurf ist ein erster, offizieller Gesetzentwurf, der von den Fachleuten – den Referent:innen –
+        Ein Diskussionsentwürfe ist ein erster, offizieller Gesetzentwurf, der von den Fachleuten – den Referent:innen –
         eines Ministeriums oder einer Behörde ausgearbeitet wird. Er dient als Grundlage für interne Diskussionen, und
         wird zur weiteren Abstimmung und Prüfung an andere Ministerien, Gremien oder Interessenvertreter weitergeleitet.
-        Oft werden von den Ministerien Stellungnahmen zu den Referentenentwürfen eingeholt, die auf der Vorhabenseite
-        des Ministeriums veröffentlicht werden.
+        Oft werden von den Ministerien Stellungnahmen zu den Diskussionsentwürfen eingeholt, die auf der Vorhabenseite
+        des Ministeriums veröffentlicht werden. Im Bund werden sie auch Referentenentwürfe genannt.
     </div>
     <table>
         <thead>
@@ -60,7 +60,7 @@
         </thead>
         <tbody>
             {% for element in paginator.pages %}
-            {% if element.extra.state == "referentenentwurf" %}
+            {% if element.extra.state == "preparl-regent" %}
             {% include "partials/short-list-element.html" %}
             {% endif %}
             {% endfor %}
@@ -91,7 +91,7 @@
         </thead>
         <tbody>
             {% for element in paginator.pages %}
-            {% if element.extra.state == "kabinett" %}
+            {% if element.extra.state == "preparl-kabbsl" %}
             {% include "partials/short-list-element.html" %}
             {% endif %}
             {% endfor %}
@@ -99,4 +99,31 @@
     </table>
 </div>
 
+<div class="table-container" onclick="toggleExplanation(this)">
+    <div class="table-title">
+        Volkbegehren
+        <span class="arrow"></span>
+    </div>
+    <div class="table-explanation">
+        Auf Ebene der Länder existieren Volksbegehren und Volksentscheide. Die Vorhaben werden von Bürger:innen initiiert und müssen 
+        im Landtag besprochen werden.
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th width="5%"></th>
+                <th width="15%">Letzte Änderung</th>
+                <th>Titel</th>
+                <th width="10%">Initiator</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for element in paginator.pages %}
+            {% if element.extra.state == "preparl-vbegde" %}
+            {% include "partials/short-list-element.html" %}
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}

@@ -8,12 +8,11 @@
 
 <div class="table-container" onclick="toggleExplanation(this)">
     <div class="table-title">
-        Tagesordnung für die nächste Sitzungswoche
+        Gesetzesinitiativen (Noch nicht Beraten)
         <span class="arrow"></span>
     </div>
     <div class="table-explanation">
-        Nur Gesetzesvorhaben, vollständige Tagesordnung auf <a
-            href="https://www.bundestag.de/tagesordnung">bundestag.de</a>
+        Hier ist die erste Station jedes Gesetzes in jedem Parlamentarischen Verfahren
     </div>
     <table>
         <thead>
@@ -26,38 +25,7 @@
         </thead>
         <tbody>
             {% for element in paginator.pages %}
-            {% if element.extra.state == "tagesordnung" %}
-            {% include "partials/short-list-element.html" %}
-            {% endif %}
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-<div class="table-container" onclick="toggleExplanation(this)">
-    <div class="table-title">
-        Noch nicht beraten
-        <span class="arrow"></span>
-    </div>
-    <div class="table-explanation">
-        Ein Referentenentwurf ist ein erster, offizieller Gesetzentwurf, der von den Fachleuten – den Referent:innen –
-        eines Ministeriums oder einer Behörde ausgearbeitet wird. Er dient als Grundlage für interne Diskussionen, und
-        wird zur weiteren Abstimmung und Prüfung an andere Ministerien, Gremien oder Interessenvertreter weitergeleitet.
-        Oft werden von den Ministerien Stellungnahmen zu den Referentenentwürfen eingeholt, die auf der Vorhabenseite
-        des Ministeriums veröffentlicht werden.
-    </div>
-    <table>
-        <thead>
-            <tr>
-                <th width="5%"></th>
-                <th width="15%">Letzte Änderung</th>
-                <th>Titel</th>
-                <th width="10%">Initiator</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for element in paginator.pages %}
-            {% if element.extra.state == "referentenentwurf" %}
+            {% if element.extra.state == "parl-initiativ" %}
             {% include "partials/short-list-element.html" %}
             {% endif %}
             {% endfor %}
@@ -87,16 +55,17 @@
         </thead>
         <tbody>
             {% for element in paginator.pages %}
-            {% if element.extra.state == "kabinett" %}
+            {% if element.extra.state == "parl-ausschber" %}
             {% include "partials/short-list-element.html" %}
             {% endif %}
             {% endfor %}
         </tbody>
     </table>
 </div>
+
 <div class="table-container" onclick="toggleExplanation(this)">
     <div class="table-title">
-        Noch nicht Verkündet
+        Angenommen
         <span class="arrow"></span>
     </div>
     <div class="table-explanation">
@@ -106,14 +75,7 @@
         Das bedeutet, dass sie noch nicht im Gesetzblatt erschienen sind und damit noch nicht in Kraft treten können.
         Das kann unterschiedliche Gründe haben: Der Bundespräsident muss die Gesetze zuerst unterzeichen, das kann
         einige Wochen dauern. Es kann aber auch vorkommen, dass die Verkündung durch eine Beschwerde oder Klage beim
-        Bundesverfassungsgericht verzögert wird.
-
-        <h3>Im Vermittlungsverfahren</h3>
-
-        Bei diesen Vorhaben wurde vom Bundesrat der Vermittlungsausschuss angerufen. In diesem Gremien kommen Bundesrat
-        und Bundestag zusammen, wenn keine Einigung über einen Gesetzentwurf erzielt werden konnte. Im
-        Vermittlungsausschuss wird dann ein Kompromiss ausgehandelt, der dann von Bundestag und Bundesrat beschlossen
-        werden muss. Es kann aber auch passieren, dass keine Einigung möglich ist und das Gesetz daran scheitert.
+        Verfassungsgericht verzögert wird.
     </div>
     <table>
         <thead>
@@ -126,7 +88,7 @@
         </thead>
         <tbody>
             {% for element in paginator.pages %}
-            {% if element.extra.state == "kabinett" %}
+            {% if element.extra.state == "parl-akzeptanz" %}
             {% include "partials/short-list-element.html" %}
             {% endif %}
             {% endfor %}
@@ -134,4 +96,30 @@
     </table>
 </div>
 
+<div class="table-container" onclick="toggleExplanation(this)">
+    <div class="table-title">
+        Abgelehnt
+        <span class="arrow"></span>
+    </div>
+    <div class="table-explanation">
+        <h3>Abgelehnte Vorhaben sind tot</h3>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th width="5%"></th>
+                <th width="15%">Letzte Änderung</th>
+                <th>Titel</th>
+                <th width="10%">Initiator</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for element in paginator.pages %}
+            {% if element.extra.state == "parl-ablehnung" %}
+            {% include "partials/short-list-element.html" %}
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}
