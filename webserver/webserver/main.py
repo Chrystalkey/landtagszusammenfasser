@@ -106,7 +106,7 @@ from http.server import SimpleHTTPRequestHandler
 from http.server import ThreadingHTTPServer
 from threading import Thread
 
-DIRECTORY = os.path.dirname(os.path.realpath(__file__))
+DIRECTORY = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
 
 
 # Function that runs a subprocess
