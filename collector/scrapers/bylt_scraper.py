@@ -48,7 +48,7 @@ class BYLTScraper(Scraper):
             inds = btext_soup.text.split("Nr. ")[1].split(" vom")[0]
             gsvh = models.Gesetzesvorhaben.from_dict({
                 "api_id": str(uuid.uuid4()),
-                "titel": soup.find("span", id="betreff").text.replace("\n", " ").replace("\r\n", " ").replace("\r", " ").strip()
+                "titel": soup.find("span", id="betreff").text.replace("\n", " ").replace("\r\n", " ").replace("\r", " ").strip(),
                 "verfassungsaendernd" : False,
                 "initiatoren": [],
                 "typ": models.Gesetzestyp.LANDGG,
