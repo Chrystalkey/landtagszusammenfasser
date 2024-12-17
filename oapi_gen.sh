@@ -20,4 +20,6 @@ fi
 
 
 ./$DIRECTORY/openapi-generator-cli generate -g python -i $(pwd)/docs/specs/openapi.yml -o $(pwd)/collector/oapicode
+./$DIRECTORY/openapi-generator-cli generate -g python -i $(pwd)/docs/specs/openapi.yml -o $(pwd)/webserver/oapicode
+
 ./$DIRECTORY/openapi-generator-cli generate -g rust-axum -i $(pwd)/docs/specs/openapi.yml -o $(pwd)/database/oapicode

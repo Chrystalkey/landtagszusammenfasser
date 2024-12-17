@@ -18,6 +18,8 @@ if (-Not (Test-Path -Path "oapi-generator" -PathType Container)) {
 
 # Generate Python client code
 & java -jar "./oapi-generator/openapi-generator-cli.jar" generate -g python -i "$(Get-Location)/docs/specs/openapi.yml" -o "$(Get-Location)/collector/oapicode"
+# Twice, once for the website and once for the collector
+& java -jar "./oapi-generator/openapi-generator-cli.jar" generate -g python -i "$(Get-Location)/docs/specs/openapi.yml" -o "$(Get-Location)/webserver/oapicode"
 
 # Generate Rust Axum server code
 & java -jar "./oapi-generator/openapi-generator-cli.jar" generate -g rust-axum -i "$(Get-Location)/docs/specs/openapi.yml" -o "$(Get-Location)/database/oapicode"
