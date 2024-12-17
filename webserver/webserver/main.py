@@ -29,7 +29,7 @@ def update_main():
     logging.basicConfig(level=logging.DEBUG)
     last_update = "2024-01-01"
 
-    oapiconfig = Configuration(host="http://localhost:8080")
+    oapiconfig = Configuration(host=f"http://{os.environ['LTZFDB_HOST']}:{int(os.environ['LTZFDB_PORT'])}")
 
     with openapi_client.ApiClient(oapiconfig) as api_client:
         api_instance = openapi_client.DefaultApi(api_client)
@@ -125,7 +125,7 @@ def run_server():
     run_subprocess()
 
     # Set up the server
-    server_address = (os.environ["LTZFDB_HOST"], int(os.environ["PORT"]))
+    server_address = ("", int(os.environ["PORT"]))
     httpd = ThreadingHTTPServer(server_address, SimpleHTTPRequestHandler)
 
     # Start the server in a new thread

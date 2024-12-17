@@ -29,7 +29,7 @@ pub struct Configuration {
     pub mail_sender: Option<String>,
     #[arg(long, env = "MAIL_RECIPIENT")]
     pub mail_recipient: Option<String>,
-    #[arg(long, env = "LTZF_HOST", default_value = "127.0.0.1")]
+    #[arg(long, env = "LTZF_HOST", default_value = "0.0.0.0")]
     pub host: String,
     #[arg(long, env = "LTZF_PORT", default_value = "8080")]
     pub port: u16,
