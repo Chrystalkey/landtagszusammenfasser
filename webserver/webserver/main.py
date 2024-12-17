@@ -125,7 +125,7 @@ def run_server():
     run_subprocess()
 
     # Set up the server
-    server_address = ("", 8081)
+    server_address = (os.environ["LTZFDB_HOST"], int(os.environ["PORT"]))
     httpd = ThreadingHTTPServer(server_address, SimpleHTTPRequestHandler)
 
     # Start the server in a new thread

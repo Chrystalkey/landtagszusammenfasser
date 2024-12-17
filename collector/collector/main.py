@@ -15,7 +15,7 @@ async def main():
     logger.info("Starting collector manager.")
 
     # Load all the scrapers from the scrapers dir
-    oapiconfig = Configuration(host="http://localhost:8080")
+    oapiconfig = Configuration(host=os.environ["LTZF_DATABASE"])
 
     async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit_per_host=1)) as session:
         scrapers: list[Scraper] = load_scrapers(oapiconfig, session)

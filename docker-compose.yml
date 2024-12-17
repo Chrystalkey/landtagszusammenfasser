@@ -1,0 +1,60 @@
+services:
+  database:
+    image: postgres:latest
+    container_name: pg-server
+    restart: unless-stopped
+    networks:
+      - ltzf-network
+    environment:
+      POSTGRES_USER: ltzf-user
+      POSTGRES_PASSWORD: ltzf-pass
+      POSTGRES_DB: ltzf
+  ltzf-db:
+    build:
+      context: database
+      dockerfile: database/Dockerfile
+    image: ltzf-db:test
+    container_name: ltzf-db
+    depends_on:
+      - database
+    networks:
+      - ltzf-network
+    ports:
+      - 8080:8080
+    environment:
+      DATABASE_URL: "postgres://ltzf-user:ltzf-pass@database:5432/ltzf"
+      LTZF_HOST: "localhost"
+      LTZF_PORT: 8080
+      RUST_LOG: "debug"
+  collector:
+    build:
+      context: collector
+      dockerfile: collector/Dockerfile
+    image: ltzf-collector:test
+    container_name: ltzf-collector
+    depends_on:
+      - ltzf-db
+    networks:
+      - ltzf-network
+    environment:
+      - LTZF_DATABASE=http://ltzf-db:8080
+  webserver:
+    build:
+      context: webserver
+      dockerfile: webserver/Dockerfile
+    image: ltzf-webserver:test
+    container_name: ltzf-webserver
+    depends_on:
+      - ltzf-db
+    networks:
+      - ltzf-network
+    ports:
+      - 8081:8081
+    environment:
+      - LTZFDB_HOST=ltzf-db
+      - LTZFDB_PORT=8080
+
+    
+
+networks:
+  ltzf-network:
