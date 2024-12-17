@@ -6,7 +6,7 @@ import aiohttp
 import asyncio
 import logging
 
-scrapers_dir = "./scrapers"
+scrapers_dir = "./collector/scrapers"
 logger = logging.getLogger(__name__)
 
 async def main():
@@ -45,4 +45,13 @@ def load_scrapers(config, session):
     return scrapers
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    while True:
+        try:
+            asyncio.run(main())
+        except KeyboardInterrupt:
+            logger.info("Shutting down.")
+            break
+        except Exception as e:
+            logger.error(f"Error: {e}")
+            continue
+
