@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block pagecontent %}
+<h1>{{title}}</h1>
+
+<div class="search-bar">
+    <input type="text" placeholder="Search...">
+</div>
+
+<div class="content">
+    {% block content %} {% endblock %}
+</div>
+
+{% endblock %}

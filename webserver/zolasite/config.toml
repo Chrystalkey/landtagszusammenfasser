@@ -1,0 +1,8 @@
+base_url = "http://localhost:1111"
+title = "Landtagszusammenfasser"
+description = "Ein Klon des Bundestagszusammenfassers für den Landtag Bayerns"
+default_language = "de"
+compile_sass = true
+build_search_index = true
+
+[extra]

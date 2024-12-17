@@ -1,0 +1,16 @@
+<tr>
+    <td>
+        {% if element.extra.extra_img is defined %}
+        <img src="{{ element.extra.extra_img }}" style="height:1em;display:block; margin:0 auto;">
+        {% endif %}
+    </td>
+    <td>
+        {{element.date}}
+    </td>
+    <td>
+        <a href="{{element.permalink}}"> {{element.title}}</a>
+    </td>
+    <td>
+        {{element.extra.initiator}}
+    </td>
+</tr>

@@ -1,0 +1,6 @@
+public/
+.idea/
+.vscode/
+*.zip
+*.7z
+*.rar

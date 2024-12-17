@@ -1,0 +1,225 @@
+body
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif
+  margin: 0
+  padding: 0
+  display: flex
+  justify-content: center
+  background-color: #f8f9fa
+  color: #333
+
+.container
+  width: 66.66%
+  text-align: center
+  background-color: white
+  box-shadow: 0 0 10px rgba(0,0,0,0.1)
+  margin: 20px
+  border-radius: 8px
+  overflow: hidden
+
+.header
+  background-color: #343a40
+  display: flex
+  align-items: center
+  justify-content: space-between
+  padding: 10px 20px
+  position: -webkit-sticky
+  position: sticky
+  top: 0
+  z-index: 1000
+
+.header .left-section
+  display: flex
+  align-items: center
+
+.header img
+  height: 80px
+  border-radius: 50%
+  margin-right: 10px
+
+.header .title
+  display: flex
+  flex-direction: column
+  align-items: flex-start
+  color: white
+  margin-left: 10px
+
+.header .title .main-title
+  font-size: 36px
+  margin: 0
+
+.header .title .subtitle
+  font-size: 16px
+  margin: 0
+
+.header .menus
+  display: flex
+
+.dropdown
+  position: relative
+
+.dropdown .dropbtn
+  font-size: 17px
+  border: none
+  outline: none
+  color: white
+  padding: 14px 16px
+  background-color: #343a40
+  font-family: inherit
+  margin: 0
+  cursor: pointer
+
+.header a:hover, .dropdown:hover .dropbtn
+  background-color: #495057
+
+.dropdown-content
+  display: none
+  position: absolute
+  background-color: #f8f9fa
+  min-width: 160px
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2)
+  z-index: 1
+
+.dropdown-content a
+  float: none
+  color: #333
+  padding: 12px 16px
+  text-decoration: none
+  display: block
+  text-align: left
+  border-bottom: 1px solid #ddd
+
+.dropdown-content a:hover
+  background-color: #ddd
+
+.dropdown:hover .dropdown-content
+  display: block
+
+h1
+  color: #e6a10c
+  text-align: center
+  padding: 20px
+  margin: 0
+  background-color: #f8f9fa
+h2, h3, h4, a
+  color: #e6a10c
+
+.search-bar
+  margin: 20px 0
+
+.search-bar input[type="text"]
+  width: 60%
+  padding: 10px
+  font-size: 16px
+  border: 1px solid #ccc
+  border-radius: 4px
+
+.footer
+  background-color: #343a40
+  padding: 10px
+  text-align: center
+  font-size: 14px
+  color: white
+.box
+  background-color: #f0f0f0
+  border: 1px solid #ccc
+  margin: 20px auto
+  padding: 10px
+  border-radius: 2px
+  width: calc(95% - 20px) /* Fill the whole content width */
+
+.box-header
+  cursor: pointer
+  text-align: left
+  padding-left: 50px /* Make space for the arrow */
+  position: relative /* Position the arrow relative to the header */
+
+  .arrow
+    position: absolute /* Position the arrow absolutely within the header */
+    left: 5px /* Stick to the left side */
+    top: 10% /* Align vertically */
+    transform: translateY(-50%) /* Center vertically */
+    display: inline-block
+    width: 10px
+    height: 10px
+    border-left: 2px solid #333
+    border-bottom: 2px solid #333
+    transform: rotate(-45deg)
+    transition: transform 0.3s ease
+
+.box-content
+  display: none
+  background-color: white
+
+.expanded
+  .box-content
+    display: block
+    .arrow
+      transform: rotate(135deg)
+
+
+
+.table-container  
+  background-color: #ffffff 
+  border: 2px solid #ccc 
+  border-radius: 2px 
+  margin-top: 20px
+  margin-left: 20px
+  margin-right: 20px
+  margin-bottom: 20px 
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) 
+  overflow: hidden 
+  transition: all 0.3s ease 
+ 
+
+.table-title  
+  cursor: pointer 
+  font-weight: bold
+  padding: 15px 
+  font-size: 24px 
+  position: relative 
+  background-color: #e0e0e0 
+ 
+
+.arrow  
+  position: absolute 
+  left: 15px 
+  top: 50% 
+  transform: translateY(-50%) 
+  display: inline-block 
+  width: 10px 
+  height: 10px 
+  border-left: 2px solid #333 
+  border-bottom: 2px solid #333 
+  transform: rotate(-45deg) 
+  transition: transform 0.3s ease 
+ 
+
+.table-explanation  
+  display: none 
+  padding: 15px 
+  font-size: 14px 
+  background-color: #f5f5f5 
+ 
+
+table  
+  width: 100% 
+  border-collapse: collapse 
+ 
+
+th, td  
+  text-align: left 
+  border-bottom: 1px solid #ddd 
+
+tbody tr:nth-child(odd)
+    background-color: #e0e0e0
+
+tbody tr:nth-child(even) 
+    background-color: #ffffff
+
+.expanded .table-explanation  
+  display: block 
+ 
+
+.expanded .arrow  
+  transform: rotate(135deg) 
+ 

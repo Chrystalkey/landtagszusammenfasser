@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+
+{% block pagecontent %}
+
+<script>
+    function toggleBox(box) {
+        box.classList.toggle('expanded');
+    }
+</script>
+
+<h1> {{title}} </h1>
+<img src="{{ page.extra.scenario_img }}" alt="Gesetzesfortschritt" style="width:60%">
+
+
+<div class="box" onclick="toggleBox(this)">
+    <div class="box-header">
+        <span class="arrow"></span>
+        Basics
+    </div>
+    <div class="box-content">
+        <!-- Content for the box -->
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla ac velit auctor, venenatis felis non, eleifend justo. Suspendisse potenti.
+    </div>
+</div>
+<div class="box" onclick="toggleBox(this)">
+    <div class="box-header">
+        <span class="arrow"></span>
+        Zusammenfassung
+    </div>
+    <div class="box-content">
+        <!-- Content for the box -->
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla ac velit auctor, venenatis felis non, eleifend justo. Suspendisse potenti.
+    </div>
+</div>
+<div class="box" onclick="toggleBox(this)">
+    <div class="box-header">
+        <span class="arrow"></span>
+        Informationen aus dem Ministerium
+    </div>
+    <div class="box-content">
+        <!-- Content for the box -->
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla ac velit auctor, venenatis felis non, eleifend justo. Suspendisse potenti.
+    </div>
+</div>
+<div class="box" onclick="toggleBox(this)">
+    <div class="box-header">
+        <span class="arrow"></span>
+        Beratungsverlauf im Bundestag
+    </div>
+    <div class="box-content">
+        <!-- Content for the box -->
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla ac velit auctor, venenatis felis non, eleifend justo. Suspendisse potenti.
+    </div>
+</div>
+<div class="box" onclick="toggleBox(this)">
+    <div class="box-header">
+        <span class="arrow"></span>
+        Beratungsverlauf im Bundesrat
+    </div>
+    <div class="box-content">
+        <!-- Content for the box -->
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla ac velit auctor, venenatis felis non, eleifend justo. Suspendisse potenti.
+    </div>
+</div>
+<div class="box" onclick="toggleBox(this)">
+    <div class="box-header">
+        <span class="arrow"></span>
+        Weiterführende Links
+    </div>
+    <div class="box-content">
+        <!-- Content for the box -->
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla ac velit auctor, venenatis felis non, eleifend justo. Suspendisse potenti.
+    </div>
+</div>
+{% endblock %}
