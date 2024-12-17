@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 def thread_main():
     global logger
+    logging.basicConfig(level=logging.DEBUG)
     last_update = "2024-01-01"
     gsvhs: [models.Gesetzesvorhaben] = []
     
@@ -22,21 +23,21 @@ def thread_main():
     with openapi_client.ApiClient(oapiconfig) as api_client:
         api_instance = openapi_client.DefaultApi(api_client)
         try:
-            gsvhs = api_instance.api_v1_gesetzesvorhaben_get(
+            response = api_instance.api_v1_gesetzesvorhaben_get(
                 updated_since=last_update,
                 limit=100,
                 parlament=models.Parlament.BY
             )
-            gsvhs = [] if gsvhs is None else gsvhs
         except openapi_client.ApiException as e:
             logger.error(f"Exception when calling DefaultApi->api_v1_gesetzesvorhaben_get: {e}")
-    generate_content(gsvhs)
+    generate_content(response)
     build_website()
     run_server()
     
 def run_server():
     import subprocess
     subprocess.run(["python", "-m", "http.server", "8081"], cwd="www")
+
 def build_website():
     # run zola build
     import subprocess
@@ -51,34 +52,46 @@ def build_website():
     
 
 # take the vec of gsvh and convert them to neat little .md files in the webserver directory
-def generate_content(items: [models.Gesetzesvorhaben]):
-    for gsvh in items:
-        text = generate_md(gsvh)
+def generate_content(response: [models.Response]):
+    global logger
+    if response is None:
+        logger.warning("No items to generate")
+    
+    for gsvh in response.payload:
         path = ""
-        if gsvh.typ.startswith("preparl"):
+        latest_station_type = None
+        latest_station = None
+        for station in gsvh.stationen:
+            if latest_station is None or station.zeitpunkt > latest_station.zeitpunkt:
+                latest_station = station
+                latest_station_type = station.typ
+        if latest_station_type.startswith("preparl"):
             path = f"zolasite/content/gesetze/vorbereitung/{gsvh.api_id}.md"
-        elif gsvh.typ.startswith("parl"):
+        elif latest_station_type.startswith("parl"):
             path = f"zolasite/content/gesetze/parlament/{gsvh.api_id}.md"
-        elif gsvh.typ.startswith("postparl"):
+        elif latest_station_type.startswith("postparl"):
             path = f"zolasite/content/gesetze/abgeschlossen/{gsvh.api_id}.md"
         else:
             logger.warning(f"Unknown type {gsvh.typ}")
             continue
-
-        with open(path, "w") as f:
+        text = generate_md(gsvh, latest_station.zeitpunkt)
+        logger.info(f"Writing to {path}")
+        logger.debug(text)
+        logger.debug(text[540:])
+        with open(path, "w", encoding="utf-8") as f:
             f.write(text)
 
-def generate_md(gsvh: models.Gesetzesvorhaben)->str:
+def generate_md(gsvh: models.Gesetzesvorhaben, timestamp: str)->str:
     text = "+++\n"
     text += f"title=\"{gsvh.titel}\"\n"
-    text += f"date=\"{gsvh.datum}\"\n"
+    text += f"date=\"{timestamp}\"\n"
     text += "[extra]\n"
     text += f"state=\"eckpunkt\"\n" # todo: change when the template is ready
     text += "extra_img=\"/icons/90daytimeout.png\"\n"
     text += "scenario_img=\"/images/Szenario10.png\"\n"
     initiatoren = ""
     for i in gsvh.initiatoren:
-        initiatoren += i + ", "
+        initiatoren += str(i) + ", "
     initiatoren = initiatoren[:-2]
     text += f"initiator=\"{initiatoren}\"\n"
     text += "+++\n\n"
