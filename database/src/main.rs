@@ -10,6 +10,7 @@ use std::sync::Arc;
 use clap::Parser;
 use deadpool_diesel::postgres::{Manager, Pool};
 
+use error::LTZFError;
 use lettre::{transport::smtp::authentication::Credentials, SmtpTransport};
 use tokio::net::TcpListener;
 
@@ -31,7 +32,7 @@ pub struct Configuration {
     pub mail_recipient: Option<String>,
     #[arg(long, env = "LTZF_HOST", default_value = "0.0.0.0")]
     pub host: String,
-    #[arg(long, env = "LTZF_PORT", default_value = "8080")]
+    #[arg(long, env = "LTZF_PORT", default_value = "80")]
     pub port: u16,
     #[arg(long, short, env = "DATABASE_URL")]
     pub db_url: String,
@@ -54,10 +55,8 @@ impl Configuration {
             || self.mail_sender.is_none()
             || self.mail_recipient.is_none()
         {
-            return Err(error::LTZFError::ConfigurationError(format!(
-                "Mail Configuration is incomplete: {:?}",
-                self
-            )));
+            return Err(LTZFError::Infrastructure{
+                source: error::InfrastructureError::Configuration{message: "Mail Configuration is incomplete".into(), config: self.clone()}}); 
         }
         let mailer = SmtpTransport::relay(self.mail_server.as_ref().unwrap().as_str())?
             .credentials(Credentials::new(
@@ -104,8 +103,8 @@ async fn main() -> Result<()> {
         tracing::info!("DB Unavailable, Retrying in {} ms...", milliseconds);
         std::thread::sleep(std::time::Duration::from_millis(milliseconds));
     };
-    if !available{
-        return Err(error::LTZFError::GenericStringError(format!("Server Connection failed after 10 retries")));
+    if !available {
+        return Err(LTZFError::Other{message: "Server Connection failed after 10 retries".into() });
     }
     
     tracing::debug!("Started Database Pool");

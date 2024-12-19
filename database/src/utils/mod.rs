@@ -5,7 +5,7 @@ use tokio::signal;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations};
 
-use crate::{error::LTZFError, LTZFServer, Result};
+use crate::{error::*, LTZFServer, Result};
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations/");
 
@@ -70,6 +70,7 @@ pub async fn run_migrations(pool: &Pool) -> Result<()> {
     conn.interact(|conn| 
         conn.run_pending_migrations(MIGRATIONS).map(|_| ()))
         .await?
-        .map_err(|e| LTZFError::FallbackError(e))?;
+        .map_err(|e| 
+                DatabaseError::Unknown { source: e })?;
     Ok(())
 }

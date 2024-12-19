@@ -22,7 +22,6 @@ tokio = { version = "1.0", features = ["sync", "macros", "rt-multi-thread"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 uuid = { version = "1.4", features = ["fast-rng", "v7", "serde"] }
-thiserror = "1.0.61"
 ulid = { version = "1.1.2", features = ["uuid", "serde"] }
 derive_builder = "0.20.0"
 clap = { version = "4.5.16", features = ["derive", "env"] }
@@ -32,3 +31,4 @@ deadpool = "0.12.1"
 strum = { version = "0.26.3", features = ["derive"] }
 axum-extra = "0.9.6"
 dotenv = "0.15.0"
+snafu = "0.8.5"

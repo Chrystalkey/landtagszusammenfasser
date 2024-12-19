@@ -1,8 +1,7 @@
 use std::str::FromStr;
 
 use crate::db::schema;
-use crate::error::LTZFError;
-use crate::Result;
+use crate::error::*;
 use deadpool_diesel::postgres::Connection;
 use diesel::prelude::*;
 use openapi::models;
@@ -103,7 +102,7 @@ pub async fn gsvh_by_id(id: i32, connection: &Connection) -> Result<models::Gese
         titel: res.titel,
         verfassungsaendernd: res.verfassungsaendernd,
         typ: models::Gesetzestyp::from_str(res.typ.as_str())
-            .map_err(|e| LTZFError::GenericStringError(e))?,
+            .map_err(|e| DataValidationError::InvalidEnumValue { msg: e })?,
         initiatoren,
         ids: Some(ids),
         links: Some(links),
@@ -196,9 +195,9 @@ pub async fn station_by_id(id: i32, connection: &Connection) -> Result<models::S
 
     return Ok(models::Station {
         parlament: models::Parlament::from_str(parl?.as_str())
-            .map_err(|e| LTZFError::GenericStringError(e))?,
+            .map_err(|e| DataValidationError::InvalidEnumValue { msg: e })?,
         typ: models::Stationstyp::from_str(styp?.as_str())
-            .map_err(|e| LTZFError::GenericStringError(e))?,
+            .map_err(|e| DataValidationError::InvalidEnumValue { msg: e })?,
         dokumente: doks,
         schlagworte: Some(schlagworte),
         stellungnahmen: Some(stellungnahmen),
@@ -286,7 +285,7 @@ pub async fn dokument_by_id(id: i32, connection: &Connection) -> Result<models::
         schlagworte: Some(sw),
         autoren: Some(autoren),
         typ: models::Dokumententyp::from_str(ret.5.as_str())
-            .map_err(|e| LTZFError::GenericStringError(e))?,
+            .map_err(|e| DataValidationError::InvalidEnumValue { msg: e })?,
     });
 }
 
@@ -321,17 +320,28 @@ pub async fn gsvh_by_parameter(
     let gsvh_listing: Vec<i32> = connection
         .interact(move |conn| {
             let query = diesel::sql_query(query)
-            .bind::<sql_types::Timestamp, _>(chrono::NaiveDateTime::from(params.updated_since.unwrap_or("1970-01-01".parse::<chrono::NaiveDate>().unwrap())))
-            .bind::<sql_types::Timestamp, _>(chrono::NaiveDateTime::from(params.updated_until.unwrap_or("2100-01-01".parse::<chrono::NaiveDate>().unwrap())));
-            if params.parlament.is_some(){
-                query.bind::<sql_types::Text, _>(params.parlament.as_ref().unwrap().to_string())
-                .get_results::<GSVHID>(conn)
-            }else{
+                .bind::<sql_types::Timestamp, _>(chrono::NaiveDateTime::from(
+                    params
+                        .updated_since
+                        .unwrap_or("1970-01-01".parse::<chrono::NaiveDate>().unwrap()),
+                ))
+                .bind::<sql_types::Timestamp, _>(chrono::NaiveDateTime::from(
+                    params
+                        .updated_until
+                        .unwrap_or("2100-01-01".parse::<chrono::NaiveDate>().unwrap()),
+                ));
+            if params.parlament.is_some() {
                 query
-                .get_results(conn)
+                    .bind::<sql_types::Text, _>(params.parlament.as_ref().unwrap().to_string())
+                    .get_results::<GSVHID>(conn)
+            } else {
+                query.get_results(conn)
             }
         })
-        .await??.iter().map(|e| e.id).collect();
+        .await??
+        .iter()
+        .map(|e| e.id)
+        .collect();
     tracing::debug!("Found GSVHs: {:?}", gsvh_listing);
     let mut rval = vec![];
     for idx in gsvh_listing {

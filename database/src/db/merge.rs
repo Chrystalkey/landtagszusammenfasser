@@ -1,4 +1,3 @@
-
 /// Handles merging of two datasets.
 /// in particular, stellungnahme & dokument are atomic.
 /// station and gsvh are not in the sense that gsvh.stations and station.stellungnahmen are appendable and deletable.
@@ -18,7 +17,7 @@
 ///    b. if found more than one, send a message to the admins to select one
 ///    c. if found none, create a new stellungnahme & insert
 use super::schema;
-use crate::error::LTZFError;
+use crate::error::*;
 use crate::utils;
 use crate::{LTZFServer, Result};
 use deadpool_diesel::postgres::Connection as AsyncConnection;
@@ -277,33 +276,32 @@ pub fn update_gsvh(
                 .execute(connection)?;
             let sw_ids = schema::schlagwort::table
                 .select(schema::schlagwort::id)
-                .filter(
-                    schema::schlagwort::api_key
-                        .eq_any(schlagworte),
-                )
+                .filter(schema::schlagwort::api_key.eq_any(schlagworte))
                 .distinct()
                 .get_results::<i32>(connection)?;
-            diesel::insert_into(schema::rel_station_schlagwort::table).values(
-                sw_ids
-                    .iter()
-                    .map(|id| {
-                        (
-                            schema::rel_station_schlagwort::station_id.eq(stat_id),
-                            schema::rel_station_schlagwort::schlagwort_id.eq(*id),
-                        )
-                    })
-                    .collect::<Vec<_>>(),
-            ).execute(connection)?;
+            diesel::insert_into(schema::rel_station_schlagwort::table)
+                .values(
+                    sw_ids
+                        .iter()
+                        .map(|id| {
+                            (
+                                schema::rel_station_schlagwort::station_id.eq(stat_id),
+                                schema::rel_station_schlagwort::schlagwort_id.eq(*id),
+                            )
+                        })
+                        .collect::<Vec<_>>(),
+                )
+                .execute(connection)?;
             // rep doks
-            for dokument in station.dokumente.iter(){
+            for dokument in station.dokumente.iter() {
                 let direct_equivalence = schema::dokument::table
                     .select(schema::dokument::id)
                     .filter(schema::dokument::hash.eq(dokument.hash.clone()))
                     .first::<i32>(connection)
                     .optional()?;
-                
+
                 // If the exact same document is already in the database, we can skip this step.
-                if direct_equivalence.is_some(){
+                if direct_equivalence.is_some() {
                     continue;
                 }
                 let id = super::insert::insert_dokument(dokument.clone(), connection)?;
@@ -315,27 +313,29 @@ pub fn update_gsvh(
                     .execute(connection)?;
             }
             // rep stln
-            if let Some(stellungnahmen) = station.stellungnahmen.clone(){
-                for stellungnahme in stellungnahmen.iter(){
+            if let Some(stellungnahmen) = station.stellungnahmen.clone() {
+                for stellungnahme in stellungnahmen.iter() {
                     let direct_equivalence = schema::dokument::table
                         .select(schema::dokument::id)
                         .filter(schema::dokument::hash.eq(stellungnahme.dokument.hash.clone()))
                         .first::<i32>(connection)
                         .optional()?;
-                    if direct_equivalence.is_some(){
+                    if direct_equivalence.is_some() {
                         continue;
                     }
-                    let dok_id = super::insert::insert_dokument(stellungnahme.dokument.clone(), connection)?;
+                    let dok_id =
+                        super::insert::insert_dokument(stellungnahme.dokument.clone(), connection)?;
                     diesel::insert_into(schema::stellungnahme::table)
-                    .values(
-                        (
+                        .values((
                             schema::stellungnahme::meinung.eq(stellungnahme.meinung),
                             schema::stellungnahme::dokument_id.eq(dok_id),
                             schema::stellungnahme::station_id.eq(stat_id),
-                            schema::stellungnahme::lobbyregister.eq(stellungnahme.lobbyregister_url.clone().unwrap_or("".to_string())),
-                        )
-                    )
-                    .execute(connection)?;
+                            schema::stellungnahme::lobbyregister.eq(stellungnahme
+                                .lobbyregister_url
+                                .clone()
+                                .unwrap_or("".to_string())),
+                        ))
+                        .execute(connection)?;
                 }
             }
         } else {
@@ -386,10 +386,15 @@ pub async fn run(model: &models::Gesetzesvorhaben, server: &LTZFServer) -> Resul
                 "Ambiguous Match for Merge".to_string(), 
                 "Fresh GSVH entered the database, producing ambiguous matches. The new GSVH is: \n\n {:?} \n\n The matches are: \n\n {:?}\n please provide guidance.".to_string(),
             server)?;
-            return Err(LTZFError::AmbiguousMatch(format!("Merge Candidates: {:?}", many.iter().map(|e| e.1.api_id).collect::<Vec<_>>())));
+            return Err(DataValidationError::AmbiguousMatch {
+                message: format!(
+                    "Merge Candidates: {:?}",
+                    many.iter().map(|e| e.1.api_id).collect::<Vec<_>>()
+                ),
+            }.into());
         }
         MergeState::ExactlyEqualMatch => {
-            return Err(LTZFError::ApiIDEqual(model.api_id));
+            return Err(DataValidationError::DuplicateApiId{id: model.api_id}.into());
         }
     }
     Ok(())

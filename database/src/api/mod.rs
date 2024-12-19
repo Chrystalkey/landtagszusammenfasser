@@ -3,7 +3,7 @@ use axum::extract::Host;
 use axum::http::Method;
 use lettre::SmtpTransport;
 
-use crate::error::LTZFError;
+use crate::error::{DataValidationError, DatabaseError, LTZFError};
 use crate::Configuration;
 use axum_extra::extract::CookieJar;
 use deadpool_diesel::postgres::Pool;
@@ -56,7 +56,7 @@ impl openapi::apis::default::Default for LTZFServer {
             Err(e) => {
                 tracing::warn!("{}", e.to_string());
                 match e {
-                    LTZFError::DieselError(diesel::result::Error::NotFound) => {
+                    LTZFError::Database{source: DatabaseError::Operation{source: diesel::result::Error::NotFound}} => {
                         tracing::warn!("Not Found Error: {:?}", e.to_string());
                         Ok(ApiV1GesetzesvorhabenGesvhIdGetResponse::Status404_ContentNotFound)
                     }
@@ -116,21 +116,21 @@ impl openapi::apis::default::Default for LTZFServer {
             Err(e) => {
                 tracing::warn!("Error Occurred and Is Returned: {:?}", e.to_string());
                 match e {
-                    LTZFError::DieselError(diesel::result::Error::DatabaseError(
+                    LTZFError::Database{ source: DatabaseError::Operation{source: diesel::result::Error::DatabaseError(
                         diesel::result::DatabaseErrorKind::UniqueViolation,
                         info,
-                    )) => {
+                    )}} => {
                         tracing::warn!(
                             "Unique Violation Error (Conflict on Input Data): {:?}",
                             info
                         );
                         Ok(ApiV1GesetzesvorhabenPostResponse::Status409_Conflict)
                     },
-                    LTZFError::ApiIDEqual(id) => {
+                    LTZFError::Validation{source: DataValidationError::DuplicateApiId{id}} => {
                         tracing::warn!("ApiID Equal Error: {:?}", id);
                         Ok(ApiV1GesetzesvorhabenPostResponse::Status409_Conflict)
                     },
-                    LTZFError::AmbiguousMatch(_) =>{
+                    LTZFError::Validation{source: DataValidationError::AmbiguousMatch{..}} =>{
                         Ok(ApiV1GesetzesvorhabenPostResponse::Status409_Conflict)
                     }
                     _ => {
