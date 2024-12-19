@@ -19,12 +19,8 @@ services:
       - database
     networks:
       - ltzf-network
-    ports:
-      - 8080:8080
     environment:
       DATABASE_URL: "postgres://ltzf-user:ltzf-pass@database:5432/ltzf"
-      LTZF_HOST: "0.0.0.0"
-      LTZF_PORT: 8080
       RUST_LOG: "debug"
   collector:
     build:
@@ -37,7 +33,7 @@ services:
     networks:
       - ltzf-network
     environment:
-      LTZF_DATABASE: "http://ltzf-db:8080"
+      LTZF_DATABASE: "http://ltzf-db:80"
   
   webserver:
     build:
@@ -50,11 +46,9 @@ services:
     networks:
       - ltzf-network
     ports:
-      - 8081:8081
+      - 8081:80
     environment:
       LTZFDB_HOST: "ltzf-db"
-      LTZFDB_PORT: 8080
-      PORT: 8081
 
 networks:
   ltzf-network:

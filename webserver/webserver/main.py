@@ -1,163 +1,148 @@
-# every x minutes:
-# - get the latest data from the database with the oapi collector
-# - update the date in the webserver directory
-# - run zola build
-# - copy the generated files to the webserver directory
-# - restart the webserver
+"""
+Web server that periodically:
+1. Fetches latest data from the database via OAPI collector
+2. Updates data in the webserver directory
+3. Runs zola build
+4. Copies generated files to webserver directory
+5. Restarts the webserver
+"""
 
-from openapi_client import Configuration
-from openapi_client import models
-import openapi_client
-import signal
+from pathlib import Path
 import logging
 import os
 import subprocess
 import threading
 import time
-from http.server import SimpleHTTPRequestHandler
-from socketserver import TCPServer
-import shutil
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from typing import List, Optional
 
-# Configuration
+from openapi_client import ApiClient, Configuration, DefaultApi
+from openapi_client import models
+
 logger = logging.getLogger(__name__)
-web_directory = "www"
-port = 8081
 
-
-def update_main():
-    global logger
-    logging.basicConfig(level=logging.DEBUG)
-    last_update = "2024-01-01"
-
-    oapiconfig = Configuration(host=f"http://{os.environ['LTZFDB_HOST']}:{int(os.environ['LTZFDB_PORT'])}")
-
-    with openapi_client.ApiClient(oapiconfig) as api_client:
-        api_instance = openapi_client.DefaultApi(api_client)
-        try:
-            response = api_instance.api_v1_gesetzesvorhaben_get(
-                updated_since=last_update, limit=100, parlament=models.Parlament.BY
-            )
-        except openapi_client.ApiException as e:
-            logger.error(
-                f"Exception when calling DefaultApi->api_v1_gesetzesvorhaben_get: {e}"
-            )
-    generate_content(response)
-
-
-# take the vec of gsvh and convert them to neat little .md files in the webserver directory
-def generate_content(response: [models.Response]):
-    global logger
-    if response is None:
-        logger.warning("No items to generate")
-
-    for gsvh in response.payload:
-        path = ""
-        latest_station_type = None
-        latest_station = None
-        for station in gsvh.stationen:
-            if latest_station is None or station.zeitpunkt > latest_station.zeitpunkt:
-                latest_station = station
-                latest_station_type = station.typ
-        if latest_station_type.startswith("preparl"):
-            path = f"zolasite/content/gesetze/vorbereitung/{gsvh.api_id}.md"
-        elif latest_station_type.startswith("parl"):
-            path = f"zolasite/content/gesetze/parlament/{gsvh.api_id}.md"
-        elif latest_station_type.startswith("postparl"):
-            path = f"zolasite/content/gesetze/postparlament/{gsvh.api_id}.md"
+class ContentGenerator:
+    def __init__(self):
+        self.base_dir = Path("zolasite/content/gesetze")
+        
+    def generate_md(self, gsvh: models.Gesetzesvorhaben, timestamp: str, last_state: str) -> str:
+        """Generate markdown content for a legislative proposal."""
+        title = " ".join(gsvh.titel.split())  # Normalize whitespace
+        
+        # Map certain parliamentary states to ausschber
+        if last_state in {"parl-vollvlsgn", "parl-schlussab", "parl-ggentwurf"}:
+            display_state = "parl-ausschber"
         else:
-            logger.warning(f"Unknown type {gsvh.typ}")
-            continue
-        station_type = ""+latest_station.typ
-        text = generate_md(gsvh, latest_station.zeitpunkt, station_type)
-        logger.info(f"Writing to {path}")
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(text)
+            display_state = last_state
+            
+        initiatoren = ", ".join(str(i) for i in gsvh.initiatoren)
+        
+        return f"""+++
+title="{title}"
+date="{timestamp}"
+[extra]
+state="{display_state}"
+extra_img="/icons/90daytimeout.png"
+scenario_img="/images/Szenario10.png"
+initiator="{initiatoren}"
++++
+"""
+
+    def generate_content(self, response: Optional[List[models.Response]]) -> None:
+        """Generate markdown files from legislative proposals."""
+        if not response:
+            logger.warning("No items to generate")
+            return
+
+        for gsvh in response.payload:
+            # Find latest station
+            latest_station = max(gsvh.stationen, key=lambda s: s.zeitpunkt)
+            station_type = latest_station.typ
+
+            # Determine output path based on station type
+            if station_type.startswith("preparl"):
+                subdir = "vorbereitung"
+            elif station_type.startswith("parl"):
+                subdir = "parlament"
+            elif station_type.startswith("postparl"):
+                subdir = "postparlament"
+            else:
+                logger.warning(f"Unknown station type: {station_type}")
+                continue
+
+            path = self.base_dir / subdir / f"{gsvh.api_id}.md"
+            content = self.generate_md(gsvh, latest_station.zeitpunkt, station_type)
+            
+            logger.info(f"Writing to {path}")
+            path.write_text(content, encoding="utf-8")
 
 
-def generate_md(gsvh: models.Gesetzesvorhaben, timestamp: str, last_state: str) -> str:
-    text = "+++\n"
-    title: str = gsvh.titel
-    title = (
-        title.replace("\n", " ").replace("\r\n", " ").replace("\r", " ").strip()
-    )
-    text += f'title="{title}"\n'
-    text += f'date="{timestamp}"\n'
-    text += "[extra]\n"
-    if last_state in ["parl-vollvlsgn", "parl-schlussab", "parl-ggentwurf"]:
-        text += f'state="parl-ausschber"\n'
-    else:
-        text += f'state="{str(last_state)}"\n'
-    text += 'extra_img="/icons/90daytimeout.png"\n'
-    text += 'scenario_img="/images/Szenario10.png"\n'
-    initiatoren = ""
-    for i in gsvh.initiatoren:
-        initiatoren += str(i) + ", "
-    initiatoren = initiatoren[:-2]
-    text += f'initiator="{initiatoren}"\n'
-    text += "+++\n\n"
+class WebServer:
+    def __init__(self, port: int):
+        self.directory = Path(__file__).parent.parent
+        self.content_generator = ContentGenerator()
+        self.port = port
 
-    return text
+    def update_data(self) -> None:
+        """Fetch latest data from API and generate content."""
+        logging.basicConfig(level=logging.DEBUG)
+        last_update = "2024-01-01"  # TODO: Make this dynamic
 
+        config = Configuration(
+            host=f"http://{os.environ['LTZFDB_HOST']}:{int(os.environ['LTZFDB_PORT'])}"
+        )
 
-import os
-import subprocess
-import time
-from http.server import SimpleHTTPRequestHandler
-from http.server import ThreadingHTTPServer
-from threading import Thread
+        try:
+            with ApiClient(config) as api_client:
+                api = DefaultApi(api_client)
+                response = api.api_v1_gesetzesvorhaben_get(
+                    updated_since=last_update,
+                    limit=100,
+                    parlament=models.Parlament.BY
+                )
+                self.content_generator.generate_content(response)
+        except Exception as e:
+            logger.error(f"Failed to fetch data: {e}")
 
-DIRECTORY = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
+    def build_site(self) -> None:
+        """Build the static site using zola."""
+        os.chdir(self.directory)
+        subprocess.run(["zola", "build", "-o", "../www", "--force"], cwd="zolasite")
+        os.chdir(self.directory / "www")
 
+    def run(self) -> None:
+        """Run the web server with periodic updates."""
+        self.update_data()
+        self.build_site()
 
-# Function that runs a subprocess
-def run_subprocess():
-    global DIRECTORY
-    print(f"Running subprocess in {DIRECTORY}")
-    # Replace with your actual command
-    os.chdir(DIRECTORY)
-    subprocess.run(["zola", "build", "-o", "../www", "--force"], cwd="zolasite")
-    os.chdir(os.path.join(DIRECTORY, "www"))
+        server = ThreadingHTTPServer(("", self.port), SimpleHTTPRequestHandler)
+        server_thread = threading.Thread(target=server.serve_forever)
+        server_thread.start()
 
+        try:
+            while True:
+                time.sleep(100)
+                self.update_data()
+                
+                logger.info("Restarting server...")
+                server.shutdown()
+                server.server_close()
+                server_thread.join()
 
-def run_server():
-    # Initialize with subprocess
-    update_main()  # Call the update function
-    run_subprocess()
+                self.build_site()
 
-    # Set up the server
-    server_address = ("", int(os.environ["PORT"]))
-    httpd = ThreadingHTTPServer(server_address, SimpleHTTPRequestHandler)
-
-    # Start the server in a new thread
-    server_thread = Thread(target=httpd.serve_forever)
-    server_thread.start()
-
-    # Periodically call update_main and restart server every 10 seconds
-    try:
-        while True:
-            time.sleep(100)
-            update_main()
-            print("Stopping server for restart...")
-            httpd.server_close()  # Stop the server
-            httpd.shutdown()
-
-            # Wait for the server thread to stop
+                server = ThreadingHTTPServer(("", self.port), SimpleHTTPRequestHandler)
+                server_thread = threading.Thread(target=server.serve_forever)
+                server_thread.start()
+                
+        except KeyboardInterrupt:
+            logger.info("Server stopped by user")
+            server.shutdown()
+            server.server_close()
             server_thread.join()
-
-            # Run the subprocess again (step 1)
-            run_subprocess()
-
-            # Restart the server
-            print("Restarting server...")
-            httpd = ThreadingHTTPServer(server_address, SimpleHTTPRequestHandler)
-            server_thread = Thread(target=httpd.serve_forever)
-            server_thread.start()
-    except KeyboardInterrupt:
-        print("Server stopped by user.")
-        httpd.server_close()
-        httpd.shutdown()
-        server_thread.join()
 
 
 if __name__ == "__main__":
-    run_server()
+    port = int(80 if os.environ["PORT"] is None else os.environ["PORT"])
+    server = WebServer(port)
+    server.run()
