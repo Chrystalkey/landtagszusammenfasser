@@ -1,5 +1,6 @@
 +++
 title="Unterstützen / Über uns"
+template="subpage.html"
 +++
 
 # Was soll das hier?

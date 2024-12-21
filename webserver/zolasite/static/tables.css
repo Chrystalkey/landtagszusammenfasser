@@ -1,0 +1,77 @@
+/* Table styles */
+.laws-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: var(--spacing-xl) 0;
+    background-color: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.laws-table th,
+.laws-table td {
+    padding: var(--spacing-md) var(--spacing-lg);
+    text-align: left;
+}
+
+.laws-table th {
+    background-color: var(--color-bg-secondary);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    border-bottom: 2px solid var(--color-border);
+    position: sticky;
+    top: 0;
+}
+
+.laws-table tr:nth-child(even) {
+    background-color: var(--color-bg-secondary);
+}
+
+.laws-table tr:hover {
+    background-color: var(--color-bg-hover);
+}
+
+.laws-table td {
+    border-bottom: 1px solid var(--color-border);
+}
+
+.laws-table tr:last-child td {
+    border-bottom: none;
+}
+
+.date-col {
+    width: 100px;
+    white-space: nowrap;
+    color: var(--color-text-secondary);
+}
+
+.right-col {
+    text-align: right;
+    width: 120px;
+    white-space: nowrap;
+    color: var(--color-text-secondary);
+}
+
+.laws-table a {
+    color: var(--color-link);
+    font-weight: 500;
+}
+
+.laws-table a:hover {
+    color: var(--color-link-hover);
+}
+
+/* Category page sections */
+.category-section {
+    margin-bottom: var(--spacing-xl);
+}
+
+.category-section h2 {
+    margin: var(--spacing-xl) 0;
+    color: var(--color-text-primary);
+    font-weight: 500;
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 2px solid var(--color-border);
+} 

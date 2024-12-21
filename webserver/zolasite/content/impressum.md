@@ -1,6 +1,6 @@
 +++
 title="Impressum und Datenschutz"
-template="page.html"
+template="subpage.html"
 +++
 
 # Dinge und Zeug und so

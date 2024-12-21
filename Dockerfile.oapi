@@ -1,0 +1,17 @@
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    maven jq curl\
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY docs/specs/openapi.yml ./openapi.yml
+
+RUN curl "https://raw.githubusercontent.com/OpenAPITools/openapi-generator/master/bin/utils/openapi-generator-cli.sh" > openapi-generator-cli && \
+chmod u+x openapi-generator-cli
+
+RUN ./openapi-generator-cli generate -g python -i ./openapi.yml -o /app/oapicode-python
+RUN ./openapi-generator-cli generate -g rust-axum -i ./openapi.yml -o /app/oapicode-rust
+
+ENTRYPOINT [ "echo", "\"hello\"" ]

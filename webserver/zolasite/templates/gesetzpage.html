@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block pagecontent %}
+<main class="main-content">
+    <article class="law-article">
+        <div class="info-box">
+            <h2>Basisdaten</h2>
+            <dl class="info-list">
+                <div class="info-item">
+                    <dt>Initiator</dt>
+                    <dd>{{ page.extra.initiator | default(value="Nicht angegeben") }}</dd>
+                </div>
+                <div class="info-item">
+                    <dt>Datum</dt>
+                    <dd>{{ page.extra.date | date(format="%d.%m.%Y") }}</dd>
+                </div>
+                <div class="info-item">
+                    <dt>Status</dt>
+                    <dd>{{ page.extra.status | safe }}</dd>
+                </div>
+                <div class="info-item">
+                    <dt>Gesetzestyp</dt>
+                    <dd>{{ page.extra.gesetzestyp | default(value="Nicht angegeben") }}</dd>
+                </div>
+                <div class="info-item">
+                    <dt>Drucksache</dt>
+                    <dd>
+                        {% if page.extra.drucksache_link %}
+                            <a href="{{ page.extra.drucksache_link }}">Link</a>
+                        {% else %}
+                            Nicht angegeben
+                        {% endif %}
+                    </dd>
+                </div>
+                <div class="info-item">
+                    <dt>Gesetzentwurf</dt>
+                    <dd>
+                        {% if page.extra.entwurf_link %}
+                            <a href="{{ page.extra.entwurf_link }}">Link</a>
+                        {% else %}
+                            Nicht angegeben
+                        {% endif %}
+                    </dd>
+                </div>
+            </dl>
+        </div>
+
+        <div class="law-content">
+            {{ page.content | safe }}
+        </div>
+    </article>
+</main>
+
+<style>
+    .law-article {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: var(--spacing-xl);
+    }
+
+    .info-box {
+        background-color: var(--color-bg-secondary);
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-xl);
+        margin-bottom: var(--spacing-xl);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .info-box h2 {
+        margin-bottom: var(--spacing-lg);
+        color: var(--color-text-primary);
+        font-size: 1.2em;
+    }
+
+    .info-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: var(--spacing-lg);
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-xs);
+    }
+
+    dt {
+        color: var(--color-text-secondary);
+        font-size: 0.9em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    dd {
+        color: var(--color-text-primary);
+        font-weight: 500;
+    }
+
+    .law-content {
+        line-height: 1.6;
+    }
+
+    .law-content h1 {
+        margin-bottom: var(--spacing-xl);
+        color: var(--color-text-primary);
+        font-size: 1.8em;
+    }
+
+    .law-content h2 {
+        margin: var(--spacing-xl) 0 var(--spacing-md);
+        color: var(--color-text-primary);
+        font-size: 1.4em;
+    }
+
+    .law-content h3 {
+        margin: var(--spacing-lg) 0 var(--spacing-md);
+        color: var(--color-text-primary);
+        font-size: 1.2em;
+    }
+
+    .law-content p {
+        margin-bottom: var(--spacing-md);
+    }
+
+    .law-content ul, .law-content ol {
+        margin: var(--spacing-md) 0;
+        padding-left: var(--spacing-xl);
+    }
+
+    .law-content li {
+        margin-bottom: var(--spacing-xs);
+    }
+
+    .law-content a {
+        color: var(--color-link);
+        text-decoration: none;
+    }
+
+    .law-content a:hover {
+        color: var(--color-link-hover);
+        text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+        .law-article {
+            padding: var(--spacing-md);
+        }
+
+        .info-list {
+            grid-template-columns: 1fr;
+            gap: var(--spacing-md);
+        }
+    }
+</style>
+{% endblock pagecontent %}

@@ -4,3 +4,6 @@ public/
 *.zip
 *.7z
 *.rar
+
+content/*/*
+!content/*/*_index.md

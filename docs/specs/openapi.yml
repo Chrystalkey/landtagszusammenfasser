@@ -147,7 +147,7 @@ components:
         - "preparl-vbegde" # Volksbegehren / Diskussionsentwurf
         - "parl-initiativ" # Gesetzesinitiative 
         - "parl-ausschber" # Beratung im Ausschuss
-        - "parl-vollvlsgn" # Vollversammlung und Lesung
+        - "parl-vollvlsgn" # Vollversammlung / Lesung
         - "parl-schlussab" # Schlussabstimmung
         - "parl-akzeptanz" # Akzeptanz des Parlaments
         - "parl-ablehnung" # Ablehnung des Parlaments

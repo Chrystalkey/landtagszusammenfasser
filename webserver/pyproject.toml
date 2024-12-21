@@ -4,14 +4,15 @@ version = "0.1.0"
 description = ""
 authors = ["Chrystalkey <schaefer10056@gmail.com>"]
 readme = "README.md"
-packages =[
-    {include="webserver", from=".."}
+packages = [
+    {include = "webserver", from = "."},
+    {include = "openapi_client", from = "./oapicode"}
 ]
 
 [tool.poetry.dependencies]
 python = "^3.13"
 pydantic = "^2.9.2"
-openapi-client = {path = "oapicode"}
+openapi-client = {path = "./oapicode"}
 
 
 [build-system]

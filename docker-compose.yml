@@ -1,4 +1,9 @@
 services:
+  oapi-preimage:
+    build:
+      context: .
+      dockerfile: Dockerfile.oapi
+    image: oapi-preimage
   database:
     image: postgres:latest
     container_name: pg-server
@@ -9,19 +14,24 @@ services:
       POSTGRES_USER: ltzf-user
       POSTGRES_PASSWORD: ltzf-pass
       POSTGRES_DB: ltzf
+
   ltzf-db:
     build:
       context: database
       dockerfile: Dockerfile
     image: ltzf-db:test
     container_name: ltzf-db
+    ports:
+      - 8080:80
     depends_on:
       - database
+      - oapi-preimage
     networks:
       - ltzf-network
     environment:
       DATABASE_URL: "postgres://ltzf-user:ltzf-pass@database:5432/ltzf"
       RUST_LOG: "debug"
+
   collector:
     build:
       context: collector
@@ -30,6 +40,7 @@ services:
     container_name: ltzf-collector
     depends_on:
       - ltzf-db
+      - oapi-preimage
     networks:
       - ltzf-network
     environment:
@@ -43,6 +54,7 @@ services:
     container_name: ltzf-webserver
     depends_on:
       - ltzf-db
+      - oapi-preimage
     networks:
       - ltzf-network
     ports:

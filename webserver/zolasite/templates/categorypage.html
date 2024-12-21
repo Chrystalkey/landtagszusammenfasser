@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block pagecontent %}
+    <main class="main-content">
+        <h1>{{ section.title }}</h1>
+        
+        {% for table in section.extra.tables %}
+            <section id="{{ table.name | slugify }}" class="category-section">
+                <h2>{{ table.name }}</h2>
+                <table class="laws-table sortable">
+                    <thead>
+                        <tr>
+                            <th class="date-col sortable" data-sort="date">Datum <span class="sort-icon">↕</span></th>
+                            <th class="date-col sortable" data-sort="info">Info <span class="sort-icon">↕</span></th>
+                            <th class="sortable" data-sort="title">Titel <span class="sort-icon">↕</span></th>
+                            <th class="right-col sortable" data-sort="initiator">Initiator <span class="sort-icon">↕</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set_global matching_pages = [] %}
+                        {% for subpage in paginator.pages %}
+                            {% if subpage.extra.station in table.stations %}
+                                {% set_global matching_pages = matching_pages | concat(with=subpage) %}
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% for subpage in matching_pages | sort(attribute="extra.date") | reverse %}
+                            <tr>
+                                <td class="date-col" data-sort-value="{{ subpage.extra.date | date(format='%Y-%m-%d') }}">{{ subpage.extra.date | date(format="%d.%m.%Y") }}</td>
+                                <td class="date-col"></td>
+                                <td data-sort-value="{{ subpage.title }}"><a href="{{ subpage.path }}">{{ subpage.title }}</a></td>
+                                <td class="right-col" data-sort-value="{{ subpage.extra.initiator | default(value="") }}">{{ subpage.extra.initiator | default(value="") }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </section>
+        {% endfor %}
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('th.sortable').forEach(headerCell => {
+                headerCell.addEventListener('click', () => {
+                    const table = headerCell.closest('table');
+                    const tbody = table.querySelector('tbody');
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+                    const columnIndex = headerCell.cellIndex;
+                    const isAscending = headerCell.classList.contains('asc');
+                    const sortType = headerCell.getAttribute('data-sort');
+
+                    // Reset all sort icons
+                    table.querySelectorAll('th.sortable').forEach(th => {
+                        th.classList.remove('asc', 'desc');
+                        th.querySelector('.sort-icon').textContent = '↕';
+                    });
+
+                    // Set new sort direction
+                    headerCell.classList.toggle('asc', !isAscending);
+                    headerCell.classList.toggle('desc', isAscending);
+                    headerCell.querySelector('.sort-icon').textContent = isAscending ? '↓' : '↑';
+
+                    // Sort the rows
+                    rows.sort((rowA, rowB) => {
+                        const cellA = rowA.cells[columnIndex].getAttribute('data-sort-value') || rowA.cells[columnIndex].textContent.trim();
+                        const cellB = rowB.cells[columnIndex].getAttribute('data-sort-value') || rowB.cells[columnIndex].textContent.trim();
+
+                        if (sortType === 'date') {
+                            const dateA = cellA ? new Date(cellA) : new Date(0);
+                            const dateB = cellB ? new Date(cellB) : new Date(0);
+                            return isAscending ? dateB - dateA : dateA - dateB;
+                        }
+
+                        // Handle empty values
+                        if (!cellA) return isAscending ? 1 : -1;
+                        if (!cellB) return isAscending ? -1 : 1;
+
+                        return isAscending ? 
+                            cellB.localeCompare(cellA, 'de') :
+                            cellA.localeCompare(cellB, 'de');
+                    });
+
+                    // Reorder the rows
+                    rows.forEach(row => tbody.appendChild(row));
+                });
+            });
+        });
+    </script>
+{% endblock %}

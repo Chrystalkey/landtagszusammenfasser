@@ -11,12 +11,8 @@ services:
       - postgres
     networks:
       - ltzf-network
-    ports:
-      - 8080:8080
     environment:
       DATABASE_URL: "postgres://postgres:blub@pg-server:5432/postgres"
-      LTZF_HOST: "localhost"
-      LTZF_PORT: 8080
       RUST_LOG: "debug"
 
   postgres:

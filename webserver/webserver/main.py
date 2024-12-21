@@ -13,6 +13,7 @@ import os
 import subprocess
 import threading
 import time
+import webserver.generation as generation
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from typing import List, Optional
 
@@ -23,30 +24,7 @@ logger = logging.getLogger(__name__)
 
 class ContentGenerator:
     def __init__(self):
-        self.base_dir = Path("zolasite/content/gesetze")
-        
-    def generate_md(self, gsvh: models.Gesetzesvorhaben, timestamp: str, last_state: str) -> str:
-        """Generate markdown content for a legislative proposal."""
-        title = " ".join(gsvh.titel.split())  # Normalize whitespace
-        
-        # Map certain parliamentary states to ausschber
-        if last_state in {"parl-vollvlsgn", "parl-schlussab", "parl-ggentwurf"}:
-            display_state = "parl-ausschber"
-        else:
-            display_state = last_state
-            
-        initiatoren = ", ".join(str(i) for i in gsvh.initiatoren)
-        
-        return f"""+++
-title="{title}"
-date="{timestamp}"
-[extra]
-state="{display_state}"
-extra_img="/icons/90daytimeout.png"
-scenario_img="/images/Szenario10.png"
-initiator="{initiatoren}"
-+++
-"""
+        self.base_dir = Path("zolasite/content")
 
     def generate_content(self, response: Optional[List[models.Response]]) -> None:
         """Generate markdown files from legislative proposals."""
@@ -61,21 +39,29 @@ initiator="{initiatoren}"
 
             # Determine output path based on station type
             if station_type.startswith("preparl"):
-                subdir = "vorbereitung"
-            elif station_type.startswith("parl"):
-                subdir = "parlament"
-            elif station_type.startswith("postparl"):
-                subdir = "postparlament"
+                subdir = "in-vorbereitung"
+            elif station_type.startswith("parl") and station_type not in ["parl-abgelehnt", "parl-akzeptiert"]:
+                subdir = "in-beratung"
+            elif station_type.startswith("postparl") or station_type in ["parl-abgelehnt", "parl-akzeptiert"]:
+                subdir = "in-nachbereitung"
             else:
                 logger.warning(f"Unknown station type: {station_type}")
                 continue
 
             path = self.base_dir / subdir / f"{gsvh.api_id}.md"
-            content = self.generate_md(gsvh, latest_station.zeitpunkt, station_type)
+            content = generation.generate_content(gsvh)
             
             logger.info(f"Writing to {path}")
+            if path.exists():
+                with open(path, "r", encoding="utf-8") as file:
+                    existing_content = file.read()
+                if existing_content == content:
+                    logger.info(f"Content for {gsvh.api_id} already exists and is unchanged")
+                    continue
+                else:
+                    logger.info(f"Content for {gsvh.api_id} already exists but is different")
+                    os.remove(path)
             path.write_text(content, encoding="utf-8")
-
 
 class WebServer:
     def __init__(self, port: int):
@@ -89,7 +75,7 @@ class WebServer:
         last_update = "2024-01-01"  # TODO: Make this dynamic
 
         config = Configuration(
-            host=f"http://{os.environ['LTZFDB_HOST']}:{int(os.environ['LTZFDB_PORT'])}"
+            host=f"http://{os.environ.get('LTZFDB_HOST')}:{os.environ.get('LTZFDB_PORT', 80)}"
         )
 
         try:
@@ -143,6 +129,6 @@ class WebServer:
 
 
 if __name__ == "__main__":
-    port = int(80 if os.environ["PORT"] is None else os.environ["PORT"])
+    port = int(os.environ.get("PORT", 80))
     server = WebServer(port)
     server.run()
