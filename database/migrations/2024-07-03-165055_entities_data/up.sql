@@ -25,7 +25,8 @@ CREATE TABLE gesetzesvorhaben(
     api_id UUID NOT NULL UNIQUE,
     titel VARCHAR NOT NULL,
     verfassungsaendernd BOOLEAN NOT NULL,
-    typ INTEGER NOT NULL REFERENCES gesetzestyp(id) ON DELETE CASCADE
+    typ INTEGER NOT NULL REFERENCES gesetzestyp(id) ON DELETE CASCADE,
+    CONSTRAINT unique_gsvh_titel_typ UNIQUE (titel, typ)
 );
 CREATE TABLE rel_gsvh_init(
     gesetzesvorhaben INTEGER NOT NULL REFERENCES gesetzesvorhaben(id) ON DELETE CASCADE,

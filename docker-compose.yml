@@ -8,6 +8,8 @@ services:
     image: postgres:latest
     container_name: pg-server
     restart: unless-stopped
+    ports:
+      - 5432:5432
     networks:
       - ltzf-network
     environment:

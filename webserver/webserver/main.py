@@ -22,6 +22,7 @@ from openapi_client import models
 
 logger = logging.getLogger(__name__)
 
+
 class ContentGenerator:
     def __init__(self):
         self.base_dir = Path("zolasite/content")
@@ -40,9 +41,15 @@ class ContentGenerator:
             # Determine output path based on station type
             if station_type.startswith("preparl"):
                 subdir = "in-vorbereitung"
-            elif station_type.startswith("parl") and station_type not in ["parl-abgelehnt", "parl-akzeptiert"]:
+            elif station_type.startswith("parl") and station_type not in [
+                "parl-abgelehnt",
+                "parl-akzeptiert",
+            ]:
                 subdir = "in-beratung"
-            elif station_type.startswith("postparl") or station_type in ["parl-abgelehnt", "parl-akzeptiert"]:
+            elif station_type.startswith("postparl") or station_type in [
+                "parl-abgelehnt",
+                "parl-akzeptiert",
+            ]:
                 subdir = "in-nachbereitung"
             else:
                 logger.warning(f"Unknown station type: {station_type}")
@@ -50,18 +57,25 @@ class ContentGenerator:
 
             path = self.base_dir / subdir / f"{gsvh.api_id}.md"
             content = generation.generate_content(gsvh)
-            
-            logger.info(f"Writing to {path}")
-            if path.exists():
-                with open(path, "r", encoding="utf-8") as file:
-                    existing_content = file.read()
-                if existing_content == content:
-                    logger.info(f"Content for {gsvh.api_id} already exists and is unchanged")
-                    continue
-                else:
-                    logger.info(f"Content for {gsvh.api_id} already exists but is different")
-                    os.remove(path)
-            path.write_text(content, encoding="utf-8")
+            try:
+                logger.info(f"Writing to `{path}`")
+                if path.exists():
+                    existing_content = path.read_text(encoding="utf-8")
+                    if existing_content == content:
+                        logger.info(
+                            f"Content for {gsvh.api_id} already exists and is unchanged"
+                        )
+                        continue
+                    else:
+                        logger.info(
+                            f"Content for {gsvh.api_id} already exists but is different"
+                        )
+                        os.remove(path)
+                with path.open("w") as file:
+                    file.write(content)
+            except Exception as e:
+                logger.error(f"Failed to write to {path}: {e}")
+
 
 class WebServer:
     def __init__(self, port: int):
@@ -82,9 +96,7 @@ class WebServer:
             with ApiClient(config) as api_client:
                 api = DefaultApi(api_client)
                 response = api.api_v1_gesetzesvorhaben_get(
-                    updated_since=last_update,
-                    limit=100,
-                    parlament=models.Parlament.BY
+                    updated_since=last_update, limit=100, parlament=models.Parlament.BY
                 )
                 self.content_generator.generate_content(response)
         except Exception as e:
@@ -109,7 +121,7 @@ class WebServer:
             while True:
                 time.sleep(100)
                 self.update_data()
-                
+
                 logger.info("Restarting server...")
                 server.shutdown()
                 server.server_close()
@@ -120,7 +132,7 @@ class WebServer:
                 server = ThreadingHTTPServer(("", self.port), SimpleHTTPRequestHandler)
                 server_thread = threading.Thread(target=server.serve_forever)
                 server_thread.start()
-                
+
         except KeyboardInterrupt:
             logger.info("Server stopped by user")
             server.shutdown()
