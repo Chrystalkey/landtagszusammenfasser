@@ -31,4 +31,6 @@ COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY collector ./collector
 COPY --from=oapifile /app/oapicode-python ./oapicode
 
+VOLUME /app/locallogs
+
 ENTRYPOINT ["python", "-m", "collector.main"]
