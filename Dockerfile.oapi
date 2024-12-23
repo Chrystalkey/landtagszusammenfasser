@@ -1,5 +1,9 @@
 FROM debian:bookworm-slim
 
+LABEL maintainer="Benedikt Schäfer"
+LABEL description="Pre-Image that generates openapi code from scratch every time the spec changes"
+LABEL version="0.1"
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     maven jq curl\
     && rm -rf /var/lib/apt/lists/*
@@ -14,4 +18,4 @@ chmod u+x openapi-generator-cli
 RUN ./openapi-generator-cli generate -g python -i ./openapi.yml -o /app/oapicode-python
 RUN ./openapi-generator-cli generate -g rust-axum -i ./openapi.yml -o /app/oapicode-rust
 
-ENTRYPOINT [ "echo", "\"hello\"" ]
+ENTRYPOINT [ "echo", "\"hello world\"" ]
