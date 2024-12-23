@@ -16,6 +16,14 @@ services:
       POSTGRES_USER: ltzf-user
       POSTGRES_PASSWORD: ltzf-pass
       POSTGRES_DB: ltzf
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: unless-stopped
+    networks:
+      - ltzf-network
+    environment:
+      REDIS_ARGS: "--save 60 1 --loglevel warning"
 
   ltzf-db:
     build:
@@ -42,11 +50,16 @@ services:
     container_name: ltzf-collector
     depends_on:
       - ltzf-db
+      - redis
       - oapi-preimage
     networks:
       - ltzf-network
+    volumes:
+      - ./temp/locallogs:/app/locallogs
     environment:
       LTZF_DATABASE: "http://ltzf-db:80"
+      REDIS_HOST: "redis"
+      API_OBJ_LOG: "locallogs"
   
   webserver:
     build:

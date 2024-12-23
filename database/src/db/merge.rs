@@ -74,7 +74,7 @@ pub async fn gsvh_merge_candidates(
         WHERE NOT EXISTS  (SELECT 1 FROM station, parlament 
             WHERE station.gsvh_id = gesetzesvorhaben.id 
             AND station.parlament = parlament.id 
-            AND (parlament.api_key <> $1
+            AND (parlament.api_key <> $1 AND $1 NOT IN ('BT', 'BR')
                 OR parlament.api_key NOT IN ('BT', 'BR') AND $1 NOT IN ('BT', 'BR'))
             )
         AND (SIMILARITY(gesetzesvorhaben.titel, $2) > 0.3 
@@ -110,7 +110,7 @@ pub async fn gsvh_merge_candidates(
         WHERE NOT EXISTS  (SELECT 1 FROM station, parlament 
             WHERE station.gsvh_id = gesetzesvorhaben.id 
             AND station.parlament = parlament.id 
-            AND (parlament.api_key <> $1
+            AND (parlament.api_key <> $1 AND $1 NOT IN ('BT', 'BR')
                 OR parlament.api_key NOT IN ('BT', 'BR') AND $1 NOT IN ('BT', 'BR')))
         AND SIMILARITY(gesetzesvorhaben.titel, $2) > 0.3";
         tracing::trace!("Executing Query: {}", query);

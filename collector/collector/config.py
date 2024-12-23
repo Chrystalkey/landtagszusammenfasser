@@ -18,8 +18,11 @@ class CollectorConfiguration:
         self.ltzfdb_host = os.environ.get("LTZF_DATABASE", "http://localhost:80")
         self.redis_host = os.environ.get("REDIS_HOST", "localhost")
         self.redis_port = int(os.environ.get("REDIS_PORT", 6379))
-        self.api_object_log = Path(os.environ.get("API_OBJ_LOG", None))
-        self.api_object_log.mkdir(parents=True, exist_ok=True)
+        strpath = os.environ.get("API_OBJ_LOG", None)
+        if strpath:
+            self.api_object_log = Path(strpath)
+            self.api_object_log.mkdir(parents=True, exist_ok=True)
+        
         self.oapiconfig = Configuration(host=self.ltzfdb_host)
         self.scrapers_dir = Path("./collector/scrapers")
         logger.debug(f"Finished Configuration with values {str(self)}")

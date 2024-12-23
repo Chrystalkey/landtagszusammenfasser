@@ -18,15 +18,15 @@ WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
 COPY --from=oapifile /app/oapicode-rust ./oapicode
 
-# RUN mkdir src && \
-#     echo "fn main() {}" > src/main.rs && \
-#     cargo build --release && \
-#     rm -rf src
+RUN mkdir src && \
+    echo "fn main() {}" > src/main.rs && \
+    cargo build --release && \
+    rm -rf src
 
 COPY ./src ./src
 COPY ./migrations ./migrations
 
-RUN cargo build --release
+RUN touch src/main.rs && cargo build --release
 
 FROM debian:bookworm-slim
 

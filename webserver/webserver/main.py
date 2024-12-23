@@ -20,6 +20,8 @@ from typing import List, Optional
 from openapi_client import ApiClient, Configuration, DefaultApi
 from openapi_client import models
 
+logging.basicConfig(level=logging.INFO,format="%(asctime)s|%(levelname)s: %(filename)s: %(message)s")
+
 logger = logging.getLogger(__name__)
 
 

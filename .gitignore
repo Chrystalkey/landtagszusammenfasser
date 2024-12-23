@@ -11,3 +11,4 @@ __pycache__/
 oapi-generator/
 oapicode
 www/
+temp/

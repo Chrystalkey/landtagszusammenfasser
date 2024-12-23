@@ -13,14 +13,11 @@ from collector.interface import Scraper
 
 logger = logging.getLogger(__name__)
 
-async def main():
+async def main(config: CollectorConfiguration):
     global logger
-    logging.basicConfig(level=logging.INFO)
-    logger.info("Starting collector manager.")
 
+    logger.info("Starting new Scraping Cycle")
     # Load all the scrapers from the scrapers dir
-    config = CollectorConfiguration()
-
     async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit_per_host=1)) as session:
         scrapers: list[Scraper] = load_scrapers(config, session)
         for scraper in scrapers:
@@ -53,11 +50,14 @@ def load_scrapers(config, session):
     return scrapers
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO,format="%(asctime)s|%(levelname)s: %(filename)s: %(message)s")
+    logger.info("Starting collector manager.")
+    config = CollectorConfiguration()
+    logger.info("Configuration Complete")
     while True:
         try:
-            while True:
-                asyncio.run(main())
-                time.sleep(1000)
+            asyncio.run(main(config))
+            time.sleep(1000)
         except KeyboardInterrupt:
             logger.info("Shutting down.")
             break

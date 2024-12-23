@@ -14,7 +14,6 @@ from collector.config import CollectorConfiguration
 
 logger = logging.getLogger(__name__)
 
-
 class Scraper(ABC):
     listing_urls: list[str] = []
     result_objects: list[models.Gesetzesvorhaben] = []
@@ -63,6 +62,8 @@ class Scraper(ABC):
                 )
         return item
 
+    async def item_processing(self, item):
+        return await self.send(await self.item_extractor(item))
     """
     for every listing_url in the object
         extract the listing page and then extract the individual pages
@@ -87,7 +88,7 @@ class Scraper(ABC):
                 continue
             self.redis.setex(str(item), timedelta(minutes=12), value="{}")
             logger.debug(f"Initializing item extractor for {item}")
-            tasks.append(self.send(await self.item_extractor(item)))
+            tasks.append(self.item_processing(item))
 
         temp_res = []
         try:
