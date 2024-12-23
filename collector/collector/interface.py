@@ -43,7 +43,7 @@ class Scraper(ABC):
         )
         logger.info(f"Set Collector ID to {self.collector_id}")
 
-    async def send(self, item: models.Gesetzesvorhaben):
+    async def senditem(self, item: models.Gesetzesvorhaben):
         global logger
         logger.info(f"Sending Item with id `{item.api_id}` to Database")
         logger.debug(f"Collector ID: {self.collector_id}")
@@ -63,14 +63,14 @@ class Scraper(ABC):
         return item
 
     async def item_processing(self, item):
-        return await self.send(await self.item_extractor(item))
+        return await self.senditem(await self.item_extractor(item))
     """
     for every listing_url in the object
         extract the listing page and then extract the individual pages
         package everything into one or more Gesetzesvorhaben objects and return it
     """
 
-    async def extract(self):
+    async def run(self):
         global logger
         item_list = []
         tasks = []

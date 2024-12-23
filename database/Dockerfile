@@ -34,12 +34,16 @@ RUN apt-get update && \
     apt-get install -y libpq-dev libssl-dev && \
     rm -rf /var/lib/apt/lists/*
 
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+CMD curl -f "http://localhost:80" || exit 1
+
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /etc/group /etc/group
 
 WORKDIR /app
 
 COPY --from=builder --chown=ltzf-database:ltzf-database /app/target/release/ltzusfas-db ./
+
 RUN chmod +x ./ltzusfas-db
 
 USER ltzf-database

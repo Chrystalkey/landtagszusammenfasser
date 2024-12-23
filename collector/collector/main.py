@@ -24,7 +24,7 @@ async def main(config: CollectorConfiguration):
             logger.info(f"Running scraper: {scraper.__class__.__name__}")
             try:
                 # Actually run the scraper instance
-                await scraper.extract()
+                await scraper.run()
 
             except Exception as e:
                 logger.error(f"Error while running scraper {scraper.__class__.__name__}: {e}", stack_info=True)

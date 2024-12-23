@@ -1,11 +1,11 @@
 FROM oapi-preimage AS oapifile
 FROM python:3.13-bookworm AS builder
 
-RUN pip install poetry==1.4.2
+LABEL maintainer="Benedikt Schäfer"
+LABEL description="Collector for the LTZF"
+LABEL version="0.1"
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    maven jq \
-    && rm -rf /var/lib/apt/lists/*
+RUN pip install poetry==1.4.2
 
 ENV POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_IN_PROJECT=1 \
@@ -13,11 +13,10 @@ ENV POETRY_NO_INTERACTION=1 \
     POETRY_CACHE_DIR=/tmp/poetry_cache
 
 WORKDIR /app
+
 COPY --from=oapifile /app/oapicode-python ./oapicode
 
 COPY pyproject.toml poetry.lock ./
-
-RUN touch README.md
 
 RUN --mount=type=cache,target=$POETRY_CACHE_DIR poetry install --without dev --no-root
 
@@ -27,9 +26,9 @@ ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH"
 
 COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+COPY --from=oapifile /app/oapicode-python ./oapicode
 
 COPY collector ./collector
-COPY --from=oapifile /app/oapicode-python ./oapicode
 
 VOLUME /app/locallogs
 
