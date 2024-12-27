@@ -4,14 +4,14 @@ INSERT INTO
 VALUES
     ('bgg-einspruch'),
     ('bgg-zustimmung'),
-    ('volksgg'),
-    ('landgg'),
+    ('bay-parlament'),
+    ('bay-volk'),
     ('sonstig');
 
 INSERT INTO
     identifikatortyp (api_key)
 VALUES
-    ('drucksnr'),
+    ('initdrucks'),
     ('vorgnr'),
     ('sonstig');
 
@@ -25,7 +25,6 @@ VALUES
     ('parl-initiativ'),
     ('parl-ausschber'),
     ('parl-vollvlsgn'),
-    ('parl-schlussab'),
     ('parl-akzeptanz'),
     ('parl-ablehnung'),
     ('parl-ggentwurf'),
@@ -46,8 +45,8 @@ VALUES
     ('entwurf'),
     ('drucksache'),
     ('protokoll'),
+    ('topliste'),
     ('stellungnahme'),
     ('sonstig');
-
 
 CREATE EXTENSION pg_trgm;

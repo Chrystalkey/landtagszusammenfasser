@@ -67,10 +67,10 @@ class BYLTScraper(Scraper):
                     .strip(),
                     "verfassungsaendernd": False,
                     "initiatoren": [],
-                    "typ": models.Gesetzestyp.LANDGG,
+                    "typ": "bay-parlament",
                     "ids": [
                         models.Identifikator.from_dict(
-                            {"typ": "drucksnr", "id": str(inds)}
+                            {"typ": "initdrucks", "id": str(inds)}
                         )
                     ],
                     "links": [listing_item],
@@ -87,10 +87,12 @@ class BYLTScraper(Scraper):
             gsvh.initiatoren = []
             for ini in initiat_lis:
                 gsvh.initiatoren.append(ini.text)
+            gsvh.initiatoren = sorted(gsvh.initiatoren, key=lambda element: 1 if "(" in element else 0) # sort the init list such that the parties are on top
             assert (
                 len(gsvh.initiatoren) > 0
             ), f"Error: Could not find Initiatoren for url {listing_item}"
 
+            # station extraction
             for row in rows:
                 cells = row.findAll("td")
 
@@ -111,10 +113,10 @@ class BYLTScraper(Scraper):
                 # content is in the second cell
                 stat = models.Station.from_dict(
                     {
-                        "zeitpunkt": timestamp,
+                        "datum": timestamp,
                         "gremium": "",
                         "dokumente": [],
-                        "url": listing_item,
+                        "link": listing_item,
                         "parlament": "BY",
                         "schlagworte": [],
                         "stellungnahmen": [],
@@ -158,24 +160,40 @@ class BYLTScraper(Scraper):
                         )
                     ]
                 elif cellclass == "plenumsdiskussion-zustm":
-                    stat.typ = "parl-akzeptanz"
-                    stat.gremium = "landtag"
-                    stat.dokumente = [
-                        await self.create_document(
+                    if len(gsvh.stationen) > 0 and gsvh.stationen[-1].typ == "parl-akzeptanz":
+                        gsvh.stationen[-1].dokumente.append(await self.create_document(
                             extract_plenproto(cells[1]), "protokoll"
-                        )
-                    ]
+                        ))
+                        continue
+                    else:
+                        stat.typ = "parl-akzeptanz"
+                        stat.gremium = "landtag"
+                        stat.dokumente = [
+                            await self.create_document(
+                                extract_plenproto(cells[1]), "protokoll"
+                            )
+                        ]
                 elif cellclass == "plenumsdiskussion-ablng":
-                    stat.typ = "parl-ablehnung"
-                    stat.gremium = "landtag"
+                    if len(gsvh.stationen) > 0 and gsvh.stationen[-1].typ in ["parl-akzeptanz", "parl-ablehnung"]:
+                        gsvh.stationen[-1].typ = "parl-ablehnung"
+                        continue
+                    else:
+                        stat.typ = "parl-ablehnung"
+                        stat.gremium = "landtag"
                 elif cellclass == "plenumsbeschluss":
-                    stat.typ = "parl-schlussab"
-                    stat.gremium = "landtag"
-                    stat.dokumente = [
-                        await self.create_document(
+                    if len(gsvh.stationen) > 0 and gsvh.stationen[-1].typ in ["parl-akzeptanz", "parl-ablehnung"]:
+                        gsvh.stationen[-1].dokumente.append(await self.create_document(
                             extract_singlelink(cells[1]), "drucksache"
-                        )
-                    ]
+                        ))
+                        continue
+                    else:
+                        stat.typ = "parl-akzeptanz" # TODO you stopped here. todo: merge shclussabstimmung (plenproto) with akzeptanz/ablehnung
+                        stat.gremium = "landtag"
+                        stat.dokumente = [
+                            await self.create_document(
+                                extract_singlelink(cells[1]), "drucksache"
+                            )
+                        ]
                 elif cellclass == "ausschussbericht":
                     stat.typ = "parl-ausschber"
                     soup: BeautifulSoup = cells[1]
@@ -195,6 +213,10 @@ class BYLTScraper(Scraper):
                     ]
                 elif cellclass == "unclassified":
                     logger.warning("Warning: Unclassified cell. Discarded.")
+                    continue
+                else:
+                    logger.error("Reached an unreachable state. Discarded.")
+                    continue
 
                 stat.trojaner = detect_trojaner(stat)
                 logger.info(
@@ -224,9 +246,9 @@ class BYLTScraper(Scraper):
 
         titel = document_info["title"] or document_info["subject"] or "Unbekannt"
         dok_dic = {
-            "zeitpunkt": document_info["lastchange"],
+            "datum": document_info["lastchange"],
             "titel": titel,
-            "url": url,
+            "link": url,
             "hash": document_info["hash"],
             "typ": type_hint,
             "zusammenfassung": "TODO",

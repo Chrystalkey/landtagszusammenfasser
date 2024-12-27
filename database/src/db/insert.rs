@@ -20,7 +20,7 @@ pub fn insert_gsvh(
         (
             dsl::api_id.eq(api_gsvh.api_id),
             dsl::titel.eq(&api_gsvh.titel),
-            dsl::verfassungsaendernd.eq(api_gsvh.verfassungsaendernd),
+            dsl::verfaend.eq(api_gsvh.verfassungsaendernd),
             dsl::typ.eq(
                 typ_dsl::gesetzestyp
                 .select(typ_dsl::id)
@@ -41,7 +41,7 @@ pub fn insert_gsvh(
             .cloned()
             .map(|s|(
                 dsl::link.eq(s),
-                dsl::gesetzesvorhaben_id.eq(gsvh_id)
+                dsl::gsvh_id.eq(gsvh_id)
             )
             )
             .collect::<Vec<_>>()
@@ -56,7 +56,7 @@ pub fn insert_gsvh(
             api_gsvh.initiatoren.iter()
             .map(|s|
                 (dsl::initiator.eq(s),
-                dsl::gesetzesvorhaben.eq(gsvh_id)
+                dsl::gsvh_id.eq(gsvh_id)
             ))
             .collect::<Vec<_>>()
         )
@@ -69,9 +69,9 @@ pub fn insert_gsvh(
 
         for id_entry in ids.iter(){
             let value= (
-                dsl::gesetzesvorhaben_id.eq(gsvh_id),
+                dsl::gsvh_id.eq(gsvh_id),
                 dsl::identifikator.eq(&id_entry.id),
-                dsl::id_typ.eq(
+                dsl::typ.eq(
                     schema::identifikatortyp::table
                     .select(schema::identifikatortyp::id)
                     .filter(schema::identifikatortyp::api_key
@@ -107,18 +107,18 @@ pub fn insert_station(
         (dsl::gsvh_id.eq(gsvh_id),
         dsl::gremium.eq(stat.gremium),
         dsl::trojaner.eq(stat.trojaner.unwrap_or(false)),
-        dsl::zeitpunkt.eq(chrono::NaiveDateTime::from(stat.zeitpunkt)),
-        dsl::parlament.eq(
+        dsl::datum.eq(chrono::NaiveDateTime::from(stat.datum)),
+        dsl::parl_id.eq(
             schema::parlament::table.select(schema::parlament::id)
             .filter(schema::parlament::api_key.eq(&stat.parlament.to_string()))
             .first::<i32>(connection)?
         ),
-        dsl::stationstyp.eq(
+        dsl::typ.eq(
             schema::stationstyp::table.select(schema::stationstyp::id)
             .filter(schema::stationstyp::api_key.eq(&stat.typ.to_string()))
             .first::<i32>(connection)?
         ),
-        dsl::url.eq(stat.url),
+        dsl::link.eq(stat.link),
      )
     )
     .returning(dsl::id)
@@ -134,8 +134,8 @@ pub fn insert_station(
             dok_ids.iter()
             .map(|dok_id|
                 (
-                    schema::rel_station_dokument::station_id.eq(stat_id),
-                    schema::rel_station_dokument::dokument_id.eq(*dok_id)
+                    schema::rel_station_dokument::stat_id.eq(stat_id),
+                    schema::rel_station_dokument::dok_id.eq(*dok_id)
                 )
             )
             .collect::<Vec<_>>()
@@ -149,9 +149,9 @@ pub fn insert_station(
             .values( 
                 (
                     dsl::meinung.eq(stln.meinung),
-                    dsl::lobbyregister.eq(stln.lobbyregister_url),
-                    dsl::station_id.eq(stat_id),
-                    dsl::dokument_id.eq(
+                    dsl::lobbyreg_link.eq(stln.lobbyregister_link),
+                    dsl::stat_id.eq(stat_id),
+                    dsl::dok_id.eq(
                         insert_dokument(stln.dokument, connection)?
                     )
                 )
@@ -182,8 +182,8 @@ pub fn insert_station(
             sw.iter()
             .map(|s| {
                 (
-                    schema::rel_station_schlagwort::station_id.eq(stat_id),
-                    schema::rel_station_schlagwort::schlagwort_id.eq(idvec.get(s).unwrap())
+                    schema::rel_station_schlagwort::stat_id.eq(stat_id),
+                    schema::rel_station_schlagwort::sw_id.eq(idvec.get(s).unwrap())
                 )}
             )
             .collect::<Vec<_>>()
@@ -202,11 +202,11 @@ pub fn insert_dokument(
     .values(
         (
             dsl::titel.eq(dok.titel),
-            dsl::url.eq(dok.url),
+            dsl::link.eq(dok.link),
             dsl::hash.eq(dok.hash),
-            dsl::zeitpunkt.eq(chrono::NaiveDateTime::from(dok.zeitpunkt)),
+            dsl::datum.eq(chrono::NaiveDateTime::from(dok.datum)),
             dsl::zusammenfassung.eq(dok.zusammenfassung),
-            dsl::dokumententyp.eq(
+            dsl::typ.eq(
                 schema::dokumententyp::table.select(schema::dokumententyp::id)
                 .filter(schema::dokumententyp::api_key.eq(&dok.typ.to_string()))
                 .first::<i32>(connection)?
@@ -238,8 +238,8 @@ pub fn insert_dokument(
             sw.iter()
             .map(|s| {
                 (
-                    schema::rel_dok_schlagwort::dokument_id.eq(did),
-                    schema::rel_dok_schlagwort::schlagwort_id.eq(idvec.get(s).unwrap())
+                    schema::rel_dok_schlagwort::dok_id.eq(did),
+                    schema::rel_dok_schlagwort::sw_id.eq(idvec.get(s).unwrap())
                 )}
             )
             .collect::<Vec<_>>()
@@ -251,7 +251,7 @@ pub fn insert_dokument(
             auth.iter()
             .map(|s|
                 (
-                    schema::rel_dok_autor::dokument_id.eq(did),
+                    schema::rel_dok_autor::dok_id.eq(did),
                     schema::rel_dok_autor::autor.eq(s)
                 )
             )

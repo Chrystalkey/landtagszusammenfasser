@@ -23,9 +23,9 @@ mod db_models {
         pub parlament: i32,
         pub stationstyp: i32,
         pub gremium: String,
-        pub zeitpunkt: NaiveDate,
+        pub datum: NaiveDate,
         pub trojaner: bool,
-        pub url: Option<String>,
+        pub link: Option<String>,
     }
 }
 
@@ -39,7 +39,7 @@ pub async fn gsvh_by_id(id: i32, connection: &Connection) -> Result<models::Gese
                 .select((
                     dsl::id,
                     dsl::api_id,
-                    dsl::verfassungsaendernd,
+                    dsl::verfaend,
                     dsl::titel,
                     schema::gesetzestyp::dsl::api_key,
                 ))
@@ -51,7 +51,7 @@ pub async fn gsvh_by_id(id: i32, connection: &Connection) -> Result<models::Gese
         .interact(move |conn| {
             schema::rel_gsvh_links::table
                 .select(schema::rel_gsvh_links::link)
-                .filter(schema::rel_gsvh_links::gesetzesvorhaben_id.eq(res.id))
+                .filter(schema::rel_gsvh_links::gsvh_id.eq(res.id))
                 .get_results::<String>(conn)
         })
         .await??;
@@ -59,7 +59,7 @@ pub async fn gsvh_by_id(id: i32, connection: &Connection) -> Result<models::Gese
         .interact(move |conn| {
             schema::rel_gsvh_init::table
                 .select(schema::rel_gsvh_init::initiator)
-                .filter(schema::rel_gsvh_init::gesetzesvorhaben.eq(res.id))
+                .filter(schema::rel_gsvh_init::gsvh_id.eq(res.id))
                 .get_results::<String>(conn)
         })
         .await??;
@@ -67,7 +67,7 @@ pub async fn gsvh_by_id(id: i32, connection: &Connection) -> Result<models::Gese
     let ids = connection
         .interact(move |conn| {
             schema::rel_gsvh_id::table
-                .filter(schema::rel_gsvh_id::gesetzesvorhaben_id.eq(id))
+                .filter(schema::rel_gsvh_id::gsvh_id.eq(id))
                 .inner_join(schema::identifikatortyp::table)
                 .select((
                     schema::identifikatortyp::api_key,
@@ -115,8 +115,8 @@ pub async fn station_by_id(id: i32, connection: &Connection) -> Result<models::S
     let dids = connection
         .interact(move |conn| {
             schema::rel_station_dokument::table
-                .filter(schema::rel_station_dokument::station_id.eq(id))
-                .select(schema::rel_station_dokument::dokument_id)
+                .filter(schema::rel_station_dokument::stat_id.eq(id))
+                .select(schema::rel_station_dokument::dok_id)
                 .get_results::<i32>(conn)
         })
         .await??;
@@ -127,7 +127,7 @@ pub async fn station_by_id(id: i32, connection: &Connection) -> Result<models::S
     let stlid = connection
         .interact(move |conn| {
             schema::stellungnahme::table
-                .filter(schema::stellungnahme::station_id.eq(id))
+                .filter(schema::stellungnahme::stat_id.eq(id))
                 .select(schema::stellungnahme::id)
                 .get_results::<i32>(conn)
         })
@@ -140,7 +140,7 @@ pub async fn station_by_id(id: i32, connection: &Connection) -> Result<models::S
     let schlagworte = connection
         .interact(move |conn| {
             schema::rel_station_schlagwort::table
-                .filter(schema::rel_station_schlagwort::station_id.eq(id))
+                .filter(schema::rel_station_schlagwort::stat_id.eq(id))
                 .inner_join(schema::schlagwort::table)
                 .select(schema::schlagwort::api_key)
                 .distinct()
@@ -160,12 +160,12 @@ pub async fn station_by_id(id: i32, connection: &Connection) -> Result<models::S
             schema::station::table
                 .filter(schema::station::id.eq(id))
                 .select((
-                    schema::station::parlament,
-                    schema::station::stationstyp,
+                    schema::station::parl_id,
+                    schema::station::typ,
                     schema::station::gremium,
-                    schema::station::zeitpunkt,
+                    schema::station::datum,
                     schema::station::trojaner,
-                    schema::station::url,
+                    schema::station::link,
                 ))
                 .first(conn)
         })
@@ -174,9 +174,9 @@ pub async fn station_by_id(id: i32, connection: &Connection) -> Result<models::S
         parlament: rval.0,
         stationstyp: rval.1,
         gremium: rval.2,
-        zeitpunkt: rval.3.date(),
+        datum: rval.3.date(),
         trojaner: rval.4,
-        url: rval.5,
+        link: rval.5,
     };
     let (parl, styp) = connection
         .interact(move |conn| {
@@ -202,9 +202,9 @@ pub async fn station_by_id(id: i32, connection: &Connection) -> Result<models::S
         schlagworte: Some(schlagworte),
         stellungnahmen: Some(stellungnahmen),
         gremium: scaffold.gremium,
-        zeitpunkt: scaffold.zeitpunkt,
+        datum: scaffold.datum,
         trojaner: Some(scaffold.trojaner),
-        url: scaffold.url,
+        link: scaffold.link,
     });
 }
 
@@ -217,9 +217,9 @@ pub async fn stellungnahme_by_id(
             schema::stellungnahme::table
                 .filter(schema::stellungnahme::id.eq(id))
                 .select((
-                    schema::stellungnahme::dokument_id,
+                    schema::stellungnahme::dok_id,
                     schema::stellungnahme::meinung,
-                    schema::stellungnahme::lobbyregister,
+                    schema::stellungnahme::lobbyreg_link,
                 ))
                 .first(conn)
         })
@@ -228,7 +228,7 @@ pub async fn stellungnahme_by_id(
     return Ok(models::Stellungnahme {
         dokument: dokument_by_id(rval.0, connection).await?,
         meinung: rval.1,
-        lobbyregister_url: rval.2,
+        lobbyregister_link: rval.2,
     });
 }
 
@@ -248,8 +248,8 @@ pub async fn dokument_by_id(id: i32, connection: &Connection) -> Result<models::
                 .inner_join(schema::dokumententyp::table)
                 .select((
                     dsl::titel,
-                    dsl::zeitpunkt,
-                    dsl::url,
+                    dsl::datum,
+                    dsl::link,
                     dsl::hash,
                     dsl::zusammenfassung,
                     schema::dokumententyp::dsl::api_key,
@@ -260,7 +260,7 @@ pub async fn dokument_by_id(id: i32, connection: &Connection) -> Result<models::
     let sw: Vec<String> = connection
         .interact(move |conn| {
             schema::rel_dok_schlagwort::table
-                .filter(schema::rel_dok_schlagwort::dokument_id.eq(id))
+                .filter(schema::rel_dok_schlagwort::dok_id.eq(id))
                 .inner_join(schema::schlagwort::table)
                 .select(schema::schlagwort::api_key)
                 .distinct()
@@ -270,7 +270,7 @@ pub async fn dokument_by_id(id: i32, connection: &Connection) -> Result<models::
     let autoren: Vec<String> = connection
         .interact(move |conn| {
             schema::rel_dok_autor::table
-                .filter(schema::rel_dok_autor::dokument_id.eq(id))
+                .filter(schema::rel_dok_autor::dok_id.eq(id))
                 .select(schema::rel_dok_autor::autor)
                 .get_results(conn)
         })
@@ -278,8 +278,8 @@ pub async fn dokument_by_id(id: i32, connection: &Connection) -> Result<models::
 
     return Ok(models::Dokument {
         titel: ret.0,
-        zeitpunkt: ret.1.date(),
-        url: ret.2,
+        datum: ret.1.date(),
+        link: ret.2,
         hash: ret.3,
         zusammenfassung: ret.4,
         schlagworte: Some(sw),
@@ -301,7 +301,7 @@ pub async fn gsvh_by_parameter(
     use diesel::prelude::*;
     use diesel::sql_types;
     let query = format!(
-        "WITH pre_table AS (SELECT DISTINCT(gesetzesvorhaben.id), MIN(station.zeitpunkt) as earliest, MAX(station.zeitpunkt) as latest FROM gesetzesvorhaben
+        "WITH pre_table AS (SELECT DISTINCT(gesetzesvorhaben.id), MIN(station.datum) as earliest, MAX(station.datum) as latest FROM gesetzesvorhaben
             JOIN station ON station.gsvh_id = gesetzesvorhaben.id
             GROUP BY gesetzesvorhaben.id)
 
@@ -312,7 +312,7 @@ pub async fn gsvh_by_parameter(
             ORDER BY pre_table.latest DESC
             OFFSET {}
             LIMIT {}",
-        if params.parlament.is_some(){"AND EXISTS(SELECT 1 FROM station, parlament WHERE pre_table.id = station.gsvh_id AND parlament.id=station.parlament AND parlament.api_key=$3)"}else{""},
+        if params.parlament.is_some(){"AND EXISTS(SELECT 1 FROM station, parlament WHERE pre_table.id = station.gsvh_id AND parlament.id=station.parl_id AND parlament.api_key=$3)"}else{""},
         params.offset.unwrap_or(0),
         params.limit.unwrap_or(10),
     );

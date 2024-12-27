@@ -135,55 +135,59 @@ components:
       enum:
         - "bgg-einspruch"
         - "bgg-zustimmung"
-        - "volksgg"
-        - "landgg"
+        - "bay-parlament"
+        - "bay-volk"
         - "sonstig"
+      description: "Der Gesetzgebungstrack auf dem wir uns befinden. Zum Beispiel: BundesGesetzGebung - Einspruchsgesetz. Legt fest, welche Stationen hier möglich sind"
     stationstyp:
       type: "string"
+      description: "Stationen, die ein Gesetz in verschiedenen Ausformungen durchlaufen kann. Im Prinzip ist die Festlegung auf Prä / Postparlamentarisch arbiträr."
       enum:
         - "preparl-regent" # Referentenentwurf / Regierungsentwurf
         - "preparl-eckpup" # Eckpunktepapier / Parlamentsentwurf
         - "preparl-kabbsl" # Kabinettsbeschluss / Regierungsbeschluss
         - "preparl-vbegde" # Volksbegehren / Diskussionsentwurf
-        - "parl-initiativ" # Gesetzesinitiative 
+        - "parl-initiativ" # Gesetzesinitiative
         - "parl-ausschber" # Beratung im Ausschuss
         - "parl-vollvlsgn" # Vollversammlung / Lesung
-        - "parl-schlussab" # Schlussabstimmung
-        - "parl-akzeptanz" # Akzeptanz des Parlaments
-        - "parl-ablehnung" # Ablehnung des Parlaments
+        - "parl-akzeptanz" # Schlussabstimmung & Akzeptanz des Parlaments
+        - "parl-ablehnung" # Schlussabstimmung & Ablehnung des Parlaments
         - "parl-ggentwurf" # Gegenentwurf des Parlaments auf abgel. Volksbegehren
         - "postparl-vents" # Volksentscheid nach Parlamentsbechlus
         - "postparl-gsblt" # Veröffentlichung im Gesetzesblatt
-        - "postparl-kraft"  # In Kraft getreten
+        - "postparl-kraft" # In Kraft getreten
     identifikatortyp:
       type: "string"
       enum:
-        - "drucksnr"
+        - "initdrucks"
         - "vorgnr"
         - "sonstig"
+      description: "An identification for the whole process from start to finish"
     dokumententyp:
       type: "string"
       enum:
         - "entwurf"
         - "drucksache"
         - "protokoll"
+        - "topliste"
         - "stellungnahme"
         - "sonstig"
+      description: "The type of a document"
     dokument:
       type: "object"
       required:
         - "titel"
         - "hash"
         - "typ"
-        - "zeitpunkt"
-        - "url"
+        - "datum"
+        - "link"
       properties:
         titel:
           type: "string"
-        zeitpunkt:
+        datum:
           type: "string"
           format: "date"
-        url:
+        link:
           type: "string"
           format: "uri"
         hash:
@@ -210,19 +214,19 @@ components:
           $ref: "#/components/schemas/dokument"
         meinung:
           type: "integer"
-        lobbyregister_url:
+        lobbyregister_link:
           type: "string"
           format: "uri"
     station:
       type: "object"
       required:
-        - "zeitpunkt"
+        - "datum"
         - "dokumente"
         - "gremium"
         - "parlament"
         - "typ"
       properties:
-        zeitpunkt:
+        datum:
           type: "string"
           format: "date"
         gremium:
@@ -233,7 +237,7 @@ components:
           type: "array"
           items:
             $ref: "#/components/schemas/dokument"
-        url:
+        link:
           type: "string"
           format: "uri"
         parlament:
@@ -251,6 +255,7 @@ components:
           $ref: "#/components/schemas/stationstyp"
         trojaner:
           type: "boolean"
+    
     gesetzesvorhaben:
       type: "object"
       required:

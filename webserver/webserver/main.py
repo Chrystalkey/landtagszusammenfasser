@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 class ContentGenerator:
     def __init__(self):
-        self.base_dir = Path("zolasite/content")
+        self.base_dir = Path().cwd() / Path("./zolasite/content")
 
     def generate_content(self, response: Optional[List[models.Response]]) -> None:
         """Generate markdown files from legislative proposals."""
@@ -37,7 +37,7 @@ class ContentGenerator:
 
         for gsvh in response.payload:
             # Find latest station
-            latest_station = max(gsvh.stationen, key=lambda s: s.zeitpunkt)
+            latest_station = max(gsvh.stationen, key=lambda s: s.datum)
             station_type = latest_station.typ
 
             # Determine output path based on station type
@@ -60,7 +60,7 @@ class ContentGenerator:
             path = self.base_dir / subdir / f"{gsvh.api_id}.md"
             content = generation.generate_content(gsvh)
             try:
-                logger.info(f"Writing to `{path}`")
+                logger.info(f"Updating `{path}`")
                 if path.exists():
                     existing_content = path.read_text(encoding="utf-8")
                     if existing_content == content:
@@ -72,7 +72,7 @@ class ContentGenerator:
                         logger.info(
                             f"Content for {gsvh.api_id} already exists but is different"
                         )
-                        os.remove(path)
+                        os.remove(str(path))
                 with path.open("w") as file:
                     file.write(content)
             except Exception as e:
@@ -121,7 +121,7 @@ class WebServer:
 
         try:
             while True:
-                time.sleep(100)
+                time.sleep(30)
                 self.update_data()
 
                 logger.info("Restarting server...")

@@ -8,6 +8,7 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     border-radius: var(--radius-lg);
     overflow: hidden;
+    table-layout: fixed;
 }
 
 .laws-table th,
@@ -42,15 +43,16 @@
 }
 
 .date-col {
-    width: 100px;
+    width: 10%;
     white-space: nowrap;
     color: var(--color-text-secondary);
 }
 
 .right-col {
     text-align: right;
-    width: 120px;
-    white-space: nowrap;
+    width: 20%;
+    word-wrap: break-word;
+    white-space: normal; 
     color: var(--color-text-secondary);
 }
 

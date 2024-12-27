@@ -63,7 +63,7 @@ class Scraper(ABC):
         return item
 
     async def item_processing(self, item):
-        return await self.senditem(await self.item_extractor(item))
+        return [await self.senditem(await self.item_extractor(item)), item]
     """
     for every listing_url in the object
         extract the listing page and then extract the individual pages
@@ -86,7 +86,6 @@ class Scraper(ABC):
             if self.redis.exists(str(item)):
                 logger.info(f"URL {item} found in cache, skipping...")
                 continue
-            self.redis.setex(str(item), timedelta(minutes=12), value="{}")
             logger.debug(f"Initializing item extractor for {item}")
             tasks.append(self.item_processing(item))
 
@@ -97,8 +96,11 @@ class Scraper(ABC):
             logger.error(f"Error During Item Extraction: {e}", exc_info=True)
 
         for result in temp_res:
-            if isinstance(result, models.Gesetzesvorhaben):
-                self.result_objects.append(result)
+            if not isinstance(result, Exception):
+                obj = result[0]
+                item = result[1]
+                self.result_objects.append(obj)
+                self.redis.setex(str(item), timedelta(minutes=12), value="{}")
             else:
                 logger.error(f"Item extraction failed: {result}", exc_info=True)
         logger.info(

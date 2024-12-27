@@ -70,21 +70,16 @@ pub async fn gsvh_merge_candidates(
     }
 
     let result = if let Some(ids) = model.ids.clone() {
-        let query = "SELECT id, titel FROM gesetzesvorhaben 
-        WHERE NOT EXISTS  (SELECT 1 FROM station, parlament 
-            WHERE station.gsvh_id = gesetzesvorhaben.id 
-            AND station.parlament = parlament.id 
-            AND (parlament.api_key <> $1 AND $1 NOT IN ('BT', 'BR')
-                OR parlament.api_key NOT IN ('BT', 'BR') AND $1 NOT IN ('BT', 'BR'))
-            )
-        AND (SIMILARITY(gesetzesvorhaben.titel, $2) > 0.3 
-            OR EXISTS
-            (SELECT 1 FROM rel_gsvh_id as rid, identifikatortyp as idt 
-                WHERE idt.id = rid.id_typ 
-				AND rid.gesetzesvorhaben_id = gesetzesvorhaben.id 
-				AND idt.api_key = $3
-				AND rid.identifikator = $4)
-            )";
+        let query = "SELECT gesetzesvorhaben.id, titel FROM gesetzesvorhaben, gesetzestyp
+        WHERE SIMILARITY(gesetzesvorhaben.titel, $1) > 0.8
+        AND gesetzesvorhaben.typ = gesetzestyp.id
+        AND gesetzestyp.api_key = $2
+        OR EXISTS(
+            SELECT 1 FROM rel_gsvh_id, identifikatortyp 
+            WHERE rel_gsvh_id.gsvh_id = gesetzesvorhaben.id AND 
+                    identifikatortyp.id = rel_gsvh_id.typ AND
+                    identifikatortyp.api_key = $3 AND
+                    rel_gsvh_id.identifikator = $4)";
         tracing::trace!("Executing Query: {}", query);
         let mut result: HashSet<GSVHID> = HashSet::new();
 
@@ -106,21 +101,19 @@ pub async fn gsvh_merge_candidates(
         }
         result.drain().collect::<Vec<_>>()
     } else {
-        let query = "SELECT id, titel FROM gesetzesvorhaben 
-        WHERE NOT EXISTS  (SELECT 1 FROM station, parlament 
-            WHERE station.gsvh_id = gesetzesvorhaben.id 
-            AND station.parlament = parlament.id 
-            AND (parlament.api_key <> $1 AND $1 NOT IN ('BT', 'BR')
-                OR parlament.api_key NOT IN ('BT', 'BR') AND $1 NOT IN ('BT', 'BR')))
-        AND SIMILARITY(gesetzesvorhaben.titel, $2) > 0.3";
+        // select where title is pretty equal and the stations belong to the same 
+        let query = "SELECT gesetzesvorhaben.id, titel FROM gesetzesvorhaben, gesetzestyp
+        WHERE SIMILARITY(gesetzesvorhaben.titel, $1) > 0.8
+        AND gesetzesvorhaben.typ = gesetzestyp.id
+        AND gesetzestyp.api_key = $2";
         tracing::trace!("Executing Query: {}", query);
-        let stat = model.stationen[0].parlament.to_string();
         let titel = model.titel.clone();
+        let typ = model.typ.to_string();
         let result = connection
             .interact(move |conn| {
                 diesel::sql_query(query)
-                    .bind::<diesel::sql_types::Text, _>(stat)
                     .bind::<diesel::sql_types::Text, _>(titel)
+                    .bind::<diesel::sql_types::Text, _>(typ)
                     .get_results::<GSVHID>(conn)
             })
             .await??;
@@ -161,11 +154,11 @@ pub fn update_gsvh(
         .filter(schema::gesetzesvorhaben::id.eq(db_id))
         .set((
             schema::gesetzesvorhaben::api_id.eq(model.api_id.clone()),
-            schema::gesetzesvorhaben::verfassungsaendernd.eq(model.verfassungsaendernd),
+            schema::gesetzesvorhaben::verfaend.eq(model.verfassungsaendernd),
         ))
         .execute(connection)?;
     diesel::delete(schema::rel_gsvh_init::table)
-        .filter(schema::rel_gsvh_init::gesetzesvorhaben.eq(db_id))
+        .filter(schema::rel_gsvh_init::gsvh_id.eq(db_id))
         .execute(connection)?;
     diesel::insert_into(schema::rel_gsvh_init::table)
         .values(
@@ -174,7 +167,7 @@ pub fn update_gsvh(
                 .iter()
                 .map(|init| {
                     (
-                        schema::rel_gsvh_init::gesetzesvorhaben.eq(db_id),
+                        schema::rel_gsvh_init::gsvh_id.eq(db_id),
                         schema::rel_gsvh_init::initiator.eq(init.clone()),
                     )
                 })
@@ -182,7 +175,7 @@ pub fn update_gsvh(
         )
         .execute(connection)?;
     diesel::delete(schema::rel_gsvh_links::table)
-        .filter(schema::rel_gsvh_links::gesetzesvorhaben_id.eq(db_id))
+        .filter(schema::rel_gsvh_links::gsvh_id.eq(db_id))
         .execute(connection)?;
     if let Some(links) = model.links.as_ref() {
         diesel::insert_into(schema::rel_gsvh_links::table)
@@ -191,7 +184,7 @@ pub fn update_gsvh(
                     .iter()
                     .map(|link| {
                         (
-                            schema::rel_gsvh_links::gesetzesvorhaben_id.eq(db_id),
+                            schema::rel_gsvh_links::gsvh_id.eq(db_id),
                             schema::rel_gsvh_links::link.eq(link.clone()),
                         )
                     })
@@ -201,40 +194,63 @@ pub fn update_gsvh(
     }
 
     for station in model.stationen.iter() {
-        let similarity_query = format!(
-            "SELECT station.id FROM station, stationstyp, parlament
-        WHERE
-        station.stationstyp = stationstyp.id AND
-        station.parlament = parlament.id AND
-        stationstyp.api_key = $1 AND
-        parlament.api_key = $2 AND
-        (SIMILARITY(station.gremium, $3) > 0.5
-        OR EXISTS (
-            SELECT 1 FROM dokument, rel_station_dokument WHERE 
-            rel_station_dokument.station_id = station.id AND
-            rel_station_dokument.dokument_id = dokument.id AND
-            dokument.hash IN ({})
-        )OR EXISTS (
-            SELECT 1 FROM dokument, stellungnahme WHERE 
-            stellungnahme.station_id = station.id AND
-            stellungnahme.dokument_id = dokument.id AND
-            dokument.hash IN ({})
-        ))",
-            station
-                .dokumente
-                .iter()
-                .map(|d| format!("'{}'", d.hash))
-                .collect::<Vec<_>>()
-                .join(","),
-            station
-                .stellungnahmen
-                .as_ref()
-                .unwrap_or(&Vec::new())
-                .iter()
-                .map(|d| format!("'{}'", d.dokument.hash))
-                .collect::<Vec<_>>()
-                .join(",")
-        );
+        let similarity_query = 
+        if station.stellungnahmen.is_some() && station.stellungnahmen.as_ref().unwrap().len() > 0{
+            format!(
+                "SELECT station.id FROM station, stationstyp, parlament
+            WHERE
+            station.typ = stationstyp.id AND
+            station.parl_id = parlament.id AND
+            stationstyp.api_key = $1 AND
+            parlament.api_key = $2 AND
+            (SIMILARITY(station.gremium, $3) > 0.5
+            OR EXISTS (
+                SELECT 1 FROM dokument, rel_station_dokument WHERE 
+                rel_station_dokument.stat_id = station.id AND
+                rel_station_dokument.dok_id = dokument.id AND
+                dokument.hash IN ({})
+            )OR EXISTS (
+                SELECT 1 FROM dokument, stellungnahme WHERE 
+                stellungnahme.stat_id = station.id AND
+                stellungnahme.dok_id = dokument.id AND
+                dokument.hash IN ({})
+            ))",
+                station
+                    .dokumente
+                    .iter()
+                    .map(|d| format!("'{}'", d.hash))
+                    .collect::<Vec<_>>()
+                    .join(","),
+                station
+                    .stellungnahmen
+                    .as_ref()
+                    .unwrap_or(&Vec::new())
+                    .iter()
+                    .map(|d| format!("'{}'", d.dokument.hash))
+                    .collect::<Vec<_>>()
+                    .join(",")
+            )
+        }else{
+            format!(
+                "SELECT station.id FROM station, stationstyp, parlament
+            WHERE
+            station.typ = stationstyp.id AND
+            station.parl_id = parlament.id AND
+            stationstyp.api_key = $1 AND
+            parlament.api_key = $2 AND
+            (SIMILARITY(station.gremium, $3) > 0.5
+            OR EXISTS (
+                SELECT 1 FROM dokument, rel_station_dokument WHERE 
+                rel_station_dokument.stat_id = station.id AND
+                rel_station_dokument.dok_id = dokument.id AND
+                dokument.hash IN ({})
+            ))", station
+            .dokumente
+            .iter()
+            .map(|d| format!("'{}'", d.hash))
+            .collect::<Vec<_>>()
+            .join(",")
+        )};
         let typ = station.typ.clone();
         let parl = station.parlament.clone();
         let gremium = station.gremium.clone();
@@ -256,14 +272,14 @@ pub fn update_gsvh(
                 .set((
                     schema::station::gremium.eq(station.gremium.clone()),
                     schema::station::trojaner.eq(station.trojaner.clone().unwrap_or(false)),
-                    schema::station::url.eq(station.url.clone()),
-                    schema::station::zeitpunkt.eq(chrono::NaiveDateTime::from(station.zeitpunkt)),
+                    schema::station::link.eq(station.link.clone()),
+                    schema::station::datum.eq(chrono::NaiveDateTime::from(station.datum)),
                 ))
                 .execute(connection)?;
             // rep sw
             let schlagworte = station.schlagworte.clone().unwrap_or(vec![]);
             diesel::delete(schema::rel_station_schlagwort::table)
-                .filter(schema::rel_station_schlagwort::station_id.eq(stat_id))
+                .filter(schema::rel_station_schlagwort::stat_id.eq(stat_id))
                 .execute(connection)?;
             diesel::insert_into(schema::schlagwort::table)
                 .values(
@@ -285,8 +301,8 @@ pub fn update_gsvh(
                         .iter()
                         .map(|id| {
                             (
-                                schema::rel_station_schlagwort::station_id.eq(stat_id),
-                                schema::rel_station_schlagwort::schlagwort_id.eq(*id),
+                                schema::rel_station_schlagwort::stat_id.eq(stat_id),
+                                schema::rel_station_schlagwort::sw_id.eq(*id),
                             )
                         })
                         .collect::<Vec<_>>(),
@@ -307,8 +323,8 @@ pub fn update_gsvh(
                 let id = super::insert::insert_dokument(dokument.clone(), connection)?;
                 diesel::insert_into(schema::rel_station_dokument::table)
                     .values((
-                        schema::rel_station_dokument::station_id.eq(stat_id),
-                        schema::rel_station_dokument::dokument_id.eq(id),
+                        schema::rel_station_dokument::stat_id.eq(stat_id),
+                        schema::rel_station_dokument::dok_id.eq(id),
                     ))
                     .execute(connection)?;
             }
@@ -328,10 +344,10 @@ pub fn update_gsvh(
                     diesel::insert_into(schema::stellungnahme::table)
                         .values((
                             schema::stellungnahme::meinung.eq(stellungnahme.meinung),
-                            schema::stellungnahme::dokument_id.eq(dok_id),
-                            schema::stellungnahme::station_id.eq(stat_id),
-                            schema::stellungnahme::lobbyregister.eq(stellungnahme
-                                .lobbyregister_url
+                            schema::stellungnahme::dok_id.eq(dok_id),
+                            schema::stellungnahme::stat_id.eq(stat_id),
+                            schema::stellungnahme::lobbyreg_link.eq(stellungnahme
+                                .lobbyregister_link
                                 .clone()
                                 .unwrap_or("".to_string())),
                         ))

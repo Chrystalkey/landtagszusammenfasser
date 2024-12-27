@@ -38,6 +38,9 @@ pub struct Configuration {
     pub db_url: String,
     #[arg(long, short)]
     pub config: Option<String>,
+
+    #[arg(long, env = "MERGE_TITLE_SIMILARITY")]
+    pub merge_title_similarity : f32,
 }
 
 impl Configuration {

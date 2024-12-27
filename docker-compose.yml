@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.oapi
+      network: host
     image: oapi-preimage
   database:
     image: postgres:latest
@@ -28,7 +29,7 @@ services:
   ltzf-db:
     build:
       context: database
-      dockerfile: Dockerfile
+      network: host
     image: ltzf-db:test
     container_name: ltzf-db
     ports:
@@ -45,7 +46,7 @@ services:
   collector:
     build:
       context: collector
-      dockerfile: Dockerfile
+      network: host
     image: ltzf-collector:test
     container_name: ltzf-collector
     depends_on:
@@ -64,7 +65,7 @@ services:
   webserver:
     build:
       context: webserver
-      dockerfile: Dockerfile
+      network: host
     image: ltzf-webserver:test
     container_name: ltzf-webserver
     depends_on:

@@ -1,7 +1,6 @@
 import importlib.util
 import logging
 import os
-import sys
 import time
 
 import aiohttp
@@ -28,7 +27,6 @@ async def main(config: CollectorConfiguration):
 
             except Exception as e:
                 logger.error(f"Error while running scraper {scraper.__class__.__name__}: {e}", stack_info=True)
-                sys.exit(1)
 
 def load_scrapers(config, session):
     scrapers = []

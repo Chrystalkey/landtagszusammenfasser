@@ -66,4 +66,5 @@ The `docker-compose.yml` on the top level sets up, compiles and runs everything 
 
 ## Deployment
 ### Description
-The `docker-compose.yml` on the top level sets up, compiles and runs everything in one ginourmeous step.
+The `docker-compose.yml` on the top level sets up, compiles and runs everything in one ginourmeous step. 
+run `docker compose up --build -d` to just make it all up in one step. The default Port for the webserver is 8081 on localhost.

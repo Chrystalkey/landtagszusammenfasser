@@ -4,18 +4,16 @@ LABEL maintainer="Benedikt Schäfer"
 LABEL description="Pre-Image that generates openapi code from scratch every time the spec changes"
 LABEL version="0.1"
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    maven jq curl\
-    && rm -rf /var/lib/apt/lists/*
+RUN apt update && apt install -y --no-install-recommends maven jq curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir /app \
+    && curl "https://raw.githubusercontent.com/OpenAPITools/openapi-generator/master/bin/utils/openapi-generator-cli.sh" > /app/openapi-generator-cli \
+    && chmod u+x /app/openapi-generator-cli
 
 WORKDIR /app
 
 COPY docs/specs/openapi.yml ./openapi.yml
-
-RUN curl "https://raw.githubusercontent.com/OpenAPITools/openapi-generator/master/bin/utils/openapi-generator-cli.sh" > openapi-generator-cli && \
-chmod u+x openapi-generator-cli
-
-RUN ./openapi-generator-cli generate -g python -i ./openapi.yml -o /app/oapicode-python
-RUN ./openapi-generator-cli generate -g rust-axum -i ./openapi.yml -o /app/oapicode-rust
+RUN ./openapi-generator-cli generate -g python -i ./openapi.yml -o /app/oapicode-python && \
+    ./openapi-generator-cli generate -g rust-axum -i ./openapi.yml -o /app/oapicode-rust
 
 ENTRYPOINT [ "echo", "\"hello world\"" ]

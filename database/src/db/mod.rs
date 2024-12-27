@@ -17,8 +17,8 @@ mod test{
             hash: "Testhash".to_string(),
             titel: "Testtitel".to_string(),
             typ: models::Dokumententyp::Entwurf,
-            url: "Testurl".to_string(),
-            zeitpunkt: chrono::NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
+            link: "Testurl".to_string(),
+            datum: chrono::NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
             zusammenfassung: Some("Testzusammenfassung".to_string()),
         };
 
@@ -28,13 +28,13 @@ mod test{
             hash: "Testhash".to_string(),
             titel: "Testtitel".to_string(),
             typ: models::Dokumententyp::Stellungnahme,
-            url: "Testurl".to_string(),
-            zeitpunkt: chrono::NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
+            link: "Testurl".to_string(),
+            datum: chrono::NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
             zusammenfassung: Some("Testzusammenfassung".to_string()),
         };
         let stellungnahme = models::Stellungnahme{
             dokument: dok2,
-            lobbyregister_url: Some("URL".to_string()),
+            lobbyregister_link: Some("URL".to_string()),
             meinung: Some(1)
         };
         let station = models::Station{
@@ -43,10 +43,10 @@ mod test{
             stellungnahmen: Some(vec![stellungnahme]),
             parlament: models::Parlament::By,
             trojaner: Some(true),
-            url: Some("Testurl".to_string()),
+            link: Some("Testurl".to_string()),
             typ: models::Stationstyp::ParlAblehnung,
             schlagworte: Some(vec!["Testschlagwort".to_string()]),
-            zeitpunkt: chrono::NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
+            datum: chrono::NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
         };
         let gsvh = models::Gesetzesvorhaben{
             api_id: uuid::Uuid::now_v7(),
@@ -55,7 +55,7 @@ mod test{
             titel: "Testtitel".to_string(),
             typ: models::Gesetzestyp::BggEinspruch,
             verfassungsaendernd: false,
-            ids: Some(vec![models::Identifikator{id: "Testid".to_string(), typ: models::Identifikatortyp::Drucksnr}]),
+            ids: Some(vec![models::Identifikator{id: "Testid".to_string(), typ: models::Identifikatortyp::Initdrucks}]),
             stationen: vec![station]
         };
         let mut conn = diesel::pg::PgConnection::establish(

@@ -93,8 +93,8 @@ class BYSTMJScraper(Scraper):
         titel = dic["title"] or dic["subject"] or "Unbekannt"
         dok = models.Dokument.from_dict({
             "titel": titel,
-            "zeitpunkt": dic["lastchange"],
-            "url": url,
+            "datum": dic["lastchange"],
+            "link": url,
             "hash": dic["hash"],
             "zusammenfassung": "TODO",
             "schlagworte": [],
@@ -109,7 +109,7 @@ class BYSTMJScraper(Scraper):
         gsvh = models.Gesetzesvorhaben.from_dict({
             "api_id": str(uuid.uuid4()),
             "verfassungsaendernd": False,
-            "typ": "landgg",
+            "typ": "bay-parlament",
             "links": [],
             "titel": listing_item[0],
             "initiatoren": ["Bayerisches Staatsministerium der Justiz"],
@@ -117,10 +117,10 @@ class BYSTMJScraper(Scraper):
         })
         
         stat = models.Station.from_dict({
-            "zeitpunkt": dt_date.today(),  # Using the document date from build_document
+            "datum": dt_date.today(),  # Using the document date from build_document
             "gremium": "Bayerisches Staatsministerium der Justiz",
             "parlament": "BY",
-            "url": listing_item[1],
+            "link": listing_item[1],
             "typ": "preparl-regent",
             "dokumente": [await self.build_document(listing_item[1])],
             "schlagworte": [],

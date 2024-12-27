@@ -1,5 +1,5 @@
 FROM oapi-preimage AS oapifile
-FROM python:3.13-bookworm AS builder
+FROM python:3.13-slim-bookworm AS builder
 
 LABEL maintainer="Benedikt Schäfer"
 LABEL description="Collector for the LTZF"

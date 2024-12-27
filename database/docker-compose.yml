@@ -1,22 +1,24 @@
 services:
-  ltzf-db:
-    build:
-      context: .
-      dockerfile: ./Dockerfile
-    image: ltzf-db:test
-    container_name: ltzf-db
-    depends_on:
-      - postgres
-    networks:
-      - ltzf-network
-    environment:
-      DATABASE_URL: "postgres://postgres:blub@pg-server:5432/postgres"
-      RUST_LOG: "debug"
+  #ltzf-db:
+  #  build:
+  #    context: .
+  #    dockerfile: ./Dockerfile
+  #  image: ltzf-db:test
+  #  container_name: ltzf-db
+  #  depends_on:
+  #    - postgres
+  #  networks:
+  #    - ltzf-network
+  #  environment:
+  #    DATABASE_URL: "postgres://postgres:blub@pg-server:5432/postgres"
+  #    RUST_LOG: "debug"
 
   postgres:
     image: postgres:latest
     container_name: pg-server
     restart: unless-stopped
+    ports:
+      - 5432:5432
     networks:
       - ltzf-network
     environment:
