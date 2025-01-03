@@ -12,6 +12,12 @@ RUN apt update && apt install -y --no-install-recommends maven jq curl \
 
 WORKDIR /app
 
+# Run this to download the generator code
+RUN echo 'openapi: 3.0.0\ninfo:\n  title: "spec"\n  version: "0.1.0"\npaths:\n  /none:\n    get:\n      responses:\n        "200":\n          description: "success"' > openapi.yml \
+    && ./openapi-generator-cli generate -g python -i ./openapi.yml -o /app/pytest \
+    && ./openapi-generator-cli generate -g rust-axum -i ./openapi.yml -o /app/rs-test \
+    && rm -rf pytest rs-test
+
 COPY docs/specs/openapi.yml ./openapi.yml
 RUN ./openapi-generator-cli generate -g python -i ./openapi.yml -o /app/oapicode-python && \
     ./openapi-generator-cli generate -g rust-axum -i ./openapi.yml -o /app/oapicode-rust

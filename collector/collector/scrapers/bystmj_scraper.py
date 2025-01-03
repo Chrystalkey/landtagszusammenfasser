@@ -4,7 +4,7 @@ from openapi_client import models
 import aiohttp
 from datetime import datetime as dt_datetime
 from datetime import date as dt_date
-import datetime
+import datetime # needed for the eval() later
 import uuid
 import logging
 import hashlib
@@ -67,10 +67,10 @@ class BYSTMJScraper(Scraper):
                         elif not isinstance(dt, dt_datetime):
                             dt = dt_datetime.now()
                         
-                        doc_date = dt.date()
+                        doc_date = dt
                     except Exception as e:
                         logger.warning(f"Error parsing PDF date: {e}. Using current date.")
-                        doc_date = dt_datetime.now().date()
+                        doc_date = dt_datetime.now()
 
                     dic = {
                         "title": str(meta.get('/Title', '')),
@@ -93,7 +93,7 @@ class BYSTMJScraper(Scraper):
         titel = dic["title"] or dic["subject"] or "Unbekannt"
         dok = models.Dokument.from_dict({
             "titel": titel,
-            "datum": dic["lastchange"],
+            "last_mod": dic["lastchange"],
             "link": url,
             "hash": dic["hash"],
             "zusammenfassung": "TODO",

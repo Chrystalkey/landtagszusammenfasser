@@ -6,6 +6,7 @@ from uuid import UUID
 
 import aiohttp
 import asyncio
+from collector.convert import sanitize_for_serialization
 from redis import Redis
 
 import openapi_client
@@ -50,7 +51,7 @@ class Scraper(ABC):
         if self.config.api_object_log is not None:
             filepath = self.config.api_object_log / f"{self.collector_id}.json"
             with filepath.open("a", encoding="utf-8") as file:
-                file.write(str(item.to_str()) + ",\n")
+                file.write(str(sanitize_for_serialization(item)) + ",\n")
 
         with openapi_client.ApiClient(self.config.oapiconfig) as api_client:
             api_instance = openapi_client.DefaultApi(api_client)

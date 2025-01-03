@@ -1,6 +1,12 @@
-use crate::Result;
+use crate::{Result, LTZFServer};
+use axum::async_trait;
+use openapi::apis::ApiKeyAuthHeader;
 
-pub fn authenticate() -> Result<()>{
-    tracing::warn!("Authenticating. Authentication not implemented.");
-    Ok(())
+#[async_trait]
+impl ApiKeyAuthHeader for LTZFServer{
+    type Claims = ();
+    async fn extract_claims_from_header(& self, _headers: & axum::http::header::HeaderMap, _key: & str) ->  Option<Self::Claims> {
+        tracing::warn!("Authentication is not implemented!");
+        Some(())
+    }
 }

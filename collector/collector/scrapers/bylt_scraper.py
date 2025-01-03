@@ -246,7 +246,7 @@ class BYLTScraper(Scraper):
 
         titel = document_info["title"] or document_info["subject"] or "Unbekannt"
         dok_dic = {
-            "datum": document_info["lastchange"],
+            "last_mod": document_info["lastchange"],
             "titel": titel,
             "link": url,
             "hash": document_info["hash"],
@@ -341,7 +341,7 @@ async def extract_pdf_drucks(url, session):
             meta = reader.metadata
 
             # Problem Child - sometimes the date parsing does not work here
-            dtime = dt_datetime.now()
+            dtime: dt_datetime = dt_datetime.now()
             try:
                 dtime = (
                     meta.modification_date or meta.creation_date or dt_datetime.now()
@@ -356,7 +356,7 @@ async def extract_pdf_drucks(url, session):
                 "author": meta.author,
                 "creator": meta.creator,
                 "subject": meta.subject,
-                "lastchange": dtime.date(),
+                "lastchange": dtime,
                 "hash": hashlib.file_digest(f, "sha256").hexdigest(),
             }
         if os.path.exists(f"{randid}.pdf"):

@@ -278,7 +278,7 @@ pub async fn dokument_by_id(id: i32, connection: &Connection) -> Result<models::
 
     return Ok(models::Dokument {
         titel: ret.0,
-        datum: ret.1.date(),
+        last_mod: ret.1.and_utc(),
         link: ret.2,
         hash: ret.3,
         zusammenfassung: ret.4,
@@ -295,57 +295,9 @@ struct GSVHID {
     id: i32,
 }
 pub async fn gsvh_by_parameter(
-    params: models::ApiV1GesetzesvorhabenGetQueryParams,
-    connection: &Connection,
+    _params: models::ApiV1GesetzesvorhabenGetQueryParams,
+    _headers: models::ApiV1GesetzesvorhabenGetHeaderParams,
+    _connection: &Connection,
 ) -> Result<Vec<models::Gesetzesvorhaben>> {
-    use diesel::prelude::*;
-    use diesel::sql_types;
-    let query = format!(
-        "WITH pre_table AS (SELECT DISTINCT(gesetzesvorhaben.id), MIN(station.datum) as earliest, MAX(station.datum) as latest FROM gesetzesvorhaben
-            JOIN station ON station.gsvh_id = gesetzesvorhaben.id
-            GROUP BY gesetzesvorhaben.id)
-
-            SELECT pre_table.id FROM pre_table
-            WHERE pre_table.earliest >= $1
-            AND pre_table.latest <= $2
-            {}
-            ORDER BY pre_table.latest DESC
-            OFFSET {}
-            LIMIT {}",
-        if params.parlament.is_some(){"AND EXISTS(SELECT 1 FROM station, parlament WHERE pre_table.id = station.gsvh_id AND parlament.id=station.parl_id AND parlament.api_key=$3)"}else{""},
-        params.offset.unwrap_or(0),
-        params.limit.unwrap_or(10),
-    );
-
-    let gsvh_listing: Vec<i32> = connection
-        .interact(move |conn| {
-            let query = diesel::sql_query(query)
-                .bind::<sql_types::Timestamp, _>(chrono::NaiveDateTime::from(
-                    params
-                        .updated_since
-                        .unwrap_or("1970-01-01".parse::<chrono::NaiveDate>().unwrap()),
-                ))
-                .bind::<sql_types::Timestamp, _>(chrono::NaiveDateTime::from(
-                    params
-                        .updated_until
-                        .unwrap_or("2100-01-01".parse::<chrono::NaiveDate>().unwrap()),
-                ));
-            if params.parlament.is_some() {
-                query
-                    .bind::<sql_types::Text, _>(params.parlament.as_ref().unwrap().to_string())
-                    .get_results::<GSVHID>(conn)
-            } else {
-                query.get_results(conn)
-            }
-        })
-        .await??
-        .iter()
-        .map(|e| e.id)
-        .collect();
-    tracing::debug!("Found GSVHs: {:?}", gsvh_listing);
-    let mut rval = vec![];
-    for idx in gsvh_listing {
-        rval.push(gsvh_by_id(idx, connection).await?);
-    }
-    Ok(rval)
+    unimplemented!()
 }

@@ -3,16 +3,22 @@ info:
   title: "Specification for the Landtagszusammenfasser Project"
   version: "0.1.0"
 paths:
-  /api/v1/gesetzesvorhaben/{gesvh_id}:
+  /api/v1/gesetzesvorhaben/{gsvh_id}:
     get:
       description: "Returns a Gesetzesvorhaben by id"
       parameters:
-        - name: "gesvh_id"
+        - name: "gsvh_id"
           in: "path"
           required: true
           schema:
             type: "string"
             format: "uuid"
+        - name: "If-Modified-Since"
+          in: "header"
+          required: false
+          schema:
+            type: "string"
+            format: "date-time"
       responses:
         "200":
           description: "successful operation"
@@ -20,62 +26,77 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/gesetzesvorhaben"
+        "304":
+          description: "No new changes"
         "404":
           description: "Content not found"
         "500":
           description: "Internal Server Error"
-        
+    put:
+      description: API Access for the Admins without the merge just replacing gsvh
+      parameters:
+        - name: "gsvh_id"
+          in: "path"
+          required: true
+          description: "The API ID of the GSVH that is to be affected"
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        201:
+          description: "Created"
+        204:
+          description: "Content Unchanged"
+      security:
+        - apiKey: [] 
   /api/v1/gesetzesvorhaben:
     get:
       description: "Returns a filtered List of Gesetzesvorhaben"
       responses:
         "206":
-          description: "partial Content1"
+          description: "Partial Content"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/response"
         "200":
-          description: "successful operation"
+          description: "Successful operation"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/response"
         "204":
-          description: "No Content found for parameters"
+          description: "No Content found for the specified parameters"
+        "304":
+          description: "No new changes"
         "416":
-          description: "Request Range not satisfiable"
+          description: "Request Range not satisfiable. Dates before the existence of the BRP or in the future are excluded for example"
         "400":
           description: "Bad Request"
         "500":
           description: "Internal Server Error"
 
       parameters:
-        - name: "updated_since"
-          in: "query"
+        - name: "If-Modified-Since"
+          in: "header"
           required: false
           schema:
             type: "string"
-            format: "date"
-        - name: "updated_until"
+            format: "date-time"
+        - name: "initiator-contains-any"
+          in: query
+          required: false
+          description: "If any of the listed Initiators matches the Initiator, it is filtered out"
+          schema:
+            type: array
+            items:
+              type: string
+        - name: "ggpath"
           in: query
           required: false
           schema:
-            type: "string"
-            format: "date"
-        - name: "limit"
-          in: query
-          required: false
-          schema:
-            type: "integer"
-            minimum: 1
-            maximum: 100
-        - name: "offset"
-          in: query
-          required: false
-          schema:
-            type: "integer"
-            minimum: 0
+            $ref: "#/components/schemas/gesetzestyp"
         - name: "parlament"
           in: query
           required: false
@@ -105,7 +126,15 @@ paths:
           description: "Conflict. The Ressource already exists"
         "500":
           description: "Internal Server Error"
+      security:
+        - apiKey: []
 components:
+  securitySchemes:
+      apiKey:
+        description: API key of the Collector
+        type: apiKey
+        name: api-key
+        in: header
   schemas:
     parlament:
       type: "string"
@@ -179,14 +208,14 @@ components:
         - "titel"
         - "hash"
         - "typ"
-        - "datum"
+        - "last_mod"
         - "link"
       properties:
         titel:
           type: "string"
-        datum:
+        last_mod:
           type: "string"
-          format: "date"
+          format: "date-time"
         link:
           type: "string"
           format: "uri"

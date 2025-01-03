@@ -39,7 +39,7 @@ pub struct Configuration {
     #[arg(long, short)]
     pub config: Option<String>,
 
-    #[arg(long, env = "MERGE_TITLE_SIMILARITY")]
+    #[arg(long, env = "MERGE_TITLE_SIMILARITY", default_value="0.8")]
     pub merge_title_similarity : f32,
 }
 

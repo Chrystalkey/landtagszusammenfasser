@@ -224,7 +224,7 @@ pub fn update_gsvh(
                 station
                     .stellungnahmen
                     .as_ref()
-                    .unwrap_or(&Vec::new())
+                    .unwrap()
                     .iter()
                     .map(|d| format!("'{}'", d.dokument.hash))
                     .collect::<Vec<_>>()
@@ -238,7 +238,7 @@ pub fn update_gsvh(
             station.parl_id = parlament.id AND
             stationstyp.api_key = $1 AND
             parlament.api_key = $2 AND
-            (SIMILARITY(station.gremium, $3) > 0.5
+            (SIMILARITY(station.gremium, $3) > 0.8
             OR EXISTS (
                 SELECT 1 FROM dokument, rel_station_dokument WHERE 
                 rel_station_dokument.stat_id = station.id AND

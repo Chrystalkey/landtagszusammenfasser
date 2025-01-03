@@ -1,8 +1,8 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    collector_auth (db_id) {
-        db_id -> Int4,
+    collector_auth (id) {
+        id -> Int4,
         coll_id -> Uuid,
         pubkey -> Varchar,
         deleted -> Bool,
@@ -56,6 +56,13 @@ diesel::table! {
     identifikatortyp (id) {
         id -> Int4,
         api_key -> Varchar,
+    }
+}
+
+diesel::table! {
+    ip_lastreq (ip) {
+        ip -> Int4,
+        request_ts -> Timestamp,
     }
 }
 
@@ -181,6 +188,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     gesetzestyp,
     gesetzesvorhaben,
     identifikatortyp,
+    ip_lastreq,
     parlament,
     rel_dok_autor,
     rel_dok_schlagwort,

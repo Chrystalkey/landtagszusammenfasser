@@ -204,7 +204,7 @@ pub fn insert_dokument(
             dsl::titel.eq(dok.titel),
             dsl::link.eq(dok.link),
             dsl::hash.eq(dok.hash),
-            dsl::datum.eq(chrono::NaiveDateTime::from(dok.datum)),
+            dsl::datum.eq(dok.last_mod.naive_utc()),
             dsl::zusammenfassung.eq(dok.zusammenfassung),
             dsl::typ.eq(
                 schema::dokumententyp::table.select(schema::dokumententyp::id)
