@@ -34,29 +34,35 @@ class ScraperCache:
 
     def store_gsvh(self, key: str, value: models.Gesetzesvorhaben):
         """Store data in either Redis or file system cache"""
-        serialized = str(sanitize_for_serialization(value))
+        serialized = value.to_json()
         logger.debug(f"Storing gsvh {key} in redis")
+        logger.debug(f"Serialized: {serialized}")
         self.redis_client.set(f"gsvh:{key}", serialized, timedelta(minutes=12))
     
     def store_dokument(self, key: str, value: Document):
         """Store data in either Redis or file system cache"""
         serialized = value.to_json()
-        logger.debug(f"Storing gsvh {key} in redis")
+        logger.debug(f"Storing dokument {key} in redis")
+        logger.debug(f"Serialized: {serialized}")
         self.redis_client.set(f"dok:{key}", serialized)
 
     def get_gsvh(self, key: str) -> models.Gesetzesvorhaben:
         """Get Gesetzesvorhaben data from cache"""
+        logger.debug(f"Getting gsvh {key} from cache")
         result = self.redis_client.get(f"gsvh:{key}")
+        logger.debug(f"Result: {result}")
         if not result:
             return None
-        return models.Gesetzesvorhaben.from_json(self.redis_client.get(f"gsvh:{key}"))
+        return models.Gesetzesvorhaben.from_json(result)
 
     def get_dokument(self, key: str) -> Document:
         """Get Dokument data from cache"""
+        logger.debug(f"Getting dokument {key} from cache")
         result = self.redis_client.get(f"dok:{key}")
+        logger.debug(f"Result: {result}")
         if not result:
             return None
-        return Document.from_json(json_str=self.redis_client.get(f"dok:{key}"))
+        return Document.from_json(result)
 
     def clear(self):
         """Clear all cache data"""

@@ -241,13 +241,13 @@ class BYLTScraper(Scraper):
         logger.debug(f"Creating document from url: {url}")
         document = self.config.cache.get_dokument(url)
         if document is None:
-            logger.debug("Cached version not found, fetching from source")
+            logger.info("Cached version not found, fetching from source")
             document = Document(self.session, url, type_hint, self.config)
             await document.run_extraction()
             self.config.cache.store_dokument(url, document)
             return document
         else:
-            logger.debug("Cached version found, used")
+            logger.info("Cached version found, used")
             return self.config.cache.get_dokument(url)
 
     def classify_cell(self, context) -> str:

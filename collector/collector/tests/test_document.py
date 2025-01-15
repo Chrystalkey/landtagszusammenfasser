@@ -109,7 +109,8 @@ async def test_document_json_serialization(mock_config):
 
     # Serialize to JSON
     json_str = original_doc.to_json()
-    
+    with open("testout.json", "w") as f:
+        f.write(json_str)
     # Deserialize from JSON
     restored_doc = Document.from_json(json_str)
     

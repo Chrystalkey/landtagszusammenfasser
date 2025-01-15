@@ -131,9 +131,16 @@ class Document:
             os.remove(f"{self.fileid}.pdf")
 
     async def extract_semantics(self):
-        prompt = """Extrahiere folgende Metadaten aus dem Nachfolgenden Text:
+        prompt_drcks = """Extrahiere folgende Metadaten aus dem Nachfolgenden Text:
 
 Titel;Autorengruppen wie z.B. Regierungen, Parteien, Parlamentarische oder Nicht-parlamentarische Gruppen als Liste;Autoren als Personen als Liste;Schlagworte als Liste;Zahl zwischen 0 und 10, die die Gefahr einschätzt dass im Gesetzestext Fachfremde Dinge untergeschoben wurden;Betroffene Gesetzestexte als Liste;Kurzzusammenfassung der Intention, dem Fokus, betroffenen Gruppen und anderen wichtigen Informationen aus dem Text in 150-250 Worten
+
+Nutze die CSV Struktur wie oben beschrieben, weiche nicht davon ab. Formatiere Listen mit ',' als Separator. Falls eine Information nicht vorhanden sein sollte, füge stattdessen "None" ohne Anführungszeichen ein. Antworte mit nichts anderem als den gefragten Informationen.
+WEICHE UNTER KEINEN UMSTÄNDEN VON DER CSV-STRUKTUR AB
+END PROMPT"""
+        prompt_stellungnahme = """Extrahiere folgende Metadaten aus dem Nachfolgenden Text:
+
+Titel;Autorengruppen wie z.B. Regierungen, Parteien, Parlamentarische oder Nicht-parlamentarische Gruppen als Liste;Autoren als Personen als Liste;Schlagworte als Liste;None;None;Kurzzusammenfassung der Intention, dem Fokus, betroffenen Gruppen und anderen wichtigen Informationen aus dem Text in 150-250 Worten
 
 Nutze die CSV Struktur wie oben beschrieben, weiche nicht davon ab. Formatiere Listen mit ',' als Separator. Falls eine Information nicht vorhanden sein sollte, füge stattdessen "None" ohne Anführungszeichen ein. Antworte mit nichts anderem als den gefragten Informationen.
 WEICHE UNTER KEINEN UMSTÄNDEN VON DER CSV-STRUKTUR AB
@@ -145,30 +152,39 @@ END PROMPT"""
         # gefahr,
         # betroffene_texte,
         # zusammenfassung
+        body = ""
         try:
             # Combine all text from pages
             full_text = " ".join(self.meta.full_text)
-            
+            response = ""
             # Get response from LLM
-            response = await self.config.llm_connector.generate(prompt, full_text)
-            print(type(response))
+            if self.typehint == "drucksache":
+                response = await self.config.llm_connector.generate(prompt_drcks, full_text)
+            elif self.typehint == "stellungnahme":
+                response = await self.config.llm_connector.generate(prompt_stellungnahme, full_text)
+            elif self.typehint == "protokoll":
+                response = "Protokoll;None;None;None;None;None;None\nProtokoll;None;None;None;None;None;None"
+            else:
+                response = "Sonstiges;None;None;None;None;None;None\nSonstig;None;None;None;None;None;None"
             
             # Parse the response
-            parts = response.strip().split("\n")[1].split(';')
+            body = response.strip().split("\n")[1:]
+            parts = "\n".join(body).split(';')
             if len(parts) >= 7:
-                if not self.meta.title:
-                    self.meta.title = parts[0] if parts[0] != 'None' else None
+                self.meta.title = parts[0] if parts[0] != 'None' else "Ohne Titel"
                 self.authoren = parts[1].split(',') if parts[1] != 'None' else None
                 self.autorpersonen = parts[2].split(',') if parts[2] != 'None' else None
                 self.schlagworte = parts[3].split(',') if parts[3] != 'None' else None
-                self.trojanergefahr = int(parts[4]) if parts[4] != 'None' else None
-                self.texte = parts[5].split(',') if parts[5] != 'None' else None
-                self.zusammenfassung = parts[6] if parts[6] != 'None' else None
+                self.trojanergefahr = int(parts[4]) if parts[4] != 'None' else 0
+                self.texte = parts[5].split(',') if parts[5] != 'None' else []
+                self.zusammenfassung = parts[6] if parts[6] != 'None' else ""
             else:
                 logger.error(f"Invalid response format from LLM: {response}")
                 
         except Exception as e:
             logger.error(f"Error extracting semantics: {e}")
+            logger.error(f"response: {response}")
+            logger.error(f"parts: {parts}")
             raise
 
     def package(self) -> models.Dokument:
