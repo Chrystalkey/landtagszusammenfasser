@@ -81,7 +81,7 @@ impl openapi::apis::default::Default for LTZFServer {
             claims: Self::Claims,
           path_params: models::ApiV1GesetzesvorhabenGsvhIdPutPathParams,
         ) -> Result<ApiV1GesetzesvorhabenGsvhIdPutResponse, ()> {
-            tracing::debug!("api_v1_gesetzesvorhaben_gsvh_id_put Called with path params: `{:?}`", path_params);
+            tracing::trace!("api_v1_gesetzesvorhaben_gsvh_id_put Called with path params: `{:?}`", path_params);
             let out = put::api_v1_gesetzesvorhaben_gsvh_id_put(self, path_params)
             .await
             .map_err(|e| todo!())?;
@@ -92,18 +92,17 @@ impl openapi::apis::default::Default for LTZFServer {
     #[must_use]
     #[allow(clippy::type_complexity, clippy::type_repetition_in_bounds)]
     async fn api_v1_gesetzesvorhaben_get(
-        &self,
-        method: Method,
-        host: Host,
-        cookies: CookieJar,
-          header_params: models::ApiV1GesetzesvorhabenGetHeaderParams,
-          query_params: models::ApiV1GesetzesvorhabenGetQueryParams,
+            &self,
+            method: Method,
+            host: Host,
+            cookies: CookieJar,
+            query_params: models::ApiV1GesetzesvorhabenGetQueryParams,
         ) -> Result<ApiV1GesetzesvorhabenGetResponse, ()> {
-        tracing::info!(
+        tracing::trace!(
             "GET GSVHByParam endpoint called with query params: {:?}",
             query_params
         );
-        match get::api_v1_gesetzesvorhaben_get(self, query_params, header_params).await {
+        match get::api_v1_gesetzesvorhaben_get(self, query_params).await {
             Ok(models::Response{payload: None}) => Ok(ApiV1GesetzesvorhabenGetResponse::Status204_NoContentFoundForTheSpecifiedParameters),
             Ok(x) => Ok(ApiV1GesetzesvorhabenGetResponse::Status200_SuccessfulOperation(x)),
             Err(e) => {
@@ -125,7 +124,7 @@ impl openapi::apis::default::Default for LTZFServer {
           query_params: models::ApiV1GesetzesvorhabenPostQueryParams,
                 body: models::Gesetzesvorhaben,
         ) -> Result<ApiV1GesetzesvorhabenPostResponse, ()> {
-        tracing::info!("api_v1_gesetzesvorhaben_post called by {:?}", query_params);
+        tracing::trace!("api_v1_gesetzesvorhaben_post called by {:?}", query_params);
 
         let rval = post::api_v1_gesetzesvorhaben_post(self, body).await;
         match rval {

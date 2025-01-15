@@ -23,12 +23,11 @@ pub async fn api_v1_gesetzesvorhaben_gesvh_id_get(
 
 pub async fn api_v1_gesetzesvorhaben_get(
     server: &LTZFServer,
-    query_params: models::ApiV1GesetzesvorhabenGetQueryParams,
-    headers: models::ApiV1GesetzesvorhabenGetHeaderParams
+    query_params: models::ApiV1GesetzesvorhabenGetQueryParams
 ) -> Result<models::Response> {
     tracing::info!("api_v1_gesetzesvorhaben_get called");
-    let connection = server.database.get().await?;
-    let gsvh = crate::db::retrieve::gsvh_by_parameter(query_params, headers, &connection).await?;
+    let mut connection = server.database.get().await?;
+    let gsvh = crate::db::retrieve::gsvh_by_parameter(query_params, &mut connection).await?;
     Ok(models::Response {
         payload: if gsvh.is_empty() { None } else { Some(gsvh) },
     })

@@ -7,8 +7,6 @@ authors = ["Benedikt Schäfer", "Noah Lokocz", "Liv Märtens"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 
-openapi = {path="./oapicode", features=["server"]}
-
 axum = { version = "0.7", features = ["macros"] }
 axum-macros = "0.4"
 chrono = { version = "0.4", features = ["serde"] }
@@ -32,3 +30,4 @@ strum = { version = "0.26.3", features = ["derive"] }
 axum-extra = "0.9.6"
 dotenv = "0.15.0"
 snafu = "0.8.5"
+openapi = { version = "0.1.0", path = "oapicode", features = ["server"] }

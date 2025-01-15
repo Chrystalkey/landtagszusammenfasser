@@ -1,46 +1,10 @@
 services:
-  oapi-preimage:
-    build:
-      context: ..
-      dockerfile: Dockerfile.oapi
-    image: oapi-preimage
-  ltzf-db:
-    build:
-      context: ../database
-      dockerfile: ./Dockerfile
-    image: ltzf-db:test
-    container_name: ltzf-db
-    ports:
-      - "8080:80"
-    depends_on:
-      - postgres
-      - oapi-preimage
-    networks:
-      - collector-network
-    environment:
-      DATABASE_URL: "postgres://postgres:blub@postgres:5432/postgres"
-      RUST_LOG: "debug"
-
-  postgres:
-    image: postgres:latest
-    container_name: pg-server-collector
-    restart: unless-stopped
-    ports:
-      - "5432:5432"
-    networks:
-      - collector-network
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_DB=postgres
-      - POSTGRES_PASSWORD=blub
   redis:
     image: redis:latest
     container_name: collector_redis
     restart: unless-stopped
     ports:
       - "6379:6379"
+    
     environment:
       REDIS_ARGS: "--loglevel=warning --save 60 1"
-
-networks:
-  collector-network:

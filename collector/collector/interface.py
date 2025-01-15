@@ -7,11 +7,10 @@ from uuid import UUID
 import aiohttp
 import asyncio
 from collector.convert import sanitize_for_serialization
-from redis import Redis
+from collector.config import CollectorConfiguration
 
 import openapi_client
 from openapi_client import models
-from collector.config import CollectorConfiguration
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +22,7 @@ class Scraper(ABC):
     config: CollectorConfiguration = None
 
     session: aiohttp.ClientSession = None
-    redis: Redis = None
+    session_headers: dict[str, str] = {}
 
     def __init__(
         self,
@@ -37,7 +36,7 @@ class Scraper(ABC):
         self.config = config
         self.result_objects = []
         self.session = session
-        self.redis = Redis(host=config.redis_host, port=config.redis_port)
+        self.session_headers = {}
         global logger
         logger.info(
             f"Initialized {self.__class__.__name__} with {len(self.listing_urls)} listing urls"
@@ -61,6 +60,9 @@ class Scraper(ABC):
                 logger.error(
                     f"Exception when calling DefaultApi->api_v1_gesetzesvorhaben_post: {e}"
                 )
+                if e.status == 422:
+                    logger.error("Unprocessable Entity, tried to send item:\n")
+                    logger.error(sanitize_for_serialization(item))
         return item
 
     async def item_processing(self, item):
@@ -84,15 +86,18 @@ class Scraper(ABC):
         iset = set(x for xs in item_list for x in xs)
         tasks = []
         for item in iset:
-            if self.redis.exists(str(item)):
-                logger.info(f"URL {item} found in cache, skipping...")
+            cached = self.config.cache.get_gsvh(str(item))
+            if cached is not None:
+                logger.debug(f"URL {item} found in cache, skipping...")
                 continue
             logger.debug(f"Initializing item extractor for {item}")
             tasks.append(self.item_processing(item))
 
         temp_res = []
         try:
-            temp_res = await asyncio.gather(*tasks, return_exceptions=True)
+            for r in tasks:
+                temp_res.append(await r)
+            #temp_res = await asyncio.gather(*tasks, return_exceptions=True)
         except Exception as e:
             logger.error(f"Error During Item Extraction: {e}", exc_info=True)
 
@@ -101,7 +106,7 @@ class Scraper(ABC):
                 obj = result[0]
                 item = result[1]
                 self.result_objects.append(obj)
-                self.redis.setex(str(item), timedelta(minutes=12), value="{}")
+                self.config.cache.store_gsvh(str(item), obj)
             else:
                 logger.error(f"Item extraction failed: {result}", exc_info=True)
         logger.info(

@@ -24,7 +24,6 @@ async def main(config: CollectorConfiguration):
             try:
                 # Actually run the scraper instance
                 await scraper.run()
-
             except Exception as e:
                 logger.error(f"Error while running scraper {scraper.__class__.__name__}: {e}", stack_info=True)
 
@@ -52,10 +51,16 @@ if __name__ == "__main__":
     logger.info("Starting collector manager.")
     config = CollectorConfiguration()
     logger.info("Configuration Complete")
+    CYCLE_TIME = 3 * 60 * 60 # 3 hours
+    last_run = None
     while True:
+        if last_run is not None and time.time() - last_run > CYCLE_TIME:
+            logger.info("Last scraping cycle finished longer than 3 hours ago, skipping")
+            time.sleep(CYCLE_TIME-(time.time() - last_run))
+            continue
         try:
+            last_run = time.time()
             asyncio.run(main(config))
-            time.sleep(1000)
         except KeyboardInterrupt:
             logger.info("Shutting down.")
             break

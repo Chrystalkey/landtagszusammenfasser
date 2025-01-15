@@ -16,11 +16,19 @@ RUN adduser \
 WORKDIR /app
 
 COPY Cargo.toml Cargo.lock ./
+
+RUN mkdir src && \
+    echo "fn main() {}" > src/main.rs && \
+    cargo remove openapi && \
+    cargo build -r && \
+    rm -rf src
+
 COPY --from=oapifile /app/oapicode-rust ./oapicode
 
 RUN mkdir src && \
     echo "fn main() {}" > src/main.rs && \
-    cargo build --release && \
+    cargo add openapi --path ./oapicode --features server && \
+    cargo build -r && \
     rm -rf src
 
 COPY ./src ./src
@@ -40,7 +48,7 @@ RUN apt update \
 
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /etc/group /etc/group
-COPY --from=builder --chmod=+x --chown=ltzf-database:ltzf-database /app/target/release/ltzusfas-db /app/ltzusfas-db
+COPY --from=builder --chmod=0100 --chown=ltzf-database:ltzf-database /app/target/release/ltzusfas-db /app/ltzusfas-db
 
 WORKDIR /app
 

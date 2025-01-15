@@ -43,7 +43,7 @@ services:
       - ltzf-network
     environment:
       DATABASE_URL: "postgres://ltzf-user:ltzf-pass@database:5432/ltzf"
-      RUST_LOG: "debug"
+      RUST_LOG: "trace"
 
   collector:
     build:
@@ -63,6 +63,8 @@ services:
       LTZF_DATABASE: "http://ltzf-db:80"
       REDIS_HOST: "redis"
       API_OBJ_LOG: "locallogs"
+      API_KEY: "tegernsee-apfelsaft-co2grenzwert"
+
   
   webserver:
     build:

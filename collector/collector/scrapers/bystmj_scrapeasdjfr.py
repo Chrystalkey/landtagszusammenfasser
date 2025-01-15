@@ -77,7 +77,7 @@ class BYSTMJScraper(Scraper):
                         "author": meta.get('/Author', None),
                         "creator": meta.get('/Creator', None),
                         "subject": meta.get('/Subject', None),
-                        "lastchange": doc_date,
+                        "lastchange": doc_date.astimezone(datetime.timezone.utc),
                         "hash": hashlib.file_digest(f, "sha256").hexdigest()
                     }
                 if os.path.exists(f"{randid}.pdf"):

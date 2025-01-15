@@ -8,11 +8,10 @@ from datetime import datetime as dt_datetime
 
 import aiohttp
 from bs4 import BeautifulSoup
-import PyPDF2
-from redis import Redis
 
 import openapi_client.models as models
 from collector.interface import Scraper
+from collector.document import Document
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +24,10 @@ class BYLTScraper(Scraper):
             f"https://www.bayern.landtag.de/parlament/dokumente/drucksachen?isInitialCheck=0&q=&dknr=&suchverhalten=AND&dokumentenart=Drucksache&ist_basisdokument=on&sort=date&anzahl_treffer={RESULT_COUNT}&wahlperiodeid%5B%5D={CURRENT_WP}&erfassungsdatum%5Bstart%5D=&erfassungsdatum%5Bend%5D=&dokumentenart=Drucksache&suchvorgangsarten%5B%5D=Gesetze%5C%5CGesetzentwurf&suchvorgangsarten%5B%5D=Gesetze%5C%5CStaatsvertrag&suchvorgangsarten%5B%5D=Gesetze%5C%5CHaushaltsgesetz%2C+Nachtragshaushaltsgesetz"
         ]
         super().__init__(config, uuid.uuid4(), listing_urls, session)
+        # Add headers for API key authentication
+        self.session.headers.update({
+            'api-key': config.api_key
+        })
 
     async def listing_page_extractor(self, url) -> list[str]:
         global logger
@@ -66,6 +69,7 @@ class BYLTScraper(Scraper):
                     .replace("\r", " ")
                     .strip(),
                     "verfassungsaendernd": False,
+                    "trojaner": False,
                     "initiatoren": [],
                     "typ": "bay-parlament",
                     "ids": [
@@ -84,10 +88,16 @@ class BYLTScraper(Scraper):
             # Initiatoren
             init_ptr = soup.find(string="Initiatoren")
             initiat_lis = init_ptr.find_next("ul").findAll("li")
-            gsvh.initiatoren = []
+            init_dings = []
+            init_persn = []
             for ini in initiat_lis:
-                gsvh.initiatoren.append(ini.text)
-            gsvh.initiatoren = sorted(gsvh.initiatoren, key=lambda element: 1 if "(" in element else 0) # sort the init list such that the parties are on top
+                if "(" not in ini.text:
+                    init_dings.append(ini.text)
+                else:
+                    init_persn.append(ini.text)
+            gsvh.initiatoren = init_dings
+            if len(init_persn) > 0:
+                gsvh.initiator_personen = init_persn
             assert (
                 len(gsvh.initiatoren) > 0
             ), f"Error: Could not find Initiatoren for url {listing_item}"
@@ -122,27 +132,32 @@ class BYLTScraper(Scraper):
                         "stellungnahmen": [],
                         "typ": models.Stationstyp.POSTPARL_MINUS_KRAFT,
                         "trojaner": False,
+                        "betroffene_texte": [],
                     }
                 )
-                cellclass = self.classify_object(cells[1])
+                cellclass = self.classify_cell(cells[1])
                 # print(f"Timestamp: {timestamp} Cellclass: {cellclass}")
                 if cellclass == "initiativdrucksache":
                     link = extract_singlelink(cells[1])
                     gsvh.links.append(link)
                     stat.typ = models.Stationstyp.PARL_MINUS_INITIATIV
                     stat.gremium = "landtag"
-                    stat.dokumente = [await self.create_document(link, "drucksache")]
+
+                    dok = await self.create_document(link, models.Dokumententyp.DRUCKSACHE)
+                    stat.dokumente = [dok.package()]
+                    stat.trojaner = dok.trojanergefahr >= self.config.trojan_threshold
+                    stat.betroffene_texte = dok.texte
+
                 elif cellclass == "stellungnahme":
                     assert (
                         len(gsvh.stationen) > 0
                     ), "Error: Stellungnahme ohne Vorhergehenden Gesetzestext"
                     stln_urls = extract_schrstellung(cells[1])
+                    dok = await self.create_document(stln_urls["stellungnahme"], models.Dokumententyp.STELLUNGNAHME)
                     stln = models.Stellungnahme.from_dict(
                         {
                             "meinung": 0,
-                            "dokument": await self.create_document(
-                                stln_urls["stellungnahme"], "stellungnahme"
-                            ),
+                            "dokument": dok.package(),
                             "lobbyregister_url": stln_urls["lobbyregister"],
                         }
                     )
@@ -154,25 +169,25 @@ class BYLTScraper(Scraper):
                 elif cellclass == "plenumsdiskussion-uebrw":
                     stat.typ = "parl-vollvlsgn"
                     stat.gremium = "landtag"
-                    stat.dokumente = [
-                        await self.create_document(
-                            extract_plenproto(cells[1]), "protokoll"
-                        )
-                    ]
+                    dok = await self.create_document(extract_plenproto(cells[1]), models.Dokumententyp.PROTOKOLL)
+                    stat.trojaner = dok.trojanergefahr >= self.config.trojan_threshold
+                    stat.betroffene_texte = dok.texte
+                    stat.dokumente = [dok.package()]
                 elif cellclass == "plenumsdiskussion-zustm":
+                    dok = await self.create_document(extract_plenproto(cells[1]), models.Dokumententyp.PROTOKOLL)
+                    
                     if len(gsvh.stationen) > 0 and gsvh.stationen[-1].typ == "parl-akzeptanz":
-                        gsvh.stationen[-1].dokumente.append(await self.create_document(
-                            extract_plenproto(cells[1]), "protokoll"
-                        ))
+                        gsvh.stationen[-1].dokumente.append(dok.package())
+                        gsvh.stationen[-1].trojaner = dok.trojanergefahr >= self.config.trojan_threshold
+                        gsvh.stationen[-1].betroffene_texte = dok.texte
                         continue
                     else:
+                        stat.trojaner = dok.trojanergefahr >= self.config.trojan_threshold
+                        stat.betroffene_texte = dok.texte
                         stat.typ = "parl-akzeptanz"
                         stat.gremium = "landtag"
-                        stat.dokumente = [
-                            await self.create_document(
-                                extract_plenproto(cells[1]), "protokoll"
-                            )
-                        ]
+                        
+                        stat.dokumente = [dok.package()]
                 elif cellclass == "plenumsdiskussion-ablng":
                     if len(gsvh.stationen) > 0 and gsvh.stationen[-1].typ in ["parl-akzeptanz", "parl-ablehnung"]:
                         gsvh.stationen[-1].typ = "parl-ablehnung"
@@ -181,83 +196,61 @@ class BYLTScraper(Scraper):
                         stat.typ = "parl-ablehnung"
                         stat.gremium = "landtag"
                 elif cellclass == "plenumsbeschluss":
+                    dok = await self.create_document(extract_singlelink(cells[1]), models.Dokumententyp.DRUCKSACHE)
                     if len(gsvh.stationen) > 0 and gsvh.stationen[-1].typ in ["parl-akzeptanz", "parl-ablehnung"]:
-                        gsvh.stationen[-1].dokumente.append(await self.create_document(
-                            extract_singlelink(cells[1]), "drucksache"
-                        ))
+                        gsvh.stationen[-1].dokumente.append(dok.package())
+                        gsvh.stationen[-1].trojaner = dok.trojanergefahr >= self.config.trojan_threshold
+                        gsvh.stationen[-1].betroffene_texte = dok.texte
                         continue
                     else:
                         stat.typ = "parl-akzeptanz" # TODO you stopped here. todo: merge shclussabstimmung (plenproto) with akzeptanz/ablehnung
                         stat.gremium = "landtag"
-                        stat.dokumente = [
-                            await self.create_document(
-                                extract_singlelink(cells[1]), "drucksache"
-                            )
-                        ]
+                        stat.trojaner = dok.trojanergefahr >= self.config.trojan_threshold
+                        stat.betroffene_texte = dok.texte
+                        stat.dokumente = [dok.package()]
                 elif cellclass == "ausschussbericht":
+                    dok = await self.create_document(extract_singlelink(cells[1]), models.Dokumententyp.DRUCKSACHE)
                     stat.typ = "parl-ausschber"
                     soup: BeautifulSoup = cells[1]
                     stat.gremium = soup.text.split("\n")[1]
-                    stat.dokumente = [
-                        await self.create_document(
-                            extract_singlelink(cells[1]), "drucksache"
-                        )
-                    ]
+                    stat.dokumente = [dok.package()]
+                    stat.trojaner = dok.trojanergefahr >= self.config.trojan_threshold
+                    stat.betroffene_texte = dok.texte
+
                 elif cellclass == "gesetzesblatt":
                     stat.gremium = "Gesetzesblatt"
                     stat.typ = "postparl-gsblt"
-                    stat.dokumente = [
-                        await self.create_document(
-                            extract_singlelink(cells[1]), "sonstig"
-                        )
-                    ]
+                    dok = await self.create_document(extract_singlelink(cells[1]), models.Dokumententyp.SONSTIG)
+                    stat.dokumente = [dok.package()]
+                    stat.trojaner = dok.trojanergefahr >= self.config.trojan_threshold
+                    stat.betroffene_texte = dok.texte
                 elif cellclass == "unclassified":
                     logger.warning("Warning: Unclassified cell. Discarded.")
                     continue
                 else:
                     logger.error("Reached an unreachable state. Discarded.")
                     continue
-
-                stat.trojaner = detect_trojaner(stat)
                 logger.info(
                     f"Adding New Station of class `{""+stat.typ}` to GSVH `{gsvh.api_id}`"
                 )
                 gsvh.stationen.append(stat)
-
             return gsvh
 
-    async def create_document(self, url: str, type_hint: str) -> models.Dokument:
+    async def create_document(self, url: str, type_hint: models.Dokumententyp) -> Document:
         global logger
         logger.debug(f"Creating document from url: {url}")
-        document_info = dict()
-        if self.redis.exists(url):
-            logger.debug("Cached version found, used")
-            dictionary = self.redis.get(url).decode("utf-8")
-            document_info = eval(dictionary)
-        else:
+        document = self.config.cache.get_dokument(url)
+        if document is None:
             logger.debug("Cached version not found, fetching from source")
-            document_info = await extract_pdf_drucks(url, self.session)
-            self.redis.set(url, str(document_info))
-        autoren = []
-        if document_info["author"] is not None:
-            autoren.append(f"{document_info["author"]} (Author)")
-        if document_info["creator"] is not None:
-            autoren.append(f"{document_info["creator"]} (Creator)")
+            document = Document(self.session, url, type_hint, self.config)
+            await document.run_extraction()
+            self.config.cache.store_dokument(url, document)
+            return document
+        else:
+            logger.debug("Cached version found, used")
+            return self.config.cache.get_dokument(url)
 
-        titel = document_info["title"] or document_info["subject"] or "Unbekannt"
-        dok_dic = {
-            "last_mod": document_info["lastchange"],
-            "titel": titel,
-            "link": url,
-            "hash": document_info["hash"],
-            "typ": type_hint,
-            "zusammenfassung": "TODO",
-            "autoren": autoren,
-            "schlagworte": [],
-        }
-        return models.Dokument.from_dict(dok_dic)
-
-    def classify_object(self, context) -> str:
+    def classify_cell(self, context) -> str:
         cellsoup = context
         if cellsoup.text.find("Initiativdrucksache") != -1:
             return "initiativdrucksache"
@@ -293,16 +286,8 @@ class BYLTScraper(Scraper):
         else:
             return "unclassified"
 
-
-def detect_trojaner(stat: models.Station) -> bool:
-    global logger
-    logger.debug("Trojaner detection not implemented")
-    return False
-
-
 def extract_singlelink(cellsoup: BeautifulSoup) -> str:
     return cellsoup.find("a")["href"]
-
 
 # returns: {"typ": link, ...}
 def extract_schrstellung(cellsoup: BeautifulSoup) -> dict:
@@ -324,41 +309,3 @@ def extract_plenproto(cellsoup: BeautifulSoup) -> str:
 
 def extract_gbl_ausz(cellsoup: BeautifulSoup) -> str:
     return cellsoup.findAll("a")[1]["href"]
-
-
-async def extract_pdf_drucks(url, session):
-    global logger
-    logger.debug("Extracting PDF Metadata")
-    async with session.get(url) as pdfFile:
-        randid = str(uuid.uuid4())
-        logger.debug(
-            f"Extracting PDF Metadata for Url {url}, writing to file {randid}.pdf"
-        )
-        with open(f"{randid}.pdf", "wb") as f:
-            f.write(await pdfFile.read())
-        with open(f"{randid}.pdf", "rb") as f:
-            reader = PyPDF2.PdfReader(f)
-            meta = reader.metadata
-
-            # Problem Child - sometimes the date parsing does not work here
-            dtime: dt_datetime = dt_datetime.now()
-            try:
-                dtime = (
-                    meta.modification_date or meta.creation_date or dt_datetime.now()
-                )
-            except Exception as e:
-                logger.error(
-                    f"Datetime Conversion failed: {e} with DocumentInformation Class {meta}"
-                )
-
-            dic = {
-                "title": str(meta.title),
-                "author": meta.author,
-                "creator": meta.creator,
-                "subject": meta.subject,
-                "lastchange": dtime,
-                "hash": hashlib.file_digest(f, "sha256").hexdigest(),
-            }
-        if os.path.exists(f"{randid}.pdf"):
-            os.remove(f"{randid}.pdf")
-        return dic

@@ -5,7 +5,7 @@ pub async fn api_v1_gesetzesvorhaben_post(
     server: &LTZFServer,
     api_gsvh: models::Gesetzesvorhaben
 )-> Result<()> {
-    tracing::warn!("api_v1_gesetzesvorhaben_post called");
+    tracing::trace!("api_v1_gesetzesvorhaben_post called");
     db::merge::run(&api_gsvh, server).await?;
     Ok(())
 }

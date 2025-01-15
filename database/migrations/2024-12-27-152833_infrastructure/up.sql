@@ -6,14 +6,11 @@ CREATE TABLE dokument_versions(
     PRIMARY KEY(dok_id, previous_id)
 );
 
-CREATE TABLE collector_auth(
+CREATE TABLE api_keys (
     id INTEGER PRIMARY KEY,
     coll_id UUID NOT NULL UNIQUE,
-    pubkey VARCHAR NOT NULL UNIQUE,
+    key_hash VARCHAR NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_used TIMESTAMP,
     deleted BOOL NOT NULL DEFAULT false
-);
-
-CREATE TABLE ip_lastreq(
-    ip INTEGER PRIMARY KEY,
-    request_ts TIMESTAMP NOT NULL
 );

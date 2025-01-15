@@ -1,4 +1,4 @@
-from collector.scrapers.bystmj_scraper import BYSTMJScraper
+from collector.collector.scrapers.bystmj_scrapeasdjfr import BYSTMJScraper
 from collector.oapicode.openapi_client import Configuration
 
 def test_pextractor():

@@ -97,9 +97,7 @@ class WebServer:
         try:
             with ApiClient(config) as api_client:
                 api = DefaultApi(api_client)
-                response = api.api_v1_gesetzesvorhaben_get(
-                    updated_since=last_update, limit=100, parlament=models.Parlament.BY
-                )
+                response = api.api_v1_gesetzesvorhaben_get()
                 self.content_generator.generate_content(response)
         except Exception as e:
             logger.error(f"Failed to fetch data: {e}")

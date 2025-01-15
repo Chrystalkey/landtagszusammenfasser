@@ -1,4 +1,4 @@
-#![recursion_limit = "128"]
+#![recursion_limit = "2048"]
 
 mod api;
 mod db;

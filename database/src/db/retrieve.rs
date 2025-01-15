@@ -63,6 +63,14 @@ pub async fn gsvh_by_id(id: i32, connection: &Connection) -> Result<models::Gese
                 .get_results::<String>(conn)
         })
         .await??;
+    let init_personen = as_option(connection
+        .interact(move |conn| {
+            schema::rel_gsvh_init_person::table
+                .select(schema::rel_gsvh_init_person::initiator)
+                .filter(schema::rel_gsvh_init_person::gsvh_id.eq(res.id))
+                .get_results::<String>(conn)
+        })
+        .await??);
 
     let ids = connection
         .interact(move |conn| {
@@ -104,6 +112,7 @@ pub async fn gsvh_by_id(id: i32, connection: &Connection) -> Result<models::Gese
         typ: models::Gesetzestyp::from_str(res.typ.as_str())
             .map_err(|e| DataValidationError::InvalidEnumValue { msg: e })?,
         initiatoren,
+        initiator_personen: init_personen,
         ids: Some(ids),
         links: Some(links),
         stationen: stationen,
@@ -192,7 +201,14 @@ pub async fn station_by_id(id: i32, connection: &Connection) -> Result<models::S
             )
         })
         .await?;
-
+    let betroffene_texte = connection
+        .interact(move |conn| {
+            schema::rel_station_gesetz::table
+                .filter(schema::rel_station_gesetz::stat_id.eq(id))
+                .select(schema::rel_station_gesetz::gesetz)
+                .get_results::<String>(conn)
+        })
+        .await??;
     return Ok(models::Station {
         parlament: models::Parlament::from_str(parl?.as_str())
             .map_err(|e| DataValidationError::InvalidEnumValue { msg: e })?,
@@ -203,6 +219,7 @@ pub async fn station_by_id(id: i32, connection: &Connection) -> Result<models::S
         stellungnahmen: Some(stellungnahmen),
         gremium: scaffold.gremium,
         datum: scaffold.datum,
+        betroffene_texte,
         trojaner: Some(scaffold.trojaner),
         link: scaffold.link,
     });
@@ -257,7 +274,7 @@ pub async fn dokument_by_id(id: i32, connection: &Connection) -> Result<models::
                 .first(conn)
         })
         .await??;
-    let sw: Vec<String> = connection
+    let schlagworte: Option<Vec<String>> = as_option(connection
         .interact(move |conn| {
             schema::rel_dok_schlagwort::table
                 .filter(schema::rel_dok_schlagwort::dok_id.eq(id))
@@ -266,15 +283,23 @@ pub async fn dokument_by_id(id: i32, connection: &Connection) -> Result<models::
                 .distinct()
                 .get_results(conn)
         })
-        .await??;
-    let autoren: Vec<String> = connection
+        .await??);
+    let autoren: Option<Vec<String>> = as_option(connection
         .interact(move |conn| {
             schema::rel_dok_autor::table
                 .filter(schema::rel_dok_autor::dok_id.eq(id))
                 .select(schema::rel_dok_autor::autor)
                 .get_results(conn)
         })
-        .await??;
+        .await??);
+    let autorpersonen: Option<Vec<String>> = as_option(connection
+        .interact(move |conn| {
+            schema::rel_dok_autorperson::table
+                .filter(schema::rel_dok_autorperson::dok_id.eq(id))
+                .select(schema::rel_dok_autorperson::autor)
+                .get_results(conn)
+        })
+        .await??);
 
     return Ok(models::Dokument {
         titel: ret.0,
@@ -282,8 +307,9 @@ pub async fn dokument_by_id(id: i32, connection: &Connection) -> Result<models::
         link: ret.2,
         hash: ret.3,
         zusammenfassung: ret.4,
-        schlagworte: Some(sw),
-        autoren: Some(autoren),
+        schlagworte,
+        autoren,
+        autorpersonen,
         typ: models::Dokumententyp::from_str(ret.5.as_str())
             .map_err(|e| DataValidationError::InvalidEnumValue { msg: e })?,
     });
@@ -294,10 +320,68 @@ pub async fn dokument_by_id(id: i32, connection: &Connection) -> Result<models::
 struct GSVHID {
     id: i32,
 }
+
 pub async fn gsvh_by_parameter(
-    _params: models::ApiV1GesetzesvorhabenGetQueryParams,
-    _headers: models::ApiV1GesetzesvorhabenGetHeaderParams,
-    _connection: &Connection,
+    params: models::ApiV1GesetzesvorhabenGetQueryParams,
+    connection: &mut Connection,
 ) -> Result<Vec<models::Gesetzesvorhaben>> {
-    unimplemented!()
+    let pretable_join = "SELECT gesetzesvorhaben.id, MAX(station.datum) as moddate FROM gesetzesvorhaben, station, gesetzestyp, rel_gsvh_init
+    WHERE gesetzesvorhaben.id = station.gsvh_id 
+    AND gesetzesvorhaben.id = rel_gsvh_init.gsvh_id
+    AND gesetzesvorhaben.typ = gesetzestyp.id";
+    let mut param_counter = 0;
+    let query = format!(
+        "WITH gsvh_moddate as ({}
+        {}
+        {}
+        GROUP BY gesetzesvorhaben.id
+    )
+    SELECT gsvh_moddate.id FROM gsvh_moddate
+    {}
+    ORDER BY moddate DESC
+    {}
+    {}", pretable_join,
+        if params.ggtyp.is_some() {param_counter += 1;format!("AND gesetzestyp.api_key = ${}", param_counter)} else {String::new()},
+        if params.initiator_contains_any.is_some() {param_counter += 1;format!("AND ${} = ANY(rel_gsvh_init.initiator)", param_counter)} else {String::new()},
+        if params.if_modified_since.is_some() {param_counter += 1;format!("AND moddate >= ${}", param_counter)} else {String::new()},
+        if params.limit.is_some() {param_counter += 1;format!("LIMIT ${}", param_counter)} else {String::new()},
+        if params.offset.is_some() {param_counter += 1;format!("OFFSET ${}", param_counter)} else {String::new()}
+    );
+    tracing::trace!("Executing Query:\n`{}`", query);
+    let mut diesel_query = diesel::sql_query(query)
+    .into_boxed();
+
+    if let Some(ggtyp) = params.ggtyp{
+        diesel_query = diesel_query.bind::<diesel::sql_types::Text, _>(ggtyp.to_string())
+    }
+    if let Some(any_init) = params.initiator_contains_any{
+        diesel_query = diesel_query.bind::<diesel::sql_types::Array<diesel::sql_types::Text>, _>(any_init);
+    }
+    if let Some(moddate) = params.if_modified_since{
+        diesel_query = diesel_query.bind::<diesel::sql_types::Timestamp, _>(moddate.naive_utc());
+    }
+    if let Some(limit) = params.limit{
+        diesel_query = diesel_query.bind::<diesel::sql_types::Integer, _>(limit);
+    }
+    if let Some(offset) = params.offset{
+        diesel_query = diesel_query.bind::<diesel::sql_types::Integer, _>(offset);
+    }
+
+    let ids: Vec<GSVHID> = connection.interact(
+        |conn| diesel_query.load::<GSVHID>(conn)
+    ).await??;
+
+    let mut vector = vec![];
+    for id in ids{
+        vector.push(super::retrieve::gsvh_by_id(id.id, connection).await?);
+    }
+    Ok(vector)
+}
+
+fn as_option<T>(v: Vec<T>) -> Option<Vec<T>> {
+    if v.is_empty() {
+        None
+    } else {
+        Some(v)
+    }
 }

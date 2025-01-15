@@ -14,6 +14,12 @@ CREATE TABLE rel_dok_autor(
     PRIMARY KEY (dok_id, autor)
 );
 
+CREATE TABLE rel_dok_autorperson(
+    dok_id INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE,
+    autor VARCHAR NOT NULL,
+    PRIMARY KEY (dok_id, autor)
+);
+
 CREATE TABLE rel_dok_schlagwort(
     dok_id INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE,
     sw_id INTEGER NOT NULL REFERENCES schlagwort(id) ON DELETE CASCADE,
@@ -29,6 +35,12 @@ CREATE TABLE gesetzesvorhaben(
     CONSTRAINT unique_gsvh_titel_typ UNIQUE (titel, typ)
 );
 CREATE TABLE rel_gsvh_init(
+    gsvh_id INTEGER NOT NULL REFERENCES gesetzesvorhaben(id) ON DELETE CASCADE,
+    initiator VARCHAR NOT NULL,
+    PRIMARY KEY (gsvh_id, initiator)
+);
+
+CREATE TABLE rel_gsvh_init_person(
     gsvh_id INTEGER NOT NULL REFERENCES gesetzesvorhaben(id) ON DELETE CASCADE,
     initiator VARCHAR NOT NULL,
     PRIMARY KEY (gsvh_id, initiator)
@@ -69,6 +81,12 @@ CREATE TABLE rel_station_schlagwort(
     stat_id INTEGER NOT NULL REFERENCES station(id) ON DELETE CASCADE,
     sw_id INTEGER NOT NULL REFERENCES schlagwort(id) ON DELETE CASCADE,
     PRIMARY KEY (stat_id, sw_id)
+);
+
+CREATE TABLE rel_station_gesetz (
+    stat_id INTEGER NOT NULL REFERENCES station(id) ON DELETE CASCADE,
+    gesetz VARCHAR NOT NULL,
+    PRIMARY KEY (stat_id, gesetz)
 );
 
 CREATE TABLE stellungnahme (

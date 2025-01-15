@@ -12,12 +12,11 @@ beautifulsoup4 = "^4.12.3"
 requests = "^2.32.3"
 pydantic = "^2.9.2"
 openapi-client = {path = "oapicode"}
-pypdf2 = "^3.0.1"
 aiohttp = "^3.11.10"
 redis = "^5.2.1"
-
-[tool.poetry.group.test.dependencies]
-pytest = "^7"
+litellm = "^1.57.4"
+pytest-asyncio = "^0.25.2"
+pypdf = "^5.1.0"
 
 [build-system]
 requires = ["poetry-core"]

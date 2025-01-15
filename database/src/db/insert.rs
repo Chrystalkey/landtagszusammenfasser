@@ -63,6 +63,20 @@ pub fn insert_gsvh(
         .execute(connection)?;
     }
 
+    if let Some(init_personen) = api_gsvh.initiator_personen.as_ref() {
+        diesel::insert_into(schema::rel_gsvh_init_person::table)
+        .values(
+            init_personen.iter()
+            .map(|s|
+                (
+                    schema::rel_gsvh_init_person::gsvh_id.eq(gsvh_id),
+                    schema::rel_gsvh_init_person::initiator.eq(s.clone())
+                )
+            ).collect::<Vec<_>>()
+        )
+        .execute(connection)?;
+    }
+
     if let Some(ids) = api_gsvh.ids.as_ref() {
         use schema::rel_gsvh_id::dsl as dsl;
         let mut value_vec = vec![];
@@ -175,7 +189,6 @@ pub fn insert_station(
         .select((schema::schlagwort::api_key, schema::schlagwort::id))
         .get_results::<(String, i32)>(connection)?
         .drain(..).collect();
-        tracing::trace!("Inserting Schlagworte: {:?} / {:?}", sw, idvec);
 
         diesel::insert_into(schema::rel_station_schlagwort::table)
         .values(
@@ -231,7 +244,6 @@ pub fn insert_dokument(
         .select((schema::schlagwort::api_key, schema::schlagwort::id))
         .get_results::<(String, i32)>(connection)?
         .drain(..).collect();
-        tracing::trace!("Inserting Schlagworte: {:?} / {:?}", sw, idvec);
 
         diesel::insert_into(schema::rel_dok_schlagwort::table)
         .values(
@@ -253,6 +265,20 @@ pub fn insert_dokument(
                 (
                     schema::rel_dok_autor::dok_id.eq(did),
                     schema::rel_dok_autor::autor.eq(s)
+                )
+            )
+            .collect::<Vec<_>>()
+        )
+        .execute(connection)?;
+    }
+    if let Some(autoren_personen) = dok.autorpersonen{
+        diesel::insert_into(schema::rel_dok_autorperson::table)
+        .values(
+            autoren_personen.iter()
+            .map(|s|
+                (
+                    schema::rel_dok_autorperson::dok_id.eq(did),
+                    schema::rel_dok_autorperson::autor.eq(s)
                 )
             )
             .collect::<Vec<_>>()

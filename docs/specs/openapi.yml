@@ -54,12 +54,6 @@ paths:
     get:
       description: "Returns a filtered List of Gesetzesvorhaben"
       responses:
-        "206":
-          description: "Partial Content"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/response"
         "200":
           description: "Successful operation"
           content:
@@ -78,12 +72,22 @@ paths:
           description: "Internal Server Error"
 
       parameters:
-        - name: "If-Modified-Since"
-          in: "header"
+        - name: "if-modified-since"
+          in: "query"
           required: false
           schema:
             type: "string"
             format: "date-time"
+        - name: "limit"
+          in: "query"
+          required: false
+          schema:
+            type: "integer"
+        - name: "offset"
+          in: "query"
+          required: false
+          schema:
+            type: "integer"
         - name: "initiator-contains-any"
           in: query
           required: false
@@ -92,16 +96,12 @@ paths:
             type: array
             items:
               type: string
-        - name: "ggpath"
+        - name: "ggtyp"
           in: query
           required: false
+          description: "Gesetzgebungstyp"
           schema:
             $ref: "#/components/schemas/gesetzestyp"
-        - name: "parlament"
-          in: query
-          required: false
-          schema:
-            $ref: "#/components/schemas/parlament"
     post:
       description: "Pushing a new Gesetzesvorhaben"
       requestBody:
@@ -227,11 +227,18 @@ components:
           type: "array"
           items:
             type: "string"
+        autorpersonen:
+          type: "array"
+          items:
+            type: "string"
+            example: "Ach, Manfred (CSU)"
+            description: "The authors of the document if they are persons"
         autoren:
           type: "array"
           items:
             type: "string"
-            example: "Staatsregierung"
+            example: "Staatsregierung, Fraktion die Grünen, Fraktion CDU/CSU"
+            description: "The authors of the document if they are not persons, this is to be done at the collector level"
         typ:
           $ref: "#/components/schemas/dokumententyp"
     stellungnahme:
@@ -254,6 +261,7 @@ components:
         - "gremium"
         - "parlament"
         - "typ"
+        - "betroffene_texte"
       properties:
         datum:
           type: "string"
@@ -266,6 +274,12 @@ components:
           type: "array"
           items:
             $ref: "#/components/schemas/dokument"
+        betroffene_texte:
+          type: "array"
+          items:
+            type: "string"
+            example: "§ 1 Abs. 1 Satz 1"
+            description: "The text that is affected by the station"
         link:
           type: "string"
           format: "uri"
@@ -300,7 +314,7 @@ components:
           type: "string"
           format: "uuid"
           example: "123e4567-e89b-12d3-a456-426614174000"
-        titel: 
+        titel:
           type: "string"
         verfassungsaendernd:
           type: "boolean"
@@ -309,6 +323,13 @@ components:
           items:
             type: "string"
             example: "Staatsministerium für Justiz"
+            description: "The initiators of the Gesetzesvorhaben. This is meant for institutions or fractions."
+        initiator_personen:
+          type: "array"
+          items:
+            type: "string"
+            example: "Ach, Manfred (CSU)"
+            description: "The authors of the document if they are persons"
         typ:
           $ref: "#/components/schemas/gesetzestyp"
         ids:
