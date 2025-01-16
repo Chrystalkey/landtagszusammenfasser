@@ -1,4 +1,4 @@
-from litellm import completion
+from litellm import acompletion
 import logging
 from typing import Optional
 
@@ -16,7 +16,7 @@ class LLMConnector:
 
     async def generate(self, prompt: str, text: str) -> str:
         try:
-            response = completion(
+            response = await acompletion(
                 model=self.model_name,
                 messages=[
                     {"role": "system", "content": "You are a helpful assistant that extracts structured information from documents."},

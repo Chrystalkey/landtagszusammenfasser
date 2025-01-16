@@ -6,6 +6,7 @@ import uuid
 import datetime
 import logging
 import pypdf
+import csv
 from .llm_connector import LLMConnector
 
 logger = logging.getLogger(__name__)
@@ -51,8 +52,9 @@ class Document:
         self.autorpersonen = None
         self.zusammenfassung = None
         self.schlagworte = None
-        self.trojanergefahr = None
-        self.texte = None
+        self.trojanergefahr = None # only relevant for drucksachen
+        self.texte = None # only relevant for drucksachen
+        self.meinung = None # only relevant for stellungnahmen
 
         self.config = config
         self.fileid = str(uuid.uuid4())
@@ -140,11 +142,12 @@ WEICHE UNTER KEINEN UMSTÄNDEN VON DER CSV-STRUKTUR AB
 END PROMPT"""
         prompt_stellungnahme = """Extrahiere folgende Metadaten aus dem Nachfolgenden Text:
 
-Titel;Autorengruppen wie z.B. Regierungen, Parteien, Parlamentarische oder Nicht-parlamentarische Gruppen als Liste;Autoren als Personen als Liste;Schlagworte als Liste;None;None;Kurzzusammenfassung der Intention, dem Fokus, betroffenen Gruppen und anderen wichtigen Informationen aus dem Text in 150-250 Worten
+Titel;Autorengruppen wie z.B. Regierungen, Parteien, Parlamentarische oder Nicht-parlamentarische Gruppen als Liste;Autoren als Personen als Liste;Schlagworte als Liste;Meinung(-1/0/1);Kurzzusammenfassung Stellungnahme, der Meinung und Kritik, betroffenen Gruppen und anderen wichtigen Informationen aus dem Text in 150-250 Worten
 
 Nutze die CSV Struktur wie oben beschrieben, weiche nicht davon ab. Formatiere Listen mit ',' als Separator. Falls eine Information nicht vorhanden sein sollte, füge stattdessen "None" ohne Anführungszeichen ein. Antworte mit nichts anderem als den gefragten Informationen.
 WEICHE UNTER KEINEN UMSTÄNDEN VON DER CSV-STRUKTUR AB
-END PROMPT"""
+END PROMPT
+"""
         # titel,
         # autorengruppen,
         # autoren,
@@ -156,31 +159,53 @@ END PROMPT"""
         try:
             # Combine all text from pages
             full_text = " ".join(self.meta.full_text)
+            if len(full_text) <= 20:
+                logger.warning(f"Extremely short text: `{full_text}` within a document. This might hint at a non-machine readable document. The URL ist `{self.url}`")
             response = ""
             # Get response from LLM
             if self.typehint == "drucksache":
                 response = await self.config.llm_connector.generate(prompt_drcks, full_text)
+                
+                # Parse the response
+                body = body = "\n".join(response.strip().split("\n")[1:])
+                reader = csv.reader(["\n".join(body)], delimiter=";")
+                parts = [part for part in reader][0]
+                if len(parts) == 7:
+                    self.meta.title = parts[0] if parts[0] != 'None' else "Ohne Titel"
+                    self.authoren = parts[1].split(',') if parts[1] != 'None' else None
+                    self.autorpersonen = parts[2].split(',') if parts[2] != 'None' else None
+                    self.schlagworte = parts[3].split(',') if parts[3] != 'None' else None
+                    self.trojanergefahr = int(parts[4]) if parts[4] != 'None' else 0
+                    self.texte = parts[5].split(',') if parts[5] != 'None' else []
+                    self.zusammenfassung = parts[6] if parts[6] != 'None' else ""
+                else:
+                    logger.error(f"Invalid response format from LLM: {response}")
             elif self.typehint == "stellungnahme":
                 response = await self.config.llm_connector.generate(prompt_stellungnahme, full_text)
+                # Parse the response
+                body = response.strip().split("\n")[1:]
+                reader = csv.reader(["\n".join(body)], delimiter=";")
+                parts = [part for part in reader][0]
+                if len(parts) == 6:
+                    self.meta.title = parts[0] if parts[0] != 'None' else "Stellungnahme"
+                    self.authoren = parts[1].split(',') if parts[1] != 'None' else None
+                    self.autorpersonen = parts[2].split(',') if parts[2] != 'None' else None
+                    self.schlagworte = parts[3].split(',') if parts[3] != 'None' else None
+                    self.meinung = int(parts[4]) if parts[4] != 'None' else 0
+                    self.zusammenfassung = parts[5] if parts[5] != 'None' else ""
+                else:
+                    logger.error(f"Invalid response format from LLM: {response}")
             elif self.typehint == "protokoll":
-                response = "Protokoll;None;None;None;None;None;None\nProtokoll;None;None;None;None;None;None"
+                self.meta.title = "Protokoll"
+                self.meta.authoren = None
+                self.meta.autorpersonen = None
+                self.meta.schlagworte = None
+                self.meta.trojanergefahr = None
+                self.meta.texte = None
+                self.meta.zusammenfassung = None
             else:
-                response = "Sonstiges;None;None;None;None;None;None\nSonstig;None;None;None;None;None;None"
-            
-            # Parse the response
-            body = response.strip().split("\n")[1:]
-            parts = "\n".join(body).split(';')
-            if len(parts) >= 7:
-                self.meta.title = parts[0] if parts[0] != 'None' else "Ohne Titel"
-                self.authoren = parts[1].split(',') if parts[1] != 'None' else None
-                self.autorpersonen = parts[2].split(',') if parts[2] != 'None' else None
-                self.schlagworte = parts[3].split(',') if parts[3] != 'None' else None
-                self.trojanergefahr = int(parts[4]) if parts[4] != 'None' else 0
-                self.texte = parts[5].split(',') if parts[5] != 'None' else []
-                self.zusammenfassung = parts[6] if parts[6] != 'None' else ""
-            else:
-                logger.error(f"Invalid response format from LLM: {response}")
-                
+                self.meta.title = "Sonstiges"
+
         except Exception as e:
             logger.error(f"Error extracting semantics: {e}")
             logger.error(f"response: {response}")

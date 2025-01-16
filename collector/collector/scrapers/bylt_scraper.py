@@ -156,7 +156,7 @@ class BYLTScraper(Scraper):
                     dok = await self.create_document(stln_urls["stellungnahme"], models.Dokumententyp.STELLUNGNAHME)
                     stln = models.Stellungnahme.from_dict(
                         {
-                            "meinung": 0,
+                            "meinung": dok.meinung,
                             "dokument": dok.package(),
                             "lobbyregister_url": stln_urls["lobbyregister"],
                         }
