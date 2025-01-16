@@ -1,4 +1,5 @@
 from datetime import timedelta
+import json
 from openapi_client import models
 from collector.convert import sanitize_for_serialization
 from collector.document import Document
@@ -34,7 +35,7 @@ class ScraperCache:
 
     def store_gsvh(self, key: str, value: models.Gesetzesvorhaben):
         """Store data in either Redis or file system cache"""
-        serialized = value.to_json()
+        serialized = json.dumps(sanitize_for_serialization(value))
         logger.debug(f"Storing gsvh {key} in redis")
         logger.debug(f"Serialized: {serialized}")
         self.redis_client.set(f"gsvh:{key}", serialized, timedelta(minutes=12))

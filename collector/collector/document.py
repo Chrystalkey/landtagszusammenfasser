@@ -52,8 +52,8 @@ class Document:
         self.autorpersonen = None
         self.zusammenfassung = None
         self.schlagworte = None
-        self.trojanergefahr = None # only relevant for drucksachen
-        self.texte = None # only relevant for drucksachen
+        self.trojanergefahr = 0 # only relevant for drucksachen
+        self.texte = [] # only relevant for drucksachen
         self.meinung = None # only relevant for stellungnahmen
 
         self.config = config
@@ -168,7 +168,7 @@ END PROMPT
                 
                 # Parse the response
                 body = body = "\n".join(response.strip().split("\n")[1:])
-                reader = csv.reader(["\n".join(body)], delimiter=";")
+                reader = csv.reader([" ".join(body)], delimiter=";")
                 parts = [part for part in reader][0]
                 if len(parts) == 7:
                     self.meta.title = parts[0] if parts[0] != 'None' else "Ohne Titel"
@@ -184,7 +184,7 @@ END PROMPT
                 response = await self.config.llm_connector.generate(prompt_stellungnahme, full_text)
                 # Parse the response
                 body = response.strip().split("\n")[1:]
-                reader = csv.reader(["\n".join(body)], delimiter=";")
+                reader = csv.reader([" ".join(body)], delimiter=";")
                 parts = [part for part in reader][0]
                 if len(parts) == 6:
                     self.meta.title = parts[0] if parts[0] != 'None' else "Stellungnahme"
@@ -201,7 +201,7 @@ END PROMPT
                 self.meta.autorpersonen = None
                 self.meta.schlagworte = None
                 self.meta.trojanergefahr = None
-                self.meta.texte = None
+                self.meta.texte = []
                 self.meta.zusammenfassung = None
             else:
                 self.meta.title = "Sonstiges"
@@ -209,12 +209,10 @@ END PROMPT
         except Exception as e:
             logger.error(f"Error extracting semantics: {e}")
             logger.error(f"response: {response}")
-            logger.error(f"parts: {parts}")
-            raise
 
     def package(self) -> models.Dokument:
         return models.Dokument.from_dict({
-            "titel": self.meta.title,
+            "titel": self.meta.title or "Ohne Titel",
             "autoren": self.authoren,
             "autorpersonen": self.autorpersonen,
             "schlagworte": self.schlagworte,

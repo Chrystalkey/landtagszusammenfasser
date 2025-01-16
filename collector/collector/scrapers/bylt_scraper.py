@@ -170,7 +170,6 @@ class BYLTScraper(Scraper):
                     stat.typ = "parl-vollvlsgn"
                     stat.gremium = "landtag"
                     dok = await self.create_document(extract_plenproto(cells[1]), models.Dokumententyp.PROTOKOLL)
-                    stat.trojaner = dok.trojanergefahr >= self.config.trojan_threshold
                     stat.betroffene_texte = dok.texte
                     stat.dokumente = [dok.package()]
                 elif cellclass == "plenumsdiskussion-zustm":
@@ -178,12 +177,8 @@ class BYLTScraper(Scraper):
                     
                     if len(gsvh.stationen) > 0 and gsvh.stationen[-1].typ == "parl-akzeptanz":
                         gsvh.stationen[-1].dokumente.append(dok.package())
-                        gsvh.stationen[-1].trojaner = dok.trojanergefahr >= self.config.trojan_threshold
-                        gsvh.stationen[-1].betroffene_texte = dok.texte
                         continue
                     else:
-                        stat.trojaner = dok.trojanergefahr >= self.config.trojan_threshold
-                        stat.betroffene_texte = dok.texte
                         stat.typ = "parl-akzeptanz"
                         stat.gremium = "landtag"
                         
@@ -222,8 +217,6 @@ class BYLTScraper(Scraper):
                     stat.typ = "postparl-gsblt"
                     dok = await self.create_document(extract_singlelink(cells[1]), models.Dokumententyp.SONSTIG)
                     stat.dokumente = [dok.package()]
-                    stat.trojaner = dok.trojanergefahr >= self.config.trojan_threshold
-                    stat.betroffene_texte = dok.texte
                 elif cellclass == "unclassified":
                     logger.warning("Warning: Unclassified cell. Discarded.")
                     continue
