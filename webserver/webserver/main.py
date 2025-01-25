@@ -13,6 +13,7 @@ import os
 import subprocess
 import threading
 import time
+import toml
 import webserver.generation as generation
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from typing import List, Optional
@@ -24,17 +25,34 @@ logging.basicConfig(level=logging.INFO,format="%(asctime)s|%(levelname)s: %(file
 
 logger = logging.getLogger(__name__)
 
-
 class ContentGenerator:
     def __init__(self):
         self.base_dir = Path().cwd() / Path("./zolasite/content")
 
     def generate_content(self, response: Optional[List[models.Response]]) -> None:
         """Generate markdown files from legislative proposals."""
+        
+        pagestatepath = self.base_dir / "pagestate.toml"
+        pagestate = {}
+        if pagestatepath.exists():
+            pagestate = toml.loads(pagestatepath.read_text(encoding="utf-8"))
+        else:
+            pagestate = {"beratung": [], "nachbereitung": [], "vorbereitung": []}
         if not response:
             logger.warning("No items to generate")
-            return
+            
+            try:
+                ber_path = Path(self.base_dir / "beratung.md")
+                ber_path.write_text(generation.generate_beratung(pagestate["beratung"]), encoding="utf-8")
+                vorb_path = Path(self.base_dir / "vorbereitung.md")
+                vorb_path.write_text(generation.generate_vorbereitung(pagestate["vorbereitung"]), encoding="utf-8")
+                nach_path = Path(self.base_dir / "nachbereitung.md")
+                nach_path.write_text(generation.generate_nachbereitung(pagestate["nachbereitung"]), encoding="utf-8")
 
+                pagestatepath.write_text(toml.dumps(pagestate))
+            except Exception as e:
+                logger.error(f"Failed to write to pagestate or the section sites: {e}")
+            return
         for gsvh in response.payload:
             # Find latest station
             latest_station = max(gsvh.stationen, key=lambda s: s.datum)
@@ -42,22 +60,25 @@ class ContentGenerator:
 
             # Determine output path based on station type
             if station_type.startswith("preparl"):
-                subdir = "in-vorbereitung"
+                if gsvh.api_id not in pagestate["vorbereitung"]:
+                    pagestate["vorbereitung"].append(gsvh.api_id)
             elif station_type.startswith("parl") and station_type not in [
                 "parl-abgelehnt",
                 "parl-akzeptiert",
             ]:
-                subdir = "in-beratung"
+                if gsvh.api_id not in pagestate["beratung"]:
+                    pagestate["beratung"].append(gsvh.api_id)
             elif station_type.startswith("postparl") or station_type in [
                 "parl-abgelehnt",
                 "parl-akzeptiert",
             ]:
-                subdir = "in-nachbereitung"
+                if gsvh.api_id not in pagestate["nachbereitung"]:
+                    pagestate["nachbereitung"].append(gsvh.api_id)
             else:
                 logger.warning(f"Unknown station type: {station_type}")
                 continue
 
-            path = self.base_dir / subdir / f"{gsvh.api_id}.md"
+            path = self.base_dir / "gesetze" / f"{gsvh.api_id}.md"
             content = generation.generate_content(gsvh)
             try:
                 logger.info(f"Updating `{path}`")
@@ -73,10 +94,21 @@ class ContentGenerator:
                             f"Content for {gsvh.api_id} already exists but is different"
                         )
                         os.remove(str(path))
-                with path.open("w") as file:
+                with path.open("w", encoding="utf-8") as file:
                     file.write(content)
             except Exception as e:
                 logger.error(f"Failed to write to {path}: {e}")
+        try:
+            ber_path = Path(self.base_dir / "beratung.md")
+            ber_path.write_text(generation.generate_beratung(pagestate["beratung"]), encoding="utf-8")
+            vorb_path = Path(self.base_dir / "vorbereitung.md")
+            vorb_path.write_text(generation.generate_vorbereitung(pagestate["vorbereitung"]), encoding="utf-8")
+            nach_path = Path(self.base_dir / "nachbereitung.md")
+            nach_path.write_text(generation.generate_nachbereitung(pagestate["nachbereitung"]), encoding="utf-8")
+
+            pagestatepath.write_text(toml.dumps(pagestate))
+        except Exception as e:
+            logger.error(f"Failed to write to pagestate or the section sites: {e}")
 
 
 class WebServer:

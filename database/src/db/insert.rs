@@ -205,7 +205,9 @@ pub fn insert_station(
 
     return Ok(stat_id);
 }
-
+fn sanitize_string(s: &str) -> String{
+    s.to_string()
+}
 pub fn insert_dokument(
     dok: models::Dokument,
     connection: &mut diesel::PgConnection) 
@@ -214,11 +216,11 @@ pub fn insert_dokument(
     let did: i32 = diesel::insert_into(schema::dokument::table)
     .values(
         (
-            dsl::titel.eq(dok.titel),
+            dsl::titel.eq(sanitize_string(&dok.titel)),
             dsl::link.eq(dok.link),
             dsl::hash.eq(dok.hash),
             dsl::datum.eq(dok.last_mod.naive_utc()),
-            dsl::zusammenfassung.eq(dok.zusammenfassung),
+            dsl::zusammenfassung.eq(&dok.zusammenfassung.map(|s| sanitize_string(&s))),
             dsl::typ.eq(
                 schema::dokumententyp::table.select(schema::dokumententyp::id)
                 .filter(schema::dokumententyp::api_key.eq(&dok.typ.to_string()))

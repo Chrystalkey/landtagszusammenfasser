@@ -135,14 +135,14 @@ class Document:
     async def extract_semantics(self):
         prompt_drcks = """Extrahiere folgende Metadaten aus dem Nachfolgenden Text:
 
-Titel;Autorengruppen wie z.B. Regierungen, Parteien, Parlamentarische oder Nicht-parlamentarische Gruppen als Liste;Autoren als Personen als Liste;Schlagworte als Liste;Zahl zwischen 0 und 10, die die Gefahr einschätzt dass im Gesetzestext Fachfremde Dinge untergeschoben wurden;Betroffene Gesetzestexte als Liste;Kurzzusammenfassung der Intention, dem Fokus, betroffenen Gruppen und anderen wichtigen Informationen aus dem Text in 150-250 Worten
+Titel;Autorengruppen wie z.B. Regierungen/Parteien/Parlamentarische/Nicht-parlamentarische Gruppen als Liste;Autoren als Personen als Liste;Schlagworte als Liste;Zahl zwischen 0 und 10, die die Gefahr einschätzt dass im Gesetzestext Fachfremde Dinge untergeschoben wurden;Betroffene Gesetzestexte als Liste;Kurzzusammenfassung der Intention, dem Fokus, betroffenen Gruppen und anderen wichtigen Informationen aus dem Text in 150-250 Worten
 
 Nutze die CSV Struktur wie oben beschrieben, weiche nicht davon ab. Formatiere Listen mit ',' als Separator. Falls eine Information nicht vorhanden sein sollte, füge stattdessen "None" ohne Anführungszeichen ein. Antworte mit nichts anderem als den gefragten Informationen.
 WEICHE UNTER KEINEN UMSTÄNDEN VON DER CSV-STRUKTUR AB
 END PROMPT"""
         prompt_stellungnahme = """Extrahiere folgende Metadaten aus dem Nachfolgenden Text:
 
-Titel;Autorengruppen wie z.B. Regierungen, Parteien, Parlamentarische oder Nicht-parlamentarische Gruppen als Liste;Autoren als Personen als Liste;Schlagworte als Liste;Meinung(-1/0/1);Kurzzusammenfassung Stellungnahme, der Meinung und Kritik, betroffenen Gruppen und anderen wichtigen Informationen aus dem Text in 150-250 Worten
+Titel;Autorengruppen wie z.B. Regierungen/Parteien/Parlamentarische/Nicht-parlamentarische Gruppen als Liste;Autoren als Personen als Liste;Schlagworte als Liste;Meinung(-1/0/1);Kurzzusammenfassung Stellungnahme, der Meinung und Kritik, betroffenen Gruppen und anderen wichtigen Informationen aus dem Text in 150-250 Worten
 
 Nutze die CSV Struktur wie oben beschrieben, weiche nicht davon ab. Formatiere Listen mit ',' als Separator. Falls eine Information nicht vorhanden sein sollte, füge stattdessen "None" ohne Anführungszeichen ein. Antworte mit nichts anderem als den gefragten Informationen.
 WEICHE UNTER KEINEN UMSTÄNDEN VON DER CSV-STRUKTUR AB
@@ -167,8 +167,8 @@ END PROMPT
                 response = await self.config.llm_connector.generate(prompt_drcks, full_text)
                 
                 # Parse the response
-                body = body = "\n".join(response.strip().split("\n")[1:])
-                reader = csv.reader([" ".join(body)], delimiter=";")
+                body = response.strip().split("\n")[1]
+                reader = csv.reader([body], delimiter=";")
                 parts = [part for part in reader][0]
                 if len(parts) == 7:
                     self.meta.title = parts[0] if parts[0] != 'None' else "Ohne Titel"

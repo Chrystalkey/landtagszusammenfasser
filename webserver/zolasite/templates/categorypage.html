@@ -2,9 +2,9 @@
 
 {% block pagecontent %}
     <main class="main-content">
-        <h1>{{ section.title }}</h1>
+        <h1>{{ page.title }}</h1>
         
-        {% for table in section.extra.tables %}
+        {% for table in page.extra.tables %}
             <section id="{{ table.name | slugify }}" class="category-section">
                 <h2>{{ table.name }}</h2>
                 <table class="laws-table sortable">
@@ -18,9 +18,10 @@
                     </thead>
                     <tbody>
                         {% set_global matching_pages = [] %}
-                        {% for subpage in paginator.pages %}
-                            {% if subpage.extra.station in table.stations %}
-                                {% set_global matching_pages = matching_pages | concat(with=subpage) %}
+                        {% for law_path in page.extra.laws %}
+                            {% set law = get_page(path="gesetze/"~law_path~".md") %}
+                            {% if law.extra.station in table.stations %}
+                                {% set_global matching_pages = matching_pages | concat(with=law) %}
                             {% endif %}
                         {% endfor %}
                         

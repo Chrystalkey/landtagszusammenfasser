@@ -182,7 +182,7 @@ components:
         - "parl-akzeptanz" # Schlussabstimmung & Akzeptanz des Parlaments
         - "parl-ablehnung" # Schlussabstimmung & Ablehnung des Parlaments
         - "parl-ggentwurf" # Gegenentwurf des Parlaments auf abgel. Volksbegehren
-        - "postparl-vents" # Volksentscheid nach Parlamentsbechlus
+        - "postparl-vents" # Volksentscheid nach Parlamentsbeschluss
         - "postparl-gsblt" # Veröffentlichung im Gesetzesblatt
         - "postparl-kraft" # In Kraft getreten
     identifikatortyp:

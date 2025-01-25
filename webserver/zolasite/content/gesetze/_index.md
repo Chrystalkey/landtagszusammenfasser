@@ -1,7 +1,7 @@
 +++
 title="Alle Gesetze auf einen Blick"
 template="section.html"
-page_template="page.html"
+page_template="gesetzpage.html"
 sort_by="date"
 +++
 
