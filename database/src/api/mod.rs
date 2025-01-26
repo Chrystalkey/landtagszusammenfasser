@@ -34,7 +34,7 @@ impl LTZFServer {
 #[allow(unused_variables)]
 #[async_trait]
 impl openapi::apis::default::Default for LTZFServer {
-    type Claims = ();
+    type Claims = auth::APIScope;
 
     #[doc = " ApiV1GesetzesvorhabenGesvhIdGet - GET /api/v1/gesetzesvorhaben/{gsvh_id}"]
     #[must_use]

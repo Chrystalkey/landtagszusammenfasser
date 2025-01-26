@@ -3,11 +3,20 @@
 diesel::table! {
     api_keys (id) {
         id -> Int4,
-        coll_id -> Uuid,
         key_hash -> Varchar,
+        coll_id -> Nullable<Uuid>,
         created_at -> Timestamp,
+        created_by -> Int4,
         last_used -> Nullable<Timestamp>,
+        scope -> Nullable<Int4>,
         deleted -> Bool,
+    }
+}
+
+diesel::table! {
+    api_scope (id) {
+        id -> Int4,
+        api_key -> Varchar,
     }
 }
 
@@ -177,6 +186,7 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(api_keys -> api_scope (scope));
 diesel::joinable!(dokument -> dokumententyp (typ));
 diesel::joinable!(gesetzesvorhaben -> gesetzestyp (typ));
 diesel::joinable!(rel_dok_autor -> dokument (dok_id));
@@ -201,6 +211,7 @@ diesel::joinable!(stellungnahme -> station (stat_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     api_keys,
+    api_scope,
     dokument,
     dokument_versions,
     dokumententyp,

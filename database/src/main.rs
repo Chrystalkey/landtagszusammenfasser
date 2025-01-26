@@ -13,6 +13,7 @@ use deadpool_diesel::postgres::{Manager, Pool};
 use error::LTZFError;
 use lettre::{transport::smtp::authentication::Credentials, SmtpTransport};
 use tokio::net::TcpListener;
+use sha256::digest;
 
 pub use api::{LTZFArc, LTZFServer};
 pub use error::Result;
@@ -38,6 +39,9 @@ pub struct Configuration {
     pub db_url: String,
     #[arg(long, short)]
     pub config: Option<String>,
+
+    #[arg(long, env = "LTZF_KEYADDER_KEY", help = "The API Key that is used to add new Keys. This is not saved in the database.")]
+    pub keyadder_key: String,
 
     #[arg(long, env = "MERGE_TITLE_SIMILARITY", default_value="0.8")]
     pub merge_title_similarity : f32,
@@ -126,6 +130,20 @@ async fn main() -> Result<()> {
     // Apply pending database migrations
     run_migrations(&db_pool).await?;
     tracing::debug!("Applied Migrations");
+
+    // Run Key Administrative Functions
+    let connection = db_pool.get().await.unwrap();
+    let keyadder_hash = digest(config.keyadder_key.as_str());
+
+    connection.interact(|conn|{
+        diesel::insert_into(db::schema::api_keys::table)
+    .values((
+        db::schema::api_keys::key_hash.eq(keyadder_hash),
+        db::schema::api_keys::scope.eq(db::schema::api_scope::table.filter(db::schema::api_scope::api_key.eq("keyadder")).select(db::schema::api_scope::id).first::<i32>(conn)?),
+        db::schema::api_keys::deleted.eq(false),
+    )).on_conflict_do_nothing().execute(conn)
+    }).await??;
+
 
     let state = Arc::new(LTZFServer::new(db_pool, mailer, config));
     tracing::debug!("Constructed Server State");
