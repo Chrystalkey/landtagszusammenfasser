@@ -31,3 +31,4 @@ axum-extra = "0.9.6"
 dotenv = "0.15.0"
 snafu = "0.8.5"
 openapi = { version = "0.1.0", path = "oapicode", features = ["server"] }
+sha256 = "1.5.0"
