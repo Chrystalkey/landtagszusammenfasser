@@ -13,16 +13,17 @@ CREATE TABLE api_scope(
 
 INSERT INTO api_scope(id, api_key) 
 VALUES
-(1, 'admin'),
-(2, 'collector'),
-(3, 'keyadder');
+(1, 'admin'),     -- directly inserting, updating and deleting laws
+(2, 'collector'), -- "normal" insertion of laws
+(3, 'keyadder');  -- adding new api keys
 
 CREATE TABLE api_keys (
     id INTEGER PRIMARY KEY,
     key_hash VARCHAR NOT NULL,
     coll_id UUID UNIQUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by INTEGER NOT NULL REFERENCES api_keys,
+    expires_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP + INTERVAL '1 year',
+    created_by INTEGER REFERENCES api_keys,
     last_used TIMESTAMP,
     scope INTEGER REFERENCES api_scope,
     deleted BOOL NOT NULL DEFAULT false

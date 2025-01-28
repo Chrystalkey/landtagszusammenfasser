@@ -42,12 +42,19 @@ paths:
           schema:
             type: string
             format: uuid
-
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/gesetzesvorhaben"
       responses:
         201:
           description: "Created"
         204:
           description: "Content Unchanged"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
       security:
         - apiKey: [] 
   /api/v1/gesetzesvorhaben:
@@ -122,20 +129,89 @@ paths:
           description: "Successfully Integrated the Object"
         "400": 
           description: "Bad Request"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
         "409": 
           description: "Conflict. The Ressource already exists"
         "500":
           description: "Internal Server Error"
       security:
         - apiKey: []
+  /api/v1/auth:
+    delete:
+      description: "Deletes an API Key from the Database"
+      parameters:
+        - name: "api-key"
+          in: header
+          required: true
+          schema:
+            type: string
+            description: "The API Key used to authenticate/authorize the request"
+      responses:
+        "204":
+          description: "API Key was deleted successfully"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          description: "Internal Server Error"
+      security:
+        - apiKey: [] 
+    
+    put:
+      description: "Adds a new API Key to the Database"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/create_api_key"
+      responses:
+        "201":
+          $ref: "#/components/responses/ApiKeyCreated"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          description: "Internal Server Error"
+      security:
+        - apiKey: [] 
 components:
   securitySchemes:
       apiKey:
         description: API key of the Collector
         type: apiKey
-        name: api-key
+        name: X-API-Key
         in: header
+  responses:
+    UnauthorizedError:
+      description: API key is missing or invalid
+      headers:
+        WWW_Authenticate:
+          schema:
+            type: string
+    ApiKeyCreated:
+      description: "API Key was created successfully"
+      content:
+        text/plain:
+          schema:
+            type: string
+            description: "The API Key that was created"
   schemas:
+    create_api_key:
+      type: "object"
+      required:
+        - "scope"
+      properties:
+        scope:
+          type: "string"
+          enum:
+            - "admin"
+            - "collector"
+            - "keyadder"
+        expires_at:
+          type: "string"
+          format: "date-time"
+          description: "The expiration date of the API Key"
+        
     parlament:
       type: "string"
       enum:

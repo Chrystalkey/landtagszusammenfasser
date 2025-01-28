@@ -36,6 +36,28 @@ impl LTZFServer {
 impl openapi::apis::default::Default for LTZFServer {
     type Claims = auth::APIScope;
 
+    async fn api_v1_auth_put(
+        &self,
+        method: Method,
+        host: Host,
+        cookies: CookieJar,
+        claims: Self::Claims,
+        body: models::CreateApiKey,
+    ) -> Result<ApiV1AuthPutResponse, ()> {
+        todo!()
+    }
+
+    async fn api_v1_auth_delete(
+        &self,
+        method: Method,
+        host: Host,
+        cookies: CookieJar,
+        claims: Self::Claims,
+        header_params: models::ApiV1AuthDeleteHeaderParams,
+    ) -> Result<ApiV1AuthDeleteResponse, ()> {
+        todo!()
+    }
+
     #[doc = " ApiV1GesetzesvorhabenGesvhIdGet - GET /api/v1/gesetzesvorhaben/{gsvh_id}"]
     #[must_use]
     #[allow(clippy::type_complexity, clippy::type_repetition_in_bounds)]
@@ -79,10 +101,11 @@ impl openapi::apis::default::Default for LTZFServer {
             host: Host,
             cookies: CookieJar,
             claims: Self::Claims,
-          path_params: models::ApiV1GesetzesvorhabenGsvhIdPutPathParams,
+            path_params: models::ApiV1GesetzesvorhabenGsvhIdPutPathParams,
+            body: models::Gesetzesvorhaben,
         ) -> Result<ApiV1GesetzesvorhabenGsvhIdPutResponse, ()> {
             tracing::trace!("api_v1_gesetzesvorhaben_gsvh_id_put Called with path params: `{:?}`", path_params);
-            let out = put::api_v1_gesetzesvorhaben_gsvh_id_put(self, path_params)
+            let out = put::api_v1_gesetzesvorhaben_gsvh_id_put(self, path_params, body)
             .await
             .map_err(|e| todo!())?;
             Ok(out)
