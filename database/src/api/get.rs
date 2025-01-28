@@ -4,7 +4,7 @@ use openapi::models;
 
 pub async fn api_v1_gesetzesvorhaben_gesvh_id_get(
     server: &LTZFServer,
-    path_params: models::ApiV1GesetzesvorhabenGsvhIdGetPathParams,
+    path_params: models::GsvhGetByIdPathParams,
 ) -> Result<models::Gesetzesvorhaben> {
     tracing::info!("api_v1_gesetzesvorhaben_gesvh_id_get called");
     use crate::db::schema;
@@ -23,7 +23,7 @@ pub async fn api_v1_gesetzesvorhaben_gesvh_id_get(
 
 pub async fn api_v1_gesetzesvorhaben_get(
     server: &LTZFServer,
-    query_params: models::ApiV1GesetzesvorhabenGetQueryParams
+    query_params: models::GsvhGetQueryParams
 ) -> Result<models::Response> {
     tracing::info!("api_v1_gesetzesvorhaben_get called");
     let mut connection = server.database.get().await?;

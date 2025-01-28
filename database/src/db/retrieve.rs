@@ -322,7 +322,7 @@ struct GSVHID {
 }
 
 pub async fn gsvh_by_parameter(
-    params: models::ApiV1GesetzesvorhabenGetQueryParams,
+    params: models::GsvhGetQueryParams,
     connection: &mut Connection,
 ) -> Result<Vec<models::Gesetzesvorhaben>> {
     let pretable_join = "SELECT gesetzesvorhaben.id, MAX(station.datum) as moddate FROM gesetzesvorhaben, station, gesetzestyp, rel_gsvh_init

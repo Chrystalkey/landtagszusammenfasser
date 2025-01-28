@@ -7,6 +7,7 @@ use sha256::digest;
 use rand::{thread_rng, Rng};
 use rand::distributions::Alphanumeric;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum APIScope {
     KeyAdder,
     Admin,
@@ -23,6 +24,12 @@ impl TryFrom<&str> for APIScope{
         }
     }
 }
+impl TryFrom<String> for APIScope{
+    type Error = LTZFError;
+    fn try_from(value: String) -> Result<Self> {
+        APIScope::try_from(value.as_str())
+    }
+}
 impl ToString for APIScope{
     fn to_string(&self) -> String {
         match self {
@@ -35,7 +42,7 @@ impl ToString for APIScope{
 
 #[async_trait]
 impl ApiKeyAuthHeader for LTZFServer{
-    type Claims = APIScope;
+    type Claims = (APIScope, i32);
     async fn extract_claims_from_header(& self, _headers: & axum::http::header::HeaderMap, key: & str) ->  Option<Self::Claims> {
         let hash = digest(key);
 
@@ -61,18 +68,64 @@ impl ApiKeyAuthHeader for LTZFServer{
                 println!("API Key was valid but is deleted. Hash: {}", hash);
                 return None;
             }
-            Some((_, _, expires_at, scope)) => {
+            Some((id, _, expires_at, scope)) => {
                 if expires_at < chrono::Utc::now().naive_utc(){
                     println!("API Key was valid but is expired. Hash: {}", hash);
                     return None;
                 }
-                return Some(APIScope::try_from(scope.as_str()).unwrap());
+                return Some((APIScope::try_from(scope.as_str()).unwrap(), id));
             },
             None => {
                 return None;
             }
         }
     }
+}
+
+pub async fn auth_get(server: &LTZFServer, scope: APIScope, expires_at: Option<chrono::NaiveDateTime>, created_by: i32) -> Result<String>{
+    let key = generate_api_key().await;
+    let key_digest = digest(key.clone());
+    let connection = server.database.get().await?;
+    let scope_stmt = schema::api_scope::table.filter(schema::api_scope::api_key.eq(scope.to_string())).select(schema::api_scope::id);
+    connection.interact(move |conn|{
+        let scope_id = scope_stmt.first::<i32>(conn)?;
+        diesel::insert_into(schema::api_keys::table)
+        .values(
+            (
+            schema::api_keys::key_hash.eq(key_digest),
+            schema::api_keys::scope.eq(scope_id),
+            schema::api_keys::created_by.eq(created_by),
+            schema::api_keys::expires_at.eq(expires_at.unwrap_or(chrono::Utc::now().naive_utc() + chrono::Duration::days(365))),
+            )
+        )
+        .execute(conn)
+    }).await??;
+    Ok(key)
+}
+
+pub async fn auth_delete(server: &LTZFServer, scope: APIScope, key: &str) -> Result<openapi::apis::default::AuthDeleteResponse>{
+    if scope != APIScope::KeyAdder {
+        return Ok(openapi::apis::default::AuthDeleteResponse::Status401_APIKeyIsMissingOrInvalid { www_authenticate: None });
+    }
+    let hash = digest(key);
+    let connection = server.database.get().await?;
+    let mut found = true;
+    let _ = connection.interact(move|conn|{
+        diesel::update(schema::api_keys::table.filter(schema::api_keys::key_hash.eq(hash)))
+        .set(schema::api_keys::deleted.eq(true))
+        .returning(schema::api_keys::id)
+        .get_result::<i32>(conn)
+    }).await?
+    .map_err(|e: diesel::result::Error| {
+        if e == diesel::result::Error::NotFound {
+            found = false;
+        }
+        return e;
+    })?;
+    if found {
+        return Ok(openapi::apis::default::AuthDeleteResponse::Status204_APIKeyWasDeletedSuccessfully);
+    }
+    return Ok(openapi::apis::default::AuthDeleteResponse::Status404_APIKeyNotFound);
 }
 
 pub async fn generate_api_key() -> String{
@@ -83,22 +136,4 @@ pub async fn generate_api_key() -> String{
         .chain("ltzf_".chars())
         .collect();
     key
-}
-
-pub async fn create_api_key(server: &LTZFServer, key: &str, scope: APIScope, created_by: &str) -> Result<i32> {
-    let hash = digest(key);
-    let connection = server.database.get().await?;
-    let ret = connection.interact(move |conn|{
-        conn.transaction(|conn|{
-            diesel::insert_into(schema::api_keys::table)
-            .values((
-                schema::api_keys::key_hash.eq(hash),
-                schema::api_keys::scope.eq(schema::api_scope::table.filter(schema::api_scope::api_key.eq(scope.to_string())).select(schema::api_scope::id).first::<i32>(conn)?),
-                schema::api_keys::deleted.eq(false),
-            ))
-            .returning(schema::api_keys::id)
-            .get_result::<i32>(conn)
-        })
-    }).await??;
-    return Ok(ret)
 }
