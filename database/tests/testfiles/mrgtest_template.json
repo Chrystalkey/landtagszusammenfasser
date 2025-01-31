@@ -1,0 +1,86 @@
+{"context" : [
+    {
+    "api_id": "abc123",
+    "titel": "Gesetzentwurf der Staatsregierung zur Änderung des Bayerischen Gesetzes über das Erziehungs- und Unterrichtswesen",
+    "verfassungsaendernd": false,
+    "trojaner": false,
+    "initiative" : "Staatsregierung",
+    "typ": "Standard",
+    "ids": [{"typ": "drucksnr", "id": "19/2012"}, {"typ": "drucksnr", "id": "19/2731"}],
+    "links": ["https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=155494"],
+    "notes": [],
+    "stationen": [
+        {
+            "stationstyp": "preparl-regent",
+            "datum": "2022-08",
+            "parlament": "BY",
+            "schlagworte": ["Rauschtaten", "Schutz", "Strafgesetzbuch"],
+            "dokumente": [{
+                "titel":"Diskussionsentwurf zur Stärkung des Schutzes bei Rauschtaten",
+                "url": "https://www.justiz.bayern.de/media/pdf/gesetze/diske_by_rauschtaten__stand_aug_2022_.pdf",
+                "hash": "43f914d21732b5ec3ce80ea649538ac5ddd598befe6aa976f8d20ccb95e0923a",
+                "zusammenfassung": "Einige Änderungen als Reaktion auf ein Bundesgesetz",
+                "schlagworte": ["Diskussionsentwurf"],
+                "autoren": [{"name": "unbekannt", "organisation": "Bayerisches Staatsministerium der Justiz"}],
+                "typ": "Gesetzesentwurf"
+            }]
+        }
+    ]
+}],
+"gsvh": {
+        "api_id": "abc123",
+        "titel": "Gesetzentwurf der Staatsregierung zur Änderung des Bayerischen Gesetzes über das Erziehungs- und Unterrichtswesen",
+        "verfassungsaendernd": false,
+        "trojaner": false,
+        "initiative" : "Staatsregierung",
+        "typ": "Standard",
+        "ids": [{"typ": "drucksnr", "id": "19/2012"}, {"typ": "drucksnr", "id": "19/2731"}],
+        "links": ["https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=155494"],
+        "notes": [],
+        "stationen": [
+            {
+                "stationstyp": "preparl-regent",
+                "datum": "2022-08",
+                "parlament": "BY",
+                "schlagworte": ["Rauschtaten", "Schutz", "Strafgesetzbuch"],
+                "dokumente": [{
+                    "titel":"Diskussionsentwurf zur Stärkung des Schutzes bei Rauschtaten",
+                    "url": "https://www.justiz.bayern.de/media/pdf/gesetze/diske_by_rauschtaten__stand_aug_2022_.pdf",
+                    "hash": "43f914d21732b5ec3ce80ea649538ac5ddd598befe6aa976f8d20ccb95e0923a",
+                    "zusammenfassung": "Einige Änderungen als Reaktion auf ein Bundesgesetz",
+                    "schlagworte": ["Diskussionsentwurf"],
+                    "autoren": [{"name": "unbekannt", "organisation": "Bayerisches Staatsministerium der Justiz"}],
+                    "typ": "Gesetzesentwurf"
+                }]
+            }
+        ]
+    },
+"result" : [{
+    "api_id": "abc123",
+    "titel": "Gesetzentwurf der Staatsregierung zur Änderung des Bayerischen Gesetzes über das Erziehungs- und Unterrichtswesen",
+    "verfassungsaendernd": false,
+    "trojaner": false,
+    "initiative" : "Staatsregierung",
+    "typ": "Standard",
+    "ids": [{"typ": "drucksnr", "id": "19/2012"}, {"typ": "drucksnr", "id": "19/2731"}],
+    "links": ["https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=155494"],
+    "notes": [],
+    "stationen": [
+        {
+            "stationstyp": "preparl-regent",
+            "datum": "2022-08",
+            "parlament": "BY",
+            "schlagworte": ["Rauschtaten", "Schutz", "Strafgesetzbuch"],
+            "dokumente": [{
+                "titel":"Diskussionsentwurf zur Stärkung des Schutzes bei Rauschtaten",
+                "url": "https://www.justiz.bayern.de/media/pdf/gesetze/diske_by_rauschtaten__stand_aug_2022_.pdf",
+                "hash": "43f914d21732b5ec3ce80ea649538ac5ddd598befe6aa976f8d20ccb95e0923a",
+                "zusammenfassung": "Einige Änderungen als Reaktion auf ein Bundesgesetz",
+                "schlagworte": ["Diskussionsentwurf"],
+                "autoren": [{"name": "unbekannt", "organisation": "Bayerisches Staatsministerium der Justiz"}],
+                "typ": "Gesetzesentwurf"
+            }]
+        }
+    ]
+}]
+}
