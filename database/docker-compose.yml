@@ -25,5 +25,16 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_DB=postgres
       - POSTGRES_PASSWORD=blub
+
+  test-postgres:
+    image: postgres:latest
+    container_name: test-postgres
+    restart: unless-stopped
+    ports:
+      - 89512:5432
+    environment:
+      - POSTGRES_USER=mergeuser
+      - POSTGRES_PASSWORD=mergepass
+      - POSTGRES_DB=mergecenter
 networks:
   ltzf-network:

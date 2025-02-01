@@ -18,7 +18,7 @@ use sha256::digest;
 pub use api::{LTZFArc, LTZFServer};
 pub use error::Result;
 use utils::{init_tracing, run_migrations, shutdown_signal};
-#[derive(Parser, Clone, Debug)]
+#[derive(Parser, Clone, Debug, Default)]
 #[command(author, version, about)]
 pub struct Configuration {
     #[arg(long, env = "MAIL_SERVER")]
