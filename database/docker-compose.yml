@@ -31,7 +31,7 @@ services:
     container_name: test-postgres
     restart: unless-stopped
     ports:
-      - 89512:5432
+      - 59512:5432
     environment:
       - POSTGRES_USER=mergeuser
       - POSTGRES_PASSWORD=mergepass

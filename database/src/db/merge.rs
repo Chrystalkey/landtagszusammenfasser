@@ -418,6 +418,8 @@ pub async fn run(model: &models::Gesetzesvorhaben, server: &LTZFServer) -> Resul
 #[cfg(test)]
 mod scenariotests{
     use std::collections::HashSet;
+    use futures::FutureExt;
+    use std::panic::AssertUnwindSafe;
 
     use diesel::prelude::*;
     use deadpool_diesel::postgres::{Pool, Manager, Connection};
@@ -426,67 +428,103 @@ mod scenariotests{
     use serde::Deserialize;
     use crate::LTZFServer;
 
-    pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations/");
-    const DB_URL: &str = "postgres://mergeuser:mergepass@localhost:89512/mergecenter";
+    #[allow(unused)]
+    use tracing::{info, error, warn, debug};
 
-    async fn build_pool() -> Pool {
-        let db_url = std::env::var("DATABASE_URL").unwrap();
-        let manager = Manager::new(db_url.as_str(), deadpool_diesel::Runtime::Tokio1);
-        let pool = Pool::builder(manager).build().unwrap();
-        return pool;
-    }
-    async fn mock_server() -> crate::LTZFServer{
-        use crate::{LTZFServer, Configuration};
-        return LTZFServer {
-            config: Configuration{
-                ..Default::default()
-            },
-            database: build_pool().await,
-            mailer: None
-        };
-    }
-    #[derive(Deserialize)]
-    struct TestScenario{
+    pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations/");
+    const DB_URL: &str = "postgres://mergeuser:mergepass@localhost:59512/mergecenter";
+
+    #[allow(unused)]
+    struct TestScenario<'obj>{
+        name: &'obj str,
         context: Vec<models::Gesetzesvorhaben>,
         gsvh: models::Gesetzesvorhaben,
-        result: Vec<models::Gesetzesvorhaben>
+        result: Vec<models::Gesetzesvorhaben>,
+        server: LTZFServer,
+        span: tracing::Span,
     }
-    impl TestScenario{
-        async fn setup(&self, server: &LTZFServer, name: &str) {
-            let query = format!("CREATE DATABASE testing_{} WITH OWNER mergeuser;\\c testing_{};", name, name);
-            let conn = server.database.get().await.unwrap();
-            conn.interact(|conn|{
+    #[derive(Deserialize)]
+    struct PTS{
+        context: Vec<models::Gesetzesvorhaben>,
+        gsvh: models::Gesetzesvorhaben,
+        result: Vec<models::Gesetzesvorhaben>,
+    }
+    impl<'obj> TestScenario<'obj>{
+        async fn new(path: &'obj std::path::Path, conn: &Connection) -> Self {
+            let name = path.file_stem().unwrap().to_str().unwrap();
+            info!("Creating Merge Test Scenario with name: {}", name);
+            let span = tracing::span!(tracing::Level::INFO, "Mergetest", name = name);
+            let query = format!("CREATE DATABASE testing_{} WITH OWNER mergeuser;", name);
+            conn.interact(|conn| {
                 diesel::sql_query(query)
                 .execute(conn)
             }).await.unwrap().unwrap();
+
+            let test_db_url = format!("postgres://mergeuser:mergepass@localhost:59512/testing_{}", name);
+            let pts: PTS = serde_json::from_reader(std::fs::File::open(path).unwrap()).unwrap();
+            let server = LTZFServer {
+                config: crate::Configuration{
+                    ..Default::default()
+                },
+                database: Pool::builder(Manager::new(test_db_url,deadpool_diesel::Runtime::Tokio1)).build().unwrap(),
+                mailer: None
+            };
+            let conn = server.database.get().await.unwrap();
             conn.interact(|conn| 
             conn.run_pending_migrations(MIGRATIONS).map(|_| ()))
             .await.unwrap().unwrap();
-            for gsvh in &self.context{
-                super::run(gsvh, server).await.unwrap()
+            info!("Migrations applied");
+            for gsvh in pts.context.iter() {
+                super::run(gsvh, &server).await.unwrap()
+            }
+            Self {
+                name,
+                context: pts.context,
+                gsvh: pts.gsvh,
+                result: pts.result,
+                span,
+                server
             }
         }
-        async fn push(&self, server: &LTZFServer){
-            super::run(&self.gsvh, server).await.unwrap();
+        async fn get_conn(&self) -> Connection {
+            self.server.database.get().await.unwrap()
         }
-        async fn check(&self, server: &LTZFServer){
-            let paramock = GsvhGetQueryParams{ggtyp: None, if_modified_since: None,initiator_contains_any: None, limit: None,offset: None};
+        async fn push(&self) {
+            info!("Running main Merge test");
+            super::run(&self.gsvh, &self.server).await.unwrap();
+        }
+        async fn check(&self) {
+            info!("Checking for Correctness");
+            let paramock = GsvhGetQueryParams{
+                ggtyp: None, 
+                if_modified_since: None,
+                initiator_contains_any: None, 
+                limit: Some((self.result.len()*2) as i32),
+                offset: None};
             let db_gsvhs = crate::db::retrieve::gsvh_by_parameter(
-                paramock, &mut server.database.get().await.unwrap()).await.unwrap();
-            assert_eq!(db_gsvhs.len(), self.result.len());
-            
+                paramock, &mut self.get_conn().await).await.unwrap();
+            let mut set = HashSet::with_capacity(db_gsvhs.len());
+            for thing in self.result.iter() {
+                set.insert(serde_json::to_string(thing).unwrap());
+            }
+            for thing in db_gsvhs.iter() {
+                let serialized = serde_json::to_string(thing).unwrap();
+                let result = set.remove(&serialized);
+                assert!(result, "Value {} was not present in the result set", serialized);
+            }
+            assert!(set.is_empty(), "Values were expected, but not present in the result set: {:?}", set);
         }
-        async fn run(&self, server: &LTZFServer, name: &str){
-            self.setup(server, name).await;
-            self.push(server).await;
-            self.check(server).await;
+        async fn run(self) {
+            self.push().await;
+            self.check().await;
         }
     }
-
+    
     #[tokio::test]
     async fn test_merge_scenarios() {
         // set up database connection and clear it
-        let pool = build_pool().await;
+        info!("Setting up Test Database Connection");
+        let pool = Pool::builder(Manager::new(DB_URL, deadpool_diesel::Runtime::Tokio1)).build().unwrap();
         let mut available = false;
         for i in 0..14 {
             let r = pool.get().await;
@@ -506,18 +544,28 @@ mod scenariotests{
         if !available {
             panic!("Database unavailable");
         }
-        // for each scenario in the testfiles folder
-        let server = mock_server().await;
+
+        let conn = pool.get().await.unwrap();
         for path in std::fs::read_dir("tests/testfiles").unwrap() {
             if let Ok(path) = path {
-                if !path.path().ends_with(".json"){
-                    continue;
+                info!("Executing Scenario: {}", path.path().display());
+                let ptb = path.path();
+                let name = ptb.file_stem().unwrap().to_str().unwrap();
+
+                let result = AssertUnwindSafe(async {
+                    let scenario = TestScenario::new(&ptb, &conn).await;
+                    scenario.run().await
                 }
-                println!("Executing Scenario: {}", path.path().display());
-                let scenario: TestScenario = serde_json::from_reader(std::fs::File::open(path.path()).unwrap()).unwrap();
-                scenario.run(&server, format!("{}", path.path().display()).as_str()).await;
+                ).catch_unwind().await;
+
+                let query = format!("DROP DATABASE testing_{}", name);
+                conn.interact(move |conn|{
+                    diesel::sql_query(query)
+                    .execute(conn)
+                }).await.unwrap().unwrap();
+                assert!(result.is_ok());
             }else{
-                println!("Error: {:?}", path.unwrap_err())
+                error!("Error: {:?}", path.unwrap_err())
             }
         }
 

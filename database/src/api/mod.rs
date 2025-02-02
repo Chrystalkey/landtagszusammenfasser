@@ -114,7 +114,23 @@ impl openapi::apis::default::Default for LTZFServer {
             }
         }
     }
-
+    #[doc = " GsvhGet - GET /api/v1/gesetzesvorhaben"]
+    #[must_use]
+    #[allow(clippy::type_complexity, clippy::type_repetition_in_bounds)]
+    async fn gsvh_delete(
+        &self,
+        method: Method,
+        host: Host,
+        cookies: CookieJar,
+        claims: Self::Claims,
+        path_params: models::GsvhDeletePathParams,
+    ) -> Result<GsvhDeleteResponse, ()> {
+        tracing::trace!("gsvh_delete called with gsvh_id: {}", path_params.gsvh_id);
+        if claims.0 == auth::APIScope::Admin || claims.0 == auth::APIScope::KeyAdder{
+            unimplemented!("");
+        }
+        Ok(GsvhDeleteResponse::Status401_APIKeyIsMissingOrInvalid { www_authenticate: None })
+    }
     #[doc = " GsvhGet - GET /api/v1/gesetzesvorhaben"]
     #[must_use]
     #[allow(clippy::type_complexity, clippy::type_repetition_in_bounds)]
