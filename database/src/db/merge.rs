@@ -153,7 +153,6 @@ pub fn update_gsvh(
     diesel::update(schema::gesetzesvorhaben::table)
         .filter(schema::gesetzesvorhaben::id.eq(db_id))
         .set((
-            schema::gesetzesvorhaben::api_id.eq(model.api_id.clone()),
             schema::gesetzesvorhaben::verfaend.eq(model.verfassungsaendernd),
         ))
         .execute(connection)?;
@@ -505,12 +504,17 @@ mod scenariotests{
                 paramock, &mut self.get_conn().await).await.unwrap();
             let mut set = HashSet::with_capacity(db_gsvhs.len());
             for thing in self.result.iter() {
+                tracing::info!("Adding `{}` to result set", thing.api_id);
                 set.insert(serde_json::to_string(thing).unwrap());
             }
             for thing in db_gsvhs.iter() {
                 let serialized = serde_json::to_string(thing).unwrap();
                 let result = set.remove(&serialized);
-                assert!(result, "Value {} was not present in the result set", serialized);
+                if !result{
+                    assert!(result, "Database value with api_id `{}` was not present in the result set, which contained: {:?}.\nDetails:\n{}\nvs\n{:?}", thing.api_id, 
+                    self.result.iter().map(|e|e.api_id).collect::<Vec<uuid::Uuid>>(), serialized, 
+                    set);
+                }
             }
             assert!(set.is_empty(), "Values were expected, but not present in the result set: {:?}", set);
         }

@@ -137,6 +137,16 @@ pub fn insert_station(
     )
     .returning(dsl::id)
     .get_result::<i32>(connection)?;
+    if !stat.betroffene_texte.is_empty(){
+        diesel::insert_into(schema::rel_station_gesetz::table)
+        .values(
+            stat.betroffene_texte.iter().map(|gesetz|
+                (schema::rel_station_gesetz::stat_id.eq(stat_id),
+                schema::rel_station_gesetz::gesetz.eq(gesetz.clone())
+                )
+            ).collect::<Vec<_>>()
+        ).execute(connection)?;
+    }
     if !stat.dokumente.is_empty() {
         let mut dok_ids = vec![];
         for dok in stat.dokumente.clone(){
