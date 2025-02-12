@@ -59,6 +59,25 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
       security:
         - apiKey: [] 
+    delete:
+      operationId: gsvh_delete
+      parameters:
+        - name: "gsvh_id"
+          in: path
+          required: true
+          description: "API ID of the thing to be deleted"
+          schema:
+            type: "string"
+            format: "uuid"
+      responses:
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        204:
+          description: "Deleted Successfully"
+        404:
+          description: "No Element with this ID"
+      security:
+        - apiKey: [] 
   /api/v1/gesetzesvorhaben:
     get:
       operationId: "gsvh_get"

@@ -114,7 +114,7 @@ impl openapi::apis::default::Default for LTZFServer {
             }
         }
     }
-    #[doc = " GsvhGet - GET /api/v1/gesetzesvorhaben"]
+    #[doc = " GsvhDelete - GET /api/v1/gesetzesvorhaben"]
     #[must_use]
     #[allow(clippy::type_complexity, clippy::type_repetition_in_bounds)]
     async fn gsvh_delete(
