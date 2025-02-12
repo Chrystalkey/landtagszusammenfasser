@@ -418,6 +418,7 @@ pub async fn run(model: &models::Gesetzesvorhaben, server: &LTZFServer) -> Resul
 mod scenariotests{
     use std::collections::HashSet;
     use futures::FutureExt;
+    use similar::ChangeTag;
     use std::panic::AssertUnwindSafe;
 
     use diesel::prelude::*;
@@ -439,6 +440,7 @@ mod scenariotests{
         context: Vec<models::Gesetzesvorhaben>,
         gsvh: models::Gesetzesvorhaben,
         result: Vec<models::Gesetzesvorhaben>,
+        shouldfail: bool,
         server: LTZFServer,
         span: tracing::Span,
     }
@@ -447,7 +449,10 @@ mod scenariotests{
         context: Vec<models::Gesetzesvorhaben>,
         gsvh: models::Gesetzesvorhaben,
         result: Vec<models::Gesetzesvorhaben>,
+        #[serde(default = "default_bool")]
+        shouldfail: bool
     }
+    fn default_bool()->bool{ false }
     impl<'obj> TestScenario<'obj>{
         async fn new(path: &'obj std::path::Path, conn: &Connection) -> Self {
             let name = path.file_stem().unwrap().to_str().unwrap();
@@ -481,8 +486,9 @@ mod scenariotests{
                 context: pts.context,
                 gsvh: pts.gsvh,
                 result: pts.result,
+                shouldfail: pts.shouldfail,
                 span,
-                server
+                server,
             }
         }
         async fn get_conn(&self) -> Connection {
@@ -511,9 +517,10 @@ mod scenariotests{
                 let serialized = serde_json::to_string(thing).unwrap();
                 let result = set.remove(&serialized);
                 if !result{
-                    assert!(result, "Database value with api_id `{}` was not present in the result set, which contained: {:?}.\nDetails:\n{}\nvs\n{:?}", thing.api_id, 
-                    self.result.iter().map(|e|e.api_id).collect::<Vec<uuid::Uuid>>(), serialized, 
-                    set);
+                    assert!(result, 
+                        "Database value with api_id `{}` was not present in the result set, which contained: {:?}.\n\nDetails:\n{}", 
+                    thing.api_id, 
+                    self.result.iter().map(|e|e.api_id).collect::<Vec<uuid::Uuid>>(), display_set_strdiff(&serialized, set));
                 }
             }
             assert!(set.is_empty(), "Values were expected, but not present in the result set: {:?}", set);
@@ -522,6 +529,47 @@ mod scenariotests{
             self.push().await;
             self.check().await;
         }
+    }
+
+    fn display_set_strdiff(s: &str, set: HashSet<String>) -> String {
+        let mut prio = 0.;
+        let mut pe_diff = None;
+        for element in set.iter(){
+            let diff = similar::TextDiff::from_chars(s, element);
+            if prio < diff.ratio(){
+                prio = diff.ratio();
+                pe_diff = Some(diff);
+            }
+        }
+        if let Some(diff) = pe_diff{
+            let mut s = String::new();
+            let mut diffiter = diff.iter_all_changes().filter(|x| x.tag() != ChangeTag::Equal);
+            let mut current_sign = ChangeTag::Equal;
+            while let Some(el) = diffiter.next(){
+                let sign = match el.tag() {
+                    ChangeTag::Equal => continue,
+                    ChangeTag::Delete => "-",
+                    ChangeTag::Insert => "+"
+                };
+                if el.tag() != current_sign{
+                    s = format!("{}\n{:05}: {}| {}", s, el.old_index().unwrap_or(0), sign, el.value());
+                    current_sign = el.tag();
+                } else {
+                    s = format!("{}{}", s, el.value());
+                }
+            }
+            s
+        }
+        else{
+            format!("Set is empty")
+        }
+    }
+    fn hs_to_string<T: ToString>(hs: &HashSet<T>) -> String {
+        hs.iter()
+        .map(|x|
+            x.to_string()
+        )
+        .fold("[\n".to_string(), |acc, x| format!("{}\n{}", acc, x))
     }
     
     #[tokio::test]
@@ -556,8 +604,10 @@ mod scenariotests{
                 let ptb = path.path();
                 let name = ptb.file_stem().unwrap().to_str().unwrap();
 
+                let mut shouldfail = false;
                 let result = AssertUnwindSafe(async {
                     let scenario = TestScenario::new(&ptb, &conn).await;
+                    shouldfail = scenario.shouldfail;
                     scenario.run().await
                 }
                 ).catch_unwind().await;
@@ -567,7 +617,9 @@ mod scenariotests{
                     diesel::sql_query(query)
                     .execute(conn)
                 }).await.unwrap().unwrap();
-                assert!(result.is_ok());
+                if result.is_ok() == shouldfail {
+                    assert!(false, "The Scenario did not behave as expected: {}", if shouldfail{"Succeeded, but should fail"}else{"Failed but should succeed"});
+                }
             }else{
                 error!("Error: {:?}", path.unwrap_err())
             }
