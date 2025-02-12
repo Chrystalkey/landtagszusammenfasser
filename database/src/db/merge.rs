@@ -564,13 +564,6 @@ mod scenariotests{
             format!("Set is empty")
         }
     }
-    fn hs_to_string<T: ToString>(hs: &HashSet<T>) -> String {
-        hs.iter()
-        .map(|x|
-            x.to_string()
-        )
-        .fold("[\n".to_string(), |acc, x| format!("{}\n{}", acc, x))
-    }
     
     #[tokio::test]
     async fn test_merge_scenarios() {
@@ -618,7 +611,9 @@ mod scenariotests{
                     .execute(conn)
                 }).await.unwrap().unwrap();
                 if result.is_ok() == shouldfail {
-                    assert!(false, "The Scenario did not behave as expected: {}", if shouldfail{"Succeeded, but should fail"}else{"Failed but should succeed"});
+                    assert!(false, "The Scenario did not behave as expected: {}", 
+                    if shouldfail{"Succeeded, but should fail"}else{"Failed but should succeed"}
+                    );
                 }
             }else{
                 error!("Error: {:?}", path.unwrap_err())
