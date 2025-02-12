@@ -136,12 +136,28 @@ async fn main() -> Result<()> {
     let keyadder_hash = digest(config.keyadder_key.as_str());
 
     connection.interact(|conn|{
-        diesel::insert_into(db::schema::api_keys::table)
-    .values((
-        db::schema::api_keys::key_hash.eq(keyadder_hash),
-        db::schema::api_keys::scope.eq(db::schema::api_scope::table.filter(db::schema::api_scope::api_key.eq("keyadder")).select(db::schema::api_scope::id).first::<i32>(conn)?),
-        db::schema::api_keys::deleted.eq(false),
-    )).on_conflict_do_nothing().execute(conn)
+        conn.transaction(|conn|{
+            let id = diesel::insert_into(db::schema::api_keys::table)
+            .values((
+                db::schema::api_keys::id.eq(0),
+                db::schema::api_keys::key_hash.eq(keyadder_hash.clone()),
+                db::schema::api_keys::scope.eq(db::schema::api_scope::table.filter(db::schema::api_scope::api_key.eq("keyadder")).select(db::schema::api_scope::id).first::<i32>(conn)?),
+                db::schema::api_keys::created_by.eq(None as Option<i32>)
+            ))
+            .on_conflict_do_nothing()
+            .returning(db::schema::api_keys::id)
+            .get_result::<i32>(conn)
+            .optional()?;
+            if id == None {
+                return Ok(());
+            }
+
+            diesel::update(db::schema::api_keys::table)
+            .filter(db::schema::api_keys::key_hash.eq(keyadder_hash))
+            .set(db::schema::api_keys::created_by.eq(id))
+            .execute(conn)?;
+            Ok::<(), LTZFError>(())
+        })
     }).await??;
 
 
