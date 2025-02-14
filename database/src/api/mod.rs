@@ -50,7 +50,7 @@ impl openapi::apis::default::Default for LTZFServer {
         if claims.0 != auth::APIScope::KeyAdder {
             return Ok(AuthGetResponse::Status401_APIKeyIsMissingOrInvalid { www_authenticate: None })
         }
-        let key = auth::auth_get(self, body.scope.try_into().unwrap(), body.expires_at.map(|x| x.naive_utc()), claims.1).await;
+        let key = auth::auth_get(self, body.scope.try_into().unwrap(), body.expires_at.map(|x| x), claims.1).await;
         match key{
             Ok(key) => {return Ok(AuthGetResponse::Status201_APIKeyWasCreatedSuccessfully(key))}
             Err(e) =>{
