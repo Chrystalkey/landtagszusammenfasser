@@ -38,3 +38,56 @@ Wobei höhere Scopes die berechtigungen der niedrigen Scopes einschließen.
 ## Projektsetup
 
 Ein Beispiel wie man das Projekt aufsetzt findet sich in dem [Docker Compose File](../docker-compose.yml) im Rootverzeichnis.
+
+### Arguments for LTZF-DB
+```bash
+Usage: ltzusfas-db [OPTIONS] --db-url <DB_URL> --keyadder-key <KEYADDER_KEY>
+
+Options:
+      --mail-server <MAIL_SERVER>
+          [env: MAIL_SERVER=smtp.web.de]
+      --mail-user <MAIL_USER>
+          [env: MAIL_USER=]
+      --mail-password <MAIL_PASSWORD>
+          [env: MAIL_PASSWORD=]
+      --mail-sender <MAIL_SENDER>
+          [env: MAIL_SENDER=]
+      --mail-recipient <MAIL_RECIPIENT>
+          [env: MAIL_RECIPIENT=]
+      --host <HOST>
+          [env: LTZF_HOST=127.0.0.1] [default: 0.0.0.0]
+      --port <PORT>
+          [env: LTZF_PORT=8080] [default: 80]
+  -d, --db-url <DB_URL>
+          [env: DATABASE_URL=postgres://ltzf-user:ltzf-pass@localhost/ltzf]
+  -c, --config <CONFIG>
+          
+      --keyadder-key <KEYADDER_KEY>
+          The API Key that is used to add new Keys. This is not saved in the database. [env: LTZF_KEYADDER_KEY=]
+      --merge-title-similarity <MERGE_TITLE_SIMILARITY>
+          [env: MERGE_TITLE_SIMILARITY=] [default: 0.8]
+  -h, --help
+          Print help
+  -V, --version
+          Print version
+```
+### Arguments for LTZF-Collector
+
+This one is configured via environment variables:
+| Name             | Description                                  | Example      | Default or REQUIRED |
+| ---- |---- |---- | ---- |
+| LTZF_DATABASE    | The Host of the LTZF-DB service running      | localhost:80 | localhost:80 |
+| API_KEY          | The API Key to be used for auth with LTZF-DB | abc123       | REQUIRED     |
+| REDIS_HOST       | The Host of Redis Cache                      | localhost    | localhost    |
+| REDIS_PORT       | The Port of Redis Cache                      | 6379         | 6379         |
+| TROJAN_THRESHOLD | The Threshold (0-10) at which a station is classified as trojan | 5 | 5    |
+| API_OBJ_LOG      | Directory to dump all api objects. useful for debug. unused if empty. |    |
+| OPENAI_API_KEY   | OpenAI API Key for LLM related tasks.        | laskdjfoaisd | REQUIRED     |
+
+
+### Arguments for the webserver
+| Name        | Description                       | Example   | Default or REQUIRED |
+| ---- |----  |---- | ---- |
+| LTZFDB_HOST | host of the LTZF DB               | localhost | REQUIRED  |
+| LTZFDB_PORT | port of the LTZF DB               | 80        | 80        |
+| PORT        | HTTP Port this server listenes on | 80        | 80        |

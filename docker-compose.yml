@@ -42,9 +42,9 @@ services:
     networks:
       - ltzf-network
     environment:
-      DATABASE_URL: "postgres://ltzf-user:ltzf-pass@database:5432/ltzf"
-      RUST_LOG: "trace"
-      LTZF_KEYADDER_KEY: "tegernsee-apfelsaft-co2grenzwert"
+      DATABASE_URL: "postgres://ltzf-user:ltzf-pass@database:5432/ltzf" # required
+      RUST_LOG: "trace"                                                 # optional
+      LTZF_KEYADDER_KEY: "tegernsee-apfelsaft-co2grenzwert"             # required
 
   collector:
     build:
