@@ -55,7 +55,7 @@ impl ApiKeyAuthHeader for LTZFServer{
         .select((schema::api_keys::id, schema::api_keys::deleted, schema::api_keys::expires_at, schema::api_scope::api_key))
         .filter(schema::api_keys::key_hash.eq(hash.clone()));
         let table_res = connection.interact(|conn|{
-            table_res.get_result::<(i32, bool, chrono::NaiveDateTime, String)>(conn)
+            table_res.get_result::<(i32, bool, crate::DateTime, String)>(conn)
             .optional()
         }).await
         .map_err(|e| panic!("Error Occurred in Database: {}", e))
@@ -69,7 +69,7 @@ impl ApiKeyAuthHeader for LTZFServer{
                 return None;
             }
             Some((id, _, expires_at, scope)) => {
-                if expires_at < chrono::Utc::now().naive_utc(){
+                if expires_at < chrono::Utc::now() {
                     println!("API Key was valid but is expired. Hash: {}", hash);
                     return None;
                 }
@@ -82,7 +82,7 @@ impl ApiKeyAuthHeader for LTZFServer{
     }
 }
 
-pub async fn auth_get(server: &LTZFServer, scope: APIScope, expires_at: Option<chrono::NaiveDateTime>, created_by: i32) -> Result<String>{
+pub async fn auth_get(server: &LTZFServer, scope: APIScope, expires_at: Option<crate::DateTime>, created_by: i32) -> Result<String>{
     let key = generate_api_key().await;
     let key_digest = digest(key.clone());
     let connection = server.database.get().await?;
@@ -95,7 +95,7 @@ pub async fn auth_get(server: &LTZFServer, scope: APIScope, expires_at: Option<c
             schema::api_keys::key_hash.eq(key_digest),
             schema::api_keys::scope.eq(scope_id),
             schema::api_keys::created_by.eq(created_by),
-            schema::api_keys::expires_at.eq(expires_at.unwrap_or(chrono::Utc::now().naive_utc() + chrono::Duration::days(365))),
+            schema::api_keys::expires_at.eq(expires_at.unwrap_or(chrono::Utc::now() + chrono::Duration::days(365))),
             )
         )
         .execute(conn)

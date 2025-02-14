@@ -17,6 +17,8 @@ use sha256::digest;
 
 pub use api::{LTZFArc, LTZFServer};
 pub use error::Result;
+pub type DateTime = chrono::DateTime<chrono::Utc>;
+
 use utils::{init_tracing, run_migrations, shutdown_signal};
 #[derive(Parser, Clone, Debug, Default)]
 #[command(author, version, about)]
@@ -139,7 +141,6 @@ async fn main() -> Result<()> {
         conn.transaction(|conn|{
             let id = diesel::insert_into(db::schema::api_keys::table)
             .values((
-                db::schema::api_keys::id.eq(0),
                 db::schema::api_keys::key_hash.eq(keyadder_hash.clone()),
                 db::schema::api_keys::scope.eq(db::schema::api_scope::table.filter(db::schema::api_scope::api_key.eq("keyadder")).select(db::schema::api_scope::id).first::<i32>(conn)?),
                 db::schema::api_keys::created_by.eq(None as Option<i32>)
@@ -151,7 +152,7 @@ async fn main() -> Result<()> {
             if id == None {
                 return Ok(());
             }
-
+            // set the key to refer to itself
             diesel::update(db::schema::api_keys::table)
             .filter(db::schema::api_keys::key_hash.eq(keyadder_hash))
             .set(db::schema::api_keys::created_by.eq(id))

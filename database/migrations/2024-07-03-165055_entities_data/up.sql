@@ -1,7 +1,7 @@
 CREATE TABLE dokument (
     id SERIAL PRIMARY KEY,
     titel VARCHAR NOT NULL,
-    datum TIMESTAMP NOT NULL,
+    datum TIMESTAMP WITH TIME ZONE NOT NULL,
     link VARCHAR NOT NULL,
     hash VARCHAR NOT NULL,
     zusammenfassung VARCHAR,
@@ -66,7 +66,7 @@ CREATE TABLE station (
     parl_id INTEGER NOT NULL REFERENCES parlament(id) ON DELETE CASCADE,
     typ INTEGER NOT NULL REFERENCES stationstyp(id) ON DELETE CASCADE,
     gremium VARCHAR NOT NULL,
-    datum TIMESTAMP NOT NULL,
+    datum TIMESTAMP WITH TIME ZONE NOT NULL,
     trojaner BOOLEAN NOT NULL,
     link VARCHAR
 );

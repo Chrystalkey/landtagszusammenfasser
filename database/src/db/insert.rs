@@ -121,7 +121,7 @@ pub fn insert_station(
         (dsl::gsvh_id.eq(gsvh_id),
         dsl::gremium.eq(stat.gremium),
         dsl::trojaner.eq(stat.trojaner.unwrap_or(false)),
-        dsl::datum.eq(chrono::NaiveDateTime::from(stat.datum)),
+        dsl::datum.eq(chrono::NaiveDateTime::from(stat.datum).and_utc()),
         dsl::parl_id.eq(
             schema::parlament::table.select(schema::parlament::id)
             .filter(schema::parlament::api_key.eq(&stat.parlament.to_string()))

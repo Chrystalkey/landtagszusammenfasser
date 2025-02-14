@@ -272,7 +272,7 @@ pub fn update_gsvh(
                     schema::station::gremium.eq(station.gremium.clone()),
                     schema::station::trojaner.eq(station.trojaner.clone().unwrap_or(false)),
                     schema::station::link.eq(station.link.clone()),
-                    schema::station::datum.eq(chrono::NaiveDateTime::from(station.datum)),
+                    schema::station::datum.eq(chrono::NaiveDateTime::from(station.datum).and_utc()),
                 ))
                 .execute(connection)?;
             // rep sw

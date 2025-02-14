@@ -5,10 +5,10 @@ diesel::table! {
         id -> Int4,
         key_hash -> Varchar,
         coll_id -> Nullable<Uuid>,
-        created_at -> Timestamp,
-        expires_at -> Timestamp,
+        created_at -> Timestamptz,
+        expires_at -> Timestamptz,
         created_by -> Nullable<Int4>,
-        last_used -> Nullable<Timestamp>,
+        last_used -> Nullable<Timestamptz>,
         scope -> Nullable<Int4>,
         deleted -> Bool,
     }
@@ -25,7 +25,7 @@ diesel::table! {
     dokument (id) {
         id -> Int4,
         titel -> Varchar,
-        datum -> Timestamp,
+        datum -> Timestamptz,
         link -> Varchar,
         hash -> Varchar,
         zusammenfassung -> Nullable<Varchar>,
@@ -164,7 +164,7 @@ diesel::table! {
         parl_id -> Int4,
         typ -> Int4,
         gremium -> Varchar,
-        datum -> Timestamp,
+        datum -> Timestamptz,
         trojaner -> Bool,
         link -> Nullable<Varchar>,
     }

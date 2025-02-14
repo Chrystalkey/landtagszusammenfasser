@@ -18,13 +18,13 @@ VALUES
 (3, 'keyadder');  -- adding new api keys
 
 CREATE TABLE api_keys (
-    id INTEGER PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     key_hash VARCHAR NOT NULL,
     coll_id UUID UNIQUE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    expires_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP + INTERVAL '1 year',
+    created_at TIMESTAMP WITH TIME ZONE  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP WITH TIME ZONE  NOT NULL DEFAULT CURRENT_TIMESTAMP + INTERVAL '1 year',
     created_by INTEGER REFERENCES api_keys,
-    last_used TIMESTAMP,
+    last_used TIMESTAMP WITH TIME ZONE,
     scope INTEGER REFERENCES api_scope,
     deleted BOOL NOT NULL DEFAULT false
 );

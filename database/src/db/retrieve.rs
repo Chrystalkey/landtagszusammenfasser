@@ -161,7 +161,7 @@ pub async fn station_by_id(id: i32, connection: &Connection) -> Result<models::S
         i32,
         i32,
         String,
-        chrono::NaiveDateTime,
+        crate::DateTime,
         bool,
         Option<String>,
     ) = connection
@@ -183,7 +183,7 @@ pub async fn station_by_id(id: i32, connection: &Connection) -> Result<models::S
         parlament: rval.0,
         stationstyp: rval.1,
         gremium: rval.2,
-        datum: rval.3.date(),
+        datum: rval.3.date_naive(),
         trojaner: rval.4,
         link: rval.5,
     };
@@ -252,7 +252,7 @@ pub async fn stellungnahme_by_id(
 pub async fn dokument_by_id(id: i32, connection: &Connection) -> Result<models::Dokument> {
     let ret: (
         String,
-        chrono::NaiveDateTime,
+        crate::DateTime,
         String,
         String,
         Option<String>,
@@ -303,7 +303,7 @@ pub async fn dokument_by_id(id: i32, connection: &Connection) -> Result<models::
 
     return Ok(models::Dokument {
         titel: ret.0,
-        last_mod: ret.1.and_utc(),
+        last_mod: ret.1,
         link: ret.2,
         hash: ret.3,
         zusammenfassung: ret.4,
