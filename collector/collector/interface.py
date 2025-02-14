@@ -38,7 +38,7 @@ class Scraper(ABC):
         self.session = session
         self.session_headers = {}
         global logger
-        logger.info(
+        logger.info (
             f"Initialized {self.__class__.__name__} with {len(self.listing_urls)} listing urls"
         )
         logger.info(f"Set Collector ID to {self.collector_id}")
@@ -55,10 +55,11 @@ class Scraper(ABC):
         with openapi_client.ApiClient(self.config.oapiconfig) as api_client:
             api_instance = openapi_client.DefaultApi(api_client)
             try:
-                api_instance.api_v1_gesetzesvorhaben_post(str(self.collector_id), item)
+                ret = api_instance.gsvh_post(str(self.collector_id), item)
+                print(f"Returned: {ret}")
             except openapi_client.ApiException as e:
                 logger.error(
-                    f"Exception when calling DefaultApi->api_v1_gesetzesvorhaben_post: {e}"
+                    f"Exception when calling DefaultApi->gsvh_post: {e}"
                 )
                 if e.status == 422:
                     logger.error("Unprocessable Entity, tried to send item:\n")
