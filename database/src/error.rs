@@ -15,6 +15,9 @@ macro_rules! error_from {
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub))]
 pub enum DataValidationError {
+    #[snafu(display("Unauthorized because: {reason}"))]
+    Unauthorized {reason: String},
+    
     #[snafu(display("Required field missing: {field}"))]
     MissingField { field: String },
     
