@@ -43,8 +43,10 @@ impl ToString for APIScope{
 #[async_trait]
 impl ApiKeyAuthHeader for LTZFServer{
     type Claims = (APIScope, i32);
-    async fn extract_claims_from_header(& self, _headers: & axum::http::header::HeaderMap, key: & str) ->  Option<Self::Claims> {
+    async fn extract_claims_from_header(& self, headers: & axum::http::header::HeaderMap, key: & str) ->  Option<Self::Claims> {
+        let key = headers.get(key).unwrap().to_str().unwrap();
         let hash = digest(key);
+        tracing::trace!("Authenticating Key Hash {}", hash);
 
         let connection = self.database.get().await
         .map_err(|e| panic!("An Error Occurred trying to get a database connection: {}", e))
@@ -63,17 +65,20 @@ impl ApiKeyAuthHeader for LTZFServer{
         .map_err(|e| panic!("Error Occurred in Database async wrapper: {}",e))
         .unwrap();
 
+        tracing::trace!("DB Result: {:?}", table_res);
         match table_res{
             Some((_, true, _, _)) => {
-                println!("API Key was valid but is deleted. Hash: {}", hash);
+                tracing::warn!("API Key was valid but is deleted. Hash: {}", hash);
                 return None;
             }
             Some((id, _, expires_at, scope)) => {
                 if expires_at < chrono::Utc::now() {
-                    println!("API Key was valid but is expired. Hash: {}", hash);
+                    tracing::warn!("API Key was valid but is expired. Hash: {}", hash);
                     return None;
                 }
-                return Some((APIScope::try_from(scope.as_str()).unwrap(), id));
+                let scope = (APIScope::try_from(scope.as_str()).unwrap(), id);
+                tracing::trace!("Scope of key with hash`{}`: {:?}", hash, scope.0);
+                return Some(scope);
             },
             None => {
                 return None;

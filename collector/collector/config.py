@@ -43,8 +43,12 @@ class CollectorConfiguration:
         self.trojan_threshold = int(os.getenv("TROJAN_THRESHOLD", "5"))
         self.api_obj_log = os.getenv("API_OBJ_LOG")
         
-        # LLM Connector, currently only openai is supported
+        #OpenAPI Configuration
         self.oapiconfig = Configuration(host=self.database_url)
+        logger.info(f"Setting API Key to {self.api_key}")
+        self.oapiconfig.api_key["apiKey"] = self.api_key
+
+        # LLM Connector, currently only openai is supported
         if os.getenv("OPENAI_API_KEY"):
             self.llm_connector = LLMConnector.from_openai(os.getenv("OPENAI_API_KEY"))
         else:

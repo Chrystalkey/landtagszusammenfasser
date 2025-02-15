@@ -55,7 +55,7 @@ class Scraper(ABC):
         with openapi_client.ApiClient(self.config.oapiconfig) as api_client:
             api_instance = openapi_client.DefaultApi(api_client)
             try:
-                ret = api_instance.gsvh_post(str(self.collector_id), item)
+                ret = api_instance.gsvh_post(str(self.collector_id), item,)
                 print(f"Returned: {ret}")
             except openapi_client.ApiException as e:
                 logger.error(
@@ -86,7 +86,12 @@ class Scraper(ABC):
         item_list = await asyncio.gather(*tasks)
         iset = set(x for xs in item_list for x in xs)
         tasks = []
+        tctr = 0
         for item in iset:
+            if tctr < 5:
+                tctr+=1
+            else:
+                break
             cached = self.config.cache.get_gsvh(str(item))
             if cached is not None:
                 logger.debug(f"URL {item} found in cache, skipping...")
