@@ -68,12 +68,12 @@ class Scraper(ABC):
 
     async def item_processing(self, item):
         return [await self.senditem(await self.item_extractor(item)), item]
+    
     """
     for every listing_url in the object
         extract the listing page and then extract the individual pages
         package everything into one or more Gesetzesvorhaben objects and return it
     """
-
     async def run(self):
         global logger
         item_list = []
@@ -86,12 +86,7 @@ class Scraper(ABC):
         item_list = await asyncio.gather(*tasks)
         iset = set(x for xs in item_list for x in xs)
         tasks = []
-        tctr = 0
         for item in iset:
-            if tctr < 5:
-                tctr+=1
-            else:
-                break
             cached = self.config.cache.get_gsvh(str(item))
             if cached is not None:
                 logger.debug(f"URL {item} found in cache, skipping...")
