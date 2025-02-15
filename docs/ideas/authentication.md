@@ -1,1 +1,50 @@
-https://www.rfc-editor.org/rfc/rfc9449.html#name-the-dpop-http-header maybe?
+# Authentication
+## Basic Idea
+
+Authentication works using API Keys. The Keys have to be supplied via the `X-API-Key` header on each request that requires authentication.
+Thus it relies on a secure channel and does no encryption on its own.
+
+Requests that require authentication are requests that do any kind of writing operation on the final dataset: any `POST`, `PUT` and `DELETE` requests as well as `GET` on /api/v1/auth.
+
+Keys have a total length of 64 characters and start with `ltzf_`, followed by alphanumeric characters where capitalizaton matters.
+
+## Scopes
+
+API Keys are split into scopes that authorize the key to be used for different operations. The three scopes are:
+
+1. Keyadder
+2. Admin
+3. Collector
+
+Scopes with a lower number include the permissions of the ones with higher numbers.
+
+The _Keyadder_ scope is the most powerful one as it can interact with the `/.../auth` endpoint using `GET` and `DELETE` and request new api keys.
+
+The _Admin_ scope can do explicit writes and deletes of the main dataset by name. Keys with _Admin_ scope are allowed to use `PUT`, and `DELETE` on the `/.../gesetzesvorhaben/{gsvh_id}` endpoints.
+
+The _Collector_ scope is the one with the least priorities. The only endpoint requiring authentication included in this scope is `POST` on `/.../gesetzesvorhaben/`, which triggers the merging process in which data is integrated into the dataset.
+
+All read-only endpoints do not require authentication and thus also no x-api-header key.
+
+
+## Key Metadata
+
+Keys are hashed using sha256 and stored in the database in that way. Associated with the key hash is
+- its scope
+- and expiration timestamp (default 1 year)
+- a creation timestamp
+- a timestamp of last usage (this means any auth function call, regardless of the success of the associated operation)
+- a flag for deletion
+- a "created by" field, which references the api key this one was authorized by
+
+
+## Authentication Workflow
+
+The root trust is an api key that is provided via an environment variable on startup. This is automatically added to the database with itself in the "created by" field.
+
+Any subsequent keys are created using either the root key, or a key created by the root key with _Keyadder_ scope.
+
+To create a key, run http `GET` on the `/api/v1/auth` endpoint, supplying the scope as described in the openapi spec. 
+The Key can optionally be set to expire at a specified timestamp. It is not possible to create keys with no expiration date.
+
+The key is returned as plain text in the response body. This is the only time the key can be extracted from the server, because only the hash is saved to the database.
