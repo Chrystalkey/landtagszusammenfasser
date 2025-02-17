@@ -10,7 +10,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.13"
+python = "^3.12"
 pydantic = "^2.9.2"
 openapi-client = {path = "./oapicode"}
 toml = "^0.10.2"

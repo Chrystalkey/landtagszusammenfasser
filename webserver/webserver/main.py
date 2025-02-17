@@ -129,7 +129,7 @@ class WebServer:
         try:
             with ApiClient(config) as api_client:
                 api = DefaultApi(api_client)
-                response = api.api_v1_gesetzesvorhaben_get()
+                response = api.gsvh_get()
                 self.content_generator.generate_content(response)
         except Exception as e:
             logger.error(f"Failed to fetch data: {e}")
