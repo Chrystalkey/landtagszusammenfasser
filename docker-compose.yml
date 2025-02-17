@@ -64,8 +64,8 @@ services:
       LTZF_DATABASE: "http://ltzf-db:80"
       REDIS_HOST: "redis"
       API_OBJ_LOG: "locallogs"
+      OPENAI_API_KEY: "example"
       API_KEY: "tegernsee-apfelsaft-co2grenzwert"
-      OPENAI_API_KEY: "examplesecret"
 
   
   webserver:
