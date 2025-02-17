@@ -15,7 +15,7 @@ Spam und Missbrauch zu verhindern.
 
 Die API ist in vier Teile geteilt:
 - GET /api/v1/gesetzesvorhaben oder GET /api/v1/gesetzesvorhaben/{gsvh_id}
-  Öffentliche Schnittstelle um Gesetzesvorhaben aus der Datenbank abzurufen
+  Öffentliche Schnittstelle um Gesetzesvorhaben aus der Datenbank abzurufen, ohne authentifizierung
 - POST /api/v1/gesetzesvorhaben
   Schnittstelle der Collectors, die neue Gesetzesvorhaben in die Datenbank einfügen ohne den internen Zustand der Datenbank zu kennen
 - GET/DELETE /api/v1/auth
@@ -34,6 +34,8 @@ API-Keys können einen von drei Scopes zugeordnet sein:
 - Collector: Kann neue Gesetzesvorhaben einfügen
 
 Wobei höhere Scopes die berechtigungen der niedrigen Scopes einschließen.
+
+Für weitere Informationen siehe [documentation/authentication.md](documentation/authentication.md).
 
 ## Projektsetup
 
