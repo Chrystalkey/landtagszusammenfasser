@@ -1,6 +1,6 @@
 -- tables that do not require any foreign keys
 CREATE TABLE
-    gesetzestyp (
+    vorgangstyp (
         id SERIAL PRIMARY KEY,
         api_key VARCHAR NOT NULL
     );
@@ -34,3 +34,9 @@ CREATE TABLE
         id SERIAL PRIMARY KEY,
         api_key VARCHAR NOT NULL
     );
+
+CREATE TABLE experte(
+    id SERIAL PRIMARY KEY,
+    name VARCHAR NOT NULL,
+    fachgebiet VARCHAR NOT NULL
+);

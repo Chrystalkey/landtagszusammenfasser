@@ -1,11 +1,11 @@
 -- Your SQL goes here
 INSERT INTO
-    gesetzestyp (api_key)
+    vorgangstyp (api_key)
 VALUES
-    ('bgg-einspruch'),
-    ('bgg-zustimmung'),
-    ('bay-parlament'),
-    ('bay-volk'),
+    ('gg-einspruch'),
+    ('gg-zustimmung'),
+    ('gg-land-parl'),
+    ('gg-land-volk'),
     ('sonstig');
 
 INSERT INTO
@@ -20,7 +20,7 @@ INSERT INTO
 VALUES
     ('preparl-regent'),
     ('preparl-eckpup'),
-    ('preparl-kabbsl'),
+    ('preparl-regbsl'),
     ('preparl-vbegde'),
     ('parl-initiativ'),
     ('parl-ausschber'),
@@ -28,7 +28,8 @@ VALUES
     ('parl-akzeptanz'),
     ('parl-ablehnung'),
     ('parl-ggentwurf'),
-    ('postparl-vents'),
+    ('postparl-vesja'),
+    ('postparl-vesne'),
     ('postparl-gsblt'),
     ('postparl-kraft');
 

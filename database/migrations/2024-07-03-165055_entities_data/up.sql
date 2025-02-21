@@ -1,7 +1,14 @@
+CREATE TABLE ausschuss(
+    id SERIAL PRIMARY KEY,
+    parl_id INTEGER NOT NULL REFERENCES parlament(id),
+    name VARCHAR NOT NULL
+);
+
 CREATE TABLE dokument (
     id SERIAL PRIMARY KEY,
     titel VARCHAR NOT NULL,
-    datum TIMESTAMP WITH TIME ZONE NOT NULL,
+    last_mod TIMESTAMP WITH TIME ZONE NOT NULL,
+    volltext VARCHAR,
     link VARCHAR NOT NULL,
     hash VARCHAR NOT NULL,
     zusammenfassung VARCHAR,
@@ -26,51 +33,78 @@ CREATE TABLE rel_dok_schlagwort(
     PRIMARY KEY (dok_id, sw_id)
 );
 
-CREATE TABLE gesetzesvorhaben(
+CREATE TABLE vorgang (
     id SERIAL PRIMARY KEY,
     api_id UUID NOT NULL UNIQUE,
     titel VARCHAR NOT NULL,
     verfaend BOOLEAN NOT NULL,
-    typ INTEGER NOT NULL REFERENCES gesetzestyp(id) ON DELETE CASCADE,
-    CONSTRAINT unique_gsvh_titel_typ UNIQUE (titel, typ)
+    wahlperiode INTEGER NOT NULL,
+    typ INTEGER NOT NULL REFERENCES vorgangstyp(id) ON DELETE CASCADE,
+    CONSTRAINT unique_vorgang_titel_typ UNIQUE (titel, typ)
 );
-CREATE TABLE rel_gsvh_init(
-    gsvh_id INTEGER NOT NULL REFERENCES gesetzesvorhaben(id) ON DELETE CASCADE,
+CREATE TABLE rel_vorgang_init(
+    vorgang_id INTEGER NOT NULL REFERENCES vorgang(id) ON DELETE CASCADE,
     initiator VARCHAR NOT NULL,
-    PRIMARY KEY (gsvh_id, initiator)
+    PRIMARY KEY (vorgang_id, initiator)
 );
 
-CREATE TABLE rel_gsvh_init_person(
-    gsvh_id INTEGER NOT NULL REFERENCES gesetzesvorhaben(id) ON DELETE CASCADE,
+CREATE TABLE rel_vorgang_init_person(
+    vorgang_id INTEGER NOT NULL REFERENCES vorgang(id) ON DELETE CASCADE,
     initiator VARCHAR NOT NULL,
-    PRIMARY KEY (gsvh_id, initiator)
+    PRIMARY KEY (vorgang_id, initiator)
 );
 
-CREATE TABLE rel_gsvh_id (
-    gsvh_id INTEGER NOT NULL REFERENCES gesetzesvorhaben(id) ON DELETE CASCADE,
+CREATE TABLE rel_vorgang_id (
+    vorgang_id INTEGER NOT NULL REFERENCES vorgang(id) ON DELETE CASCADE,
     typ INTEGER NOT NULL REFERENCES identifikatortyp(id) ON DELETE CASCADE,
     identifikator VARCHAR NOT NULL,
-    PRIMARY KEY (gsvh_id, typ, identifikator)
+    PRIMARY KEY (vorgang_id, typ, identifikator)
 ); 
 
-CREATE TABLE rel_gsvh_links(
+CREATE TABLE rel_vorgang_links(
     id SERIAL PRIMARY KEY,
-    gsvh_id INTEGER NOT NULL REFERENCES gesetzesvorhaben(id) ON DELETE CASCADE,
+    vorgang_id INTEGER NOT NULL REFERENCES vorgang(id) ON DELETE CASCADE,
     link VARCHAR NOT NULL,
-    CONSTRAINT rel_gsvh_links_unique_combo UNIQUE (gsvh_id, link)
+    CONSTRAINT rel_vorgang_links_unique_combo UNIQUE (vorgang_id, link)
+);
+CREATE TABLE top(
+    id SERIAL PRIMARY KEY,
+    vorgang_id INTEGER REFERENCES vorgang(id),
+    titel VARCHAR NOT NULL
+);
+
+CREATE TABLE ausschusssitzung(
+    id SERIAL PRIMARY KEY,
+    termin TIMESTAMP WITH TIME ZONE NOT NULL,
+    as_id INTEGER NOT NULL REFERENCES ausschuss(id)
+);
+CREATE TABLE rel_ass_experten(
+    ass_id INTEGER NOT NULL REFERENCES ausschusssitzung(id) ON DELETE CASCADE,
+    exp_id INTEGER NOT NULL REFERENCES experte(id) ON DELETE CASCADE,
+    PRIMARY KEY (ass_id, exp_id)
+);
+CREATE TABLE rel_ass_tops(
+    ass_id INTEGER NOT NULL REFERENCES ausschusssitzung(id) ON DELETE CASCADE,
+    top_id INTEGER NOT NULL REFERENCES top(id) ON DELETE CASCADE,
+    PRIMARY KEY (ass_id, top_id)
 );
 
 CREATE TABLE station (
     id SERIAL PRIMARY KEY,
-    gsvh_id INTEGER NOT NULL REFERENCES gesetzesvorhaben(id) ON DELETE CASCADE,
+    vorgang_id INTEGER NOT NULL REFERENCES vorgang(id) ON DELETE CASCADE,
     parl_id INTEGER NOT NULL REFERENCES parlament(id) ON DELETE CASCADE,
     typ INTEGER NOT NULL REFERENCES stationstyp(id) ON DELETE CASCADE,
-    gremium VARCHAR NOT NULL,
-    datum TIMESTAMP WITH TIME ZONE NOT NULL,
-    trojaner BOOLEAN NOT NULL,
+    titel VARCHAR,
+
+    zeitpunkt TIMESTAMP WITH TIME ZONE NOT NULL,
+    trojanergefahr INTEGER NOT NULL,
     link VARCHAR
 );
-
+CREATE TABLE rel_station_ausschusssitzung(
+    stat_id INTEGER NOT NULL REFERENCES station(id) ON DELETE  CASCADE,
+    as_id INTEGER NOT NULL REFERENCES ausschusssitzung(id) ON DELETE CASCADE,
+    PRIMARY KEY (stat_id, as_id)
+);
 CREATE TABLE rel_station_dokument(
     stat_id INTEGER NOT NULL REFERENCES station(id) ON DELETE CASCADE,
     dok_id INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE,
@@ -93,8 +127,9 @@ CREATE TABLE stellungnahme (
     id SERIAL PRIMARY KEY,
     stat_id INTEGER NOT NULL REFERENCES station(id) ON DELETE CASCADE,
     dok_id INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE,
-    meinung INTEGER,
-    lobbyreg_link VARCHAR
+    meinung INTEGER NOT NULL,
+    lobbyreg_link VARCHAR,
+    volltext VARCHAR
 );
 
 --- trigger & function to delete orphaned dokument from station reference
