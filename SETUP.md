@@ -27,7 +27,7 @@ To properly develop anything on this project, you need the dependencies not pref
 **Collector**
 - Python(>=3.13)
 - Poetry(>=1.4)
-+ redis
+- redis
 
 You will notice, the Python dependencies are the same versions.
 
@@ -64,7 +64,7 @@ pgcli made my life a lot easier on linux, so you might consider it.
 
 The `docker-compose.yml` on the top level sets up, compiles and runs everything in one ginourmeous step. For development, you may want to consider commenting out what you dont need and running the rest as-is with your software locally.
 
-## Deployment
-### Description
+### Development Deployment
 The `docker-compose.yml` on the top level sets up, compiles and runs everything in one ginourmeous step. 
-run `docker compose up --build -d` to just make it all up in one step. The default Port for the webserver is 8081 on localhost.
+run `docker compose up --build -d` to just make it all up in one step. The default Port for the webserver is 8081 on localhost. Remember to set the OPENAI_API_KEY and API_KEY variables properly
+

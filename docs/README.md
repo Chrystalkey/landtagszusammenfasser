@@ -18,7 +18,7 @@ Die API ist in vier Teile geteilt:
   Öffentliche Schnittstelle um Gesetzesvorhaben aus der Datenbank abzurufen, ohne authentifizierung
 - POST /api/v1/gesetzesvorhaben
   Schnittstelle der Collectors, die neue Gesetzesvorhaben in die Datenbank einfügen ohne den internen Zustand der Datenbank zu kennen
-- GET/DELETE /api/v1/auth
+- POST/DELETE /api/v1/auth
   Schnittstelle um API-Keys zu verwalten
 - PUT /api/v1/gesetzesvorhaben/{gsvh_id}
   Adminschnittstelle um den exakten Stand eines Gesetzesvorhabens zu editieren
