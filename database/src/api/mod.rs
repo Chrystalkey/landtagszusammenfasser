@@ -36,26 +36,26 @@ impl LTZFServer {
 impl openapi::apis::default::Default for LTZFServer {
     type Claims = (auth::APIScope, i32);
 
-    #[doc = "AuthGet - GET /api/v1/auth"]
+    #[doc = "AuthPost - POST /api/v1/auth"]
     #[must_use]
     #[allow(clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    async fn auth_get(
+    async fn auth_post(
         &self,
         method: Method,
         host: Host,
         cookies: CookieJar,
         claims: Self::Claims,
         body: models::CreateApiKey,
-    ) -> Result<AuthGetResponse, ()> {
+    ) -> Result<AuthPostResponse, ()> {
         if claims.0 != auth::APIScope::KeyAdder {
-            return Ok(AuthGetResponse::Status401_APIKeyIsMissingOrInvalid { www_authenticate: None })
+            return Ok(AuthPostResponse::Status401_APIKeyIsMissingOrInvalid)
         }
         let key = auth::auth_get(self, body.scope.try_into().unwrap(), body.expires_at.map(|x| x), claims.1).await;
         match key{
-            Ok(key) => {return Ok(AuthGetResponse::Status201_APIKeyWasCreatedSuccessfully(key))}
+            Ok(key) => {return Ok(AuthPostResponse::Status201_APIKeyWasCreatedSuccessfully(key))}
             Err(e) =>{
                 tracing::error!("{}", e.to_string());
-                return Ok(AuthGetResponse::Status500_InternalServerError);
+                return Err(());
             }
         }
     }
@@ -69,9 +69,10 @@ impl openapi::apis::default::Default for LTZFServer {
         host: Host,
         cookies: CookieJar,
         claims: Self::Claims,
-        body: String,
+        header_params: models::AuthDeleteHeaderParams,
     ) -> Result<AuthDeleteResponse, ()> {
-        let ret = auth::auth_delete(self, claims.0, &body).await;
+        let key_to_delete = header_params.api_key_delete;
+        let ret = auth::auth_delete(self, claims.0, &key_to_delete).await;
         match ret {
             Ok(x) => {return Ok(x)},
             Err(e) => {
@@ -81,92 +82,93 @@ impl openapi::apis::default::Default for LTZFServer {
         }
     }
 
-    #[doc = "GsvhGetById - GET /api/v1/gesetzesvorhaben/{gsvh_id}"]
+    #[doc = "VorgangGetById - GET /api/v1/vorgang/{vorgang_id}"]
     #[must_use]
     #[allow(clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    async fn gsvh_get_by_id(
+    async fn vorgang_get_by_id(
         &self,
         method: Method,
         host: Host,
         cookies: CookieJar,
-          header_params: models::GsvhGetByIdHeaderParams,
-          path_params: models::GsvhGetByIdPathParams,
-        ) -> Result<GsvhGetByIdResponse, ()> {
+        header_params: models::VorgangGetByIdHeaderParams,
+        path_params: models::VorgangGetByIdPathParams,
+        ) -> Result<VorgangGetByIdResponse, ()> {
         tracing::info!(
             "Get By ID endpoint called with ID: {}",
-            path_params.gsvh_id
+            path_params.vorgang_id
         );
-        let gsvh = get::api_v1_gesetzesvorhaben_gesvh_id_get(self, path_params).await;
+        let vorgang = get::api_v1_vorgang_id_get(self, path_params).await;
 
-        match gsvh {
-            Ok(gsvh) => {
-                Ok(GsvhGetByIdResponse::Status200_SuccessfulOperation(gsvh))
+        match vorgang {
+            Ok(vorgang) => {
+                Ok(VorgangGetByIdResponse::Status200_SuccessfulOperation(vorgang))
             }
             Err(e) => {
                 tracing::warn!("{}", e.to_string());
                 match e {
                     LTZFError::Database{source: DatabaseError::Operation{source: diesel::result::Error::NotFound}} => {
                         tracing::warn!("Not Found Error: {:?}", e.to_string());
-                        Ok(GsvhGetByIdResponse::Status404_ContentNotFound)
+                        Ok(VorgangGetByIdResponse::Status404_ContentNotFound)
                     }
                     _ => Err(()),
                 }
             }
         }
     }
-    #[doc = " GsvhDelete - GET /api/v1/gesetzesvorhaben"]
+    #[doc = " VorgangDelete - GET /api/v1/vorgang"]
     #[must_use]
     #[allow(clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    async fn gsvh_delete(
+    async fn vorgang_delete(
         &self,
         method: Method,
         host: Host,
         cookies: CookieJar,
         claims: Self::Claims,
-        path_params: models::GsvhDeletePathParams,
-    ) -> Result<GsvhDeleteResponse, ()> {
-        tracing::trace!("gsvh_delete called with gsvh_id: {}", path_params.gsvh_id);
+        path_params: models::VorgangDeletePathParams,
+    ) -> Result<VorgangDeleteResponse, ()> {
+        tracing::trace!("vorgang_delete called with vorgang_id: {}", path_params.vorgang_id);
         if claims.0 == auth::APIScope::Admin || claims.0 == auth::APIScope::KeyAdder{
             unimplemented!("");
         }
-        Ok(GsvhDeleteResponse::Status401_APIKeyIsMissingOrInvalid { www_authenticate: None })
+        Ok(VorgangDeleteResponse::Status401_APIKeyIsMissingOrInvalid)
     }
-    #[doc = " GsvhGet - GET /api/v1/gesetzesvorhaben"]
+    #[doc = " VorgangGet - GET /api/v1/vorgang"]
     #[must_use]
     #[allow(clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    async fn gsvh_put(
+    async fn vorgang_put(
             &self,
             method: Method,
             host: Host,
             cookies: CookieJar,
             claims: Self::Claims,
-            path_params: models::GsvhPutPathParams,
-            body: models::Gesetzesvorhaben,
-        ) -> Result<GsvhPutResponse, ()> {
-            tracing::trace!("api_v1_gesetzesvorhaben_gsvh_id_put Called with path params: `{:?}`", path_params);
-            let out = put::api_v1_gesetzesvorhaben_gsvh_id_put(self, path_params, body)
+            path_params: models::VorgangPutPathParams,
+            body: models::Vorgang,
+        ) -> Result<VorgangPutResponse, ()> {
+            tracing::trace!("api_v1_vorgang_vorgang_id_put Called with path params: `{:?}`", path_params);
+            let out = put::api_v1_vorgang_id_put(self, path_params, body)
             .await
             .map_err(|e| todo!())?;
             Ok(out)
         }
 
-    #[doc = " GsvhGet - GET /api/v1/gesetzesvorhaben"]
+    #[doc = " VorgangGet - GET /api/v1/vorgang"]
     #[must_use]
     #[allow(clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    async fn gsvh_get(
+    async fn vorgang_get(
             &self,
             method: Method,
             host: Host,
             cookies: CookieJar,
-            query_params: models::GsvhGetQueryParams,
-        ) -> Result<GsvhGetResponse, ()> {
+              header_params: models::VorgangGetHeaderParams,
+              query_params: models::VorgangGetQueryParams,
+        ) -> Result<VorgangGetResponse, ()> {
         tracing::trace!(
             "GET GSVHByParam endpoint called with query params: {:?}",
             query_params
         );
-        match get::api_v1_gesetzesvorhaben_get(self, query_params).await {
-            Ok(models::Response{payload: None}) => Ok(GsvhGetResponse::Status204_NoContentFoundForTheSpecifiedParameters),
-            Ok(x) => Ok(GsvhGetResponse::Status200_SuccessfulOperation(x)),
+        match get::api_v1_vorgang_get(self, query_params, header_params).await {
+            Ok(models::VorgangGet200Response{payload: None}) => Ok(VorgangGetResponse::Status204_NoContentFoundForTheSpecifiedParameters),
+            Ok(x) => Ok(VorgangGetResponse::Status200_AntwortAufEineGefilterteAnfrageZuVorgang(x)),
             Err(e) => {
                 tracing::warn!("{}", e.to_string());
                 Err(())
@@ -174,24 +176,24 @@ impl openapi::apis::default::Default for LTZFServer {
         }
     }
 
-    #[doc = " ApiV1GesetzesvorhabenPost - POST /api/v1/gesetzesvorhaben"]
+    #[doc = " ApiV1VorgangPost - POST /api/v1/vorgang"]
     #[must_use]
     #[allow(clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    async fn gsvh_post(
+    async fn vorgang_post(
         &self,
         method: Method,
         host: Host,
         cookies: CookieJar,
             claims: Self::Claims,
-          query_params: models::GsvhPostQueryParams,
-                body: models::Gesetzesvorhaben,
-        ) -> Result<GsvhPostResponse, ()> {
-        tracing::trace!("api_v1_gesetzesvorhaben_post called by {:?}", query_params);
+          query_params: models::VorgangPostQueryParams,
+                body: models::Vorgang,
+        ) -> Result<VorgangPostResponse, ()> {
+        tracing::trace!("api_v1_vorgang_post called by {:?}", query_params);
 
-        let rval = post::api_v1_gesetzesvorhaben_post(self, body).await;
+        let rval = post::api_v1_vorgang_post(self, body).await;
         match rval {
             Ok(_) => {
-                Ok(GsvhPostResponse::Status201_SuccessfullyIntegratedTheObject)
+                Ok(VorgangPostResponse::Status201_SuccessfullyIntegratedTheObject)
             }
             Err(e) => {
                 tracing::warn!("Error Occurred and Is Returned: {:?}", e.to_string());
@@ -204,14 +206,14 @@ impl openapi::apis::default::Default for LTZFServer {
                             "Unique Violation Error (Conflict on Input Data): {:?}",
                             info
                         );
-                        Ok(GsvhPostResponse::Status409_Conflict)
+                        Ok(VorgangPostResponse::Status409_Conflict)
                     },
                     LTZFError::Validation{source: DataValidationError::DuplicateApiId{id}} => {
                         tracing::warn!("ApiID Equal Error: {:?}", id);
-                        Ok(GsvhPostResponse::Status409_Conflict)
+                        Ok(VorgangPostResponse::Status409_Conflict)
                     },
                     LTZFError::Validation{source: DataValidationError::AmbiguousMatch{..}} =>{
-                        Ok(GsvhPostResponse::Status409_Conflict)
+                        Ok(VorgangPostResponse::Status409_Conflict)
                     }
                     _ => {
                         Err(())

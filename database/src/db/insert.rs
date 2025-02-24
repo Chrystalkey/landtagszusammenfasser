@@ -6,25 +6,27 @@ use diesel::prelude::*;
 use super::schema;
 
 /// Inserts a new GSVH into the database.
-pub fn insert_gsvh(
-    api_gsvh: &models::Gesetzesvorhaben,
+pub fn insert_vorgang(
+    api_vorgang: &models::Vorgang,
     connection: &mut diesel::PgConnection
 ) -> Result<i32> {
     tracing::info!("Inserting complete GSVH into the database");
-    use schema::gesetzesvorhaben::dsl;
-    use schema::gesetzestyp::dsl as typ_dsl;
+    use schema::vorgang::dsl;
+    use schema::vorgangstyp::dsl as typ_dsl;
     
-    let gsvh_id = 
-    diesel::insert_into(schema::gesetzesvorhaben::table)
+    // master insert
+    let vorgang_id = 
+    diesel::insert_into(schema::vorgang::table)
     .values(
         (
-            dsl::api_id.eq(api_gsvh.api_id),
-            dsl::titel.eq(&api_gsvh.titel),
-            dsl::verfaend.eq(api_gsvh.verfassungsaendernd),
+            dsl::api_id.eq(api_vorgang.api_id),
+            dsl::titel.eq(&api_vorgang.titel),
+            dsl::verfaend.eq(api_vorgang.verfassungsaendernd),
+            dsl::wahlperiode.eq(api_vorgang.wahlperiode as i32),
             dsl::typ.eq(
-                typ_dsl::gesetzestyp
+                typ_dsl::vorgangstyp
                 .select(typ_dsl::id)
-                .filter(typ_dsl::api_key.eq(&api_gsvh.typ.to_string()))
+                .filter(typ_dsl::api_key.eq(&api_vorgang.typ.to_string()))
                 .first::<i32>(connection)?
             ),
         )
@@ -32,16 +34,16 @@ pub fn insert_gsvh(
     .returning(dsl::id)
     .get_result::<i32>(connection)?;
 
-    // insert links, initiatoren, ids
-    if let Some(links) = &api_gsvh.links {
-        use schema::rel_gsvh_links::dsl as dsl;
-        diesel::insert_into(schema::rel_gsvh_links::table)
+    // insert links
+    if let Some(links) = &api_vorgang.links {
+        use schema::rel_vorgang_links::dsl as dsl;
+        diesel::insert_into(schema::rel_vorgang_links::table)
         .values(
             links.iter()
             .cloned()
             .map(|s|(
                 dsl::link.eq(s),
-                dsl::gsvh_id.eq(gsvh_id)
+                dsl::vorgang_id.eq(vorgang_id)
             )
             )
             .collect::<Vec<_>>()
@@ -49,41 +51,43 @@ pub fn insert_gsvh(
         .execute(connection)?;
     }
 
-    if !api_gsvh.initiatoren.is_empty() {
-        use schema::rel_gsvh_init::dsl as dsl;
-        diesel::insert_into(schema::rel_gsvh_init::table)
+    // insert initiatoren
+    if !api_vorgang.initiatoren.is_empty() {
+        use schema::rel_vorgang_init::dsl as dsl;
+        diesel::insert_into(schema::rel_vorgang_init::table)
         .values(
-            api_gsvh.initiatoren.iter()
+            api_vorgang.initiatoren.iter()
             .map(|s|
                 (dsl::initiator.eq(s),
-                dsl::gsvh_id.eq(gsvh_id)
+                dsl::vorgang_id.eq(vorgang_id)
             ))
             .collect::<Vec<_>>()
         )
         .execute(connection)?;
     }
 
-    if let Some(init_personen) = api_gsvh.initiator_personen.as_ref() {
-        diesel::insert_into(schema::rel_gsvh_init_person::table)
+    if let Some(init_personen) = api_vorgang.initiator_personen.as_ref() {
+        diesel::insert_into(schema::rel_vorgang_init_person::table)
         .values(
             init_personen.iter()
             .map(|s|
                 (
-                    schema::rel_gsvh_init_person::gsvh_id.eq(gsvh_id),
-                    schema::rel_gsvh_init_person::initiator.eq(s.clone())
+                    schema::rel_vorgang_init_person::vorgang_id.eq(vorgang_id),
+                    schema::rel_vorgang_init_person::initiator.eq(s.clone())
                 )
             ).collect::<Vec<_>>()
         )
         .execute(connection)?;
     }
 
-    if let Some(ids) = api_gsvh.ids.as_ref() {
-        use schema::rel_gsvh_id::dsl as dsl;
+    // insert ids
+    if let Some(ids) = api_vorgang.ids.as_ref() {
+        use schema::rel_vorgang_id::dsl as dsl;
         let mut value_vec = vec![];
 
         for id_entry in ids.iter(){
             let value= (
-                dsl::gsvh_id.eq(gsvh_id),
+                dsl::vorgang_id.eq(vorgang_id),
                 dsl::identifikator.eq(&id_entry.id),
                 dsl::typ.eq(
                     schema::identifikatortyp::table
@@ -96,32 +100,34 @@ pub fn insert_gsvh(
             );
             value_vec.push(value);
         }
-        diesel::insert_into(schema::rel_gsvh_id::table)
+        diesel::insert_into(schema::rel_vorgang_id::table)
         .values(&value_vec)
         .execute(connection)?;
     }
     
-    if !api_gsvh.stationen.is_empty() {
-        for stat in api_gsvh.stationen.clone() {
-            insert_station(stat, gsvh_id, connection)?;
+    // insert statinons
+    if !api_vorgang.stationen.is_empty() {
+        for stat in api_vorgang.stationen.clone() {
+            insert_station(stat, vorgang_id, connection)?;
         }
     }
-    tracing::info!("Insertion Successful with ID: {}", gsvh_id);
-    Ok(gsvh_id)
+    tracing::info!("Insertion Successful with ID: {}", vorgang_id);
+    Ok(vorgang_id)
 }
 
 pub fn insert_station(
     stat: models::Station,
-    gsvh_id: i32,
+    vorgang_id: i32,
     connection: &mut diesel::PgConnection,
 ) -> Result<i32> {
     use schema::station::dsl;
+    // master insert
     let stat_id = diesel::insert_into(schema::station::table)
     .values(
-        (dsl::gsvh_id.eq(gsvh_id),
-        dsl::gremium.eq(stat.gremium),
-        dsl::trojaner.eq(stat.trojaner.unwrap_or(false)),
-        dsl::datum.eq(chrono::NaiveDateTime::from(stat.datum).and_utc()),
+        (dsl::vorgang_id.eq(vorgang_id),
+        dsl::titel.eq(stat.titel.clone()),
+        dsl::trojanergefahr.eq(stat.trojanergefahr.map(|x| x as i32)),
+        dsl::zeitpunkt.eq(stat.zeitpunkt),
         dsl::parl_id.eq(
             schema::parlament::table.select(schema::parlament::id)
             .filter(schema::parlament::api_key.eq(&stat.parlament.to_string()))
@@ -137,16 +143,32 @@ pub fn insert_station(
     )
     .returning(dsl::id)
     .get_result::<i32>(connection)?;
-    if !stat.betroffene_texte.is_empty(){
-        diesel::insert_into(schema::rel_station_gesetz::table)
-        .values(
-            stat.betroffene_texte.iter().map(|gesetz|
-                (schema::rel_station_gesetz::stat_id.eq(stat_id),
-                schema::rel_station_gesetz::gesetz.eq(gesetz.clone())
-                )
-            ).collect::<Vec<_>>()
-        ).execute(connection)?;
+    // ausschusssitzungen wenn anwendbar
+    if  stat.typ != models::Stationstyp::ParlAusschber &&
+        stat.ausschusssitzungen != None {
+        let string = format!("Ausschussitzungen in Station mit anderem Typ `{}`", stat.typ.to_string());
+        tracing::warn!("{}", &string);
+        return Err(crate::error::LTZFError::Validation { source: crate::error::DataValidationError::InvalidEnumValue { msg: string } });
     }
+    if let Some(_) = stat.ausschusssitzungen {
+        let string = "Ausschussitzungen müssen über den Endpoint /ausschusssitzungen hinzugefügt werden. Diese werden ignoriert";
+        tracing::warn!(string);
+    }
+
+    // betroffene gesetzestexte
+    if let Some(bt) = stat.betroffene_texte {
+        if ! bt.is_empty(){
+            diesel::insert_into(schema::rel_station_gesetz::table)
+            .values(
+                bt.iter().map(|gesetz|
+                    (schema::rel_station_gesetz::stat_id.eq(stat_id),
+                    schema::rel_station_gesetz::gesetz.eq(gesetz.clone())
+                    )
+                ).collect::<Vec<_>>()
+            ).execute(connection)?;
+        }
+    }
+    // assoziierte dokumente
     if !stat.dokumente.is_empty() {
         let mut dok_ids = vec![];
         for dok in stat.dokumente.clone(){
@@ -166,13 +188,14 @@ pub fn insert_station(
         )
         .execute(connection)?;
     }
+    // stellungnahmen
     if let Some(stln) = stat.stellungnahmen {
         use schema::stellungnahme::dsl;
         for stln in stln {
             diesel::insert_into(schema::stellungnahme::table)
             .values( 
                 (
-                    dsl::meinung.eq(stln.meinung),
+                    dsl::meinung.eq(stln.meinung as i32),
                     dsl::lobbyreg_link.eq(stln.lobbyregister_link),
                     dsl::stat_id.eq(stat_id),
                     dsl::dok_id.eq(
@@ -183,6 +206,7 @@ pub fn insert_station(
             .execute(connection)?;
         }
     }
+    // schlagworte
     if let Some(sw) = stat.schlagworte {
         diesel::insert_into(schema::schlagwort::table)
         .values(
@@ -229,7 +253,7 @@ pub fn insert_dokument(
             dsl::titel.eq(sanitize_string(&dok.titel)),
             dsl::link.eq(dok.link),
             dsl::hash.eq(dok.hash),
-            dsl::datum.eq(dok.last_mod.naive_utc()),
+            dsl::last_mod.eq(dok.last_mod.naive_utc()),
             dsl::zusammenfassung.eq(&dok.zusammenfassung.map(|s| sanitize_string(&s))),
             dsl::typ.eq(
                 schema::dokumententyp::table.select(schema::dokumententyp::id)

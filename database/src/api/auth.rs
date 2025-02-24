@@ -121,7 +121,7 @@ pub async fn auth_get(server: &LTZFServer, scope: APIScope, expires_at: Option<c
 pub async fn auth_delete(server: &LTZFServer, scope: APIScope, key: &str) -> Result<openapi::apis::default::AuthDeleteResponse>{
     if scope != APIScope::KeyAdder {
         tracing::warn!("Unauthorized: API Key does not have the required permission scope");
-        return Ok(openapi::apis::default::AuthDeleteResponse::Status401_APIKeyIsMissingOrInvalid { www_authenticate: None });
+        return Ok(openapi::apis::default::AuthDeleteResponse::Status401_APIKeyIsMissingOrInvalid);
     }
     let hash = digest(key);
     let connection = server.database.get().await?;

@@ -1,13 +1,13 @@
 /// Handles merging of two datasets.
 /// in particular, stellungnahme & dokument are atomic.
-/// station and gsvh are not in the sense that gsvh.stations and station.stellungnahmen are appendable and deletable.
+/// station and vorgang are not in the sense that vorgang.stations and station.stellungnahmen are appendable and deletable.
 /// This means the merge strategy is in general to:
-/// 1. find a gsvh that is matching enough
-///     a. if found exactly one, update the gsvh, see 2.
+/// 1. find a vorgang that is matching enough
+///     a. if found exactly one, update the vorgang, see 2.
 ///     b. if found more than one, send a message to the admins to select one
-///     c. if found none, create a new gsvh, return
-/// 2. if a., then update the gsvh properties
-/// 3. for each station in the new gsvh, find a matching station
+///     c. if found none, create a new vorgang, return
+/// 2. if a., then update the vorgang properties
+/// 3. for each station in the new vorgang, find a matching station
 ///     a. if found exactly one, update it, see 4.
 ///     b. if found more than one, send a message to the admins to select one
 ///     c. if found none, create a new station & insert
@@ -35,7 +35,7 @@ pub enum MergeState<T> {
 }
 
 #[derive(QueryableByName, Debug, PartialEq, Eq, Hash, Clone)]
-#[diesel(table_name=schema::gesetzesvorhaben)]
+#[diesel(table_name=schema::vorgang)]
 struct GSVHID {
     id: i32,
 }
@@ -48,18 +48,18 @@ struct STATID {
 /// this function determines what means "matching enough".
 /// I propose:
 /// 1. title match: if the titles are similar enough (to be determined)
-/// 2. any existing station must match the parliamentary track of the incoming gsvh
+/// 2. any existing station must match the parliamentary track of the incoming vorgang
 ///
-pub async fn gsvh_merge_candidates(
-    model: &models::Gesetzesvorhaben,
+pub async fn vorgang_merge_candidates(
+    model: &models::Vorgang,
     connection: &AsyncConnection,
-) -> Result<MergeState<(i32, models::Gesetzesvorhaben)>> {
+) -> Result<MergeState<(i32, models::Vorgang)>> {
     let apiid = model.api_id.clone();
     let x = connection
         .interact(move |conn| {
-            schema::gesetzesvorhaben::table
-                .filter(schema::gesetzesvorhaben::api_id.eq(apiid))
-                .select(schema::gesetzesvorhaben::id)
+            schema::vorgang::table
+                .filter(schema::vorgang::api_id.eq(apiid))
+                .select(schema::vorgang::id)
                 .first::<i32>(conn)
                 .optional()
         })
@@ -70,16 +70,16 @@ pub async fn gsvh_merge_candidates(
     }
 
     let result = if let Some(ids) = model.ids.clone() {
-        let query = "SELECT gesetzesvorhaben.id, titel FROM gesetzesvorhaben, gesetzestyp
-        WHERE SIMILARITY(gesetzesvorhaben.titel, $1) > 0.8
-        AND gesetzesvorhaben.typ = gesetzestyp.id
+        let query = "SELECT vorgang.id, titel FROM vorgang, gesetzestyp
+        WHERE SIMILARITY(vorgang.titel, $1) > 0.8
+        AND vorgang.typ = gesetzestyp.id
         AND gesetzestyp.api_key = $2
         OR EXISTS(
-            SELECT 1 FROM rel_gsvh_id, identifikatortyp 
-            WHERE rel_gsvh_id.gsvh_id = gesetzesvorhaben.id AND 
-                    identifikatortyp.id = rel_gsvh_id.typ AND
+            SELECT 1 FROM rel_vorgang_id, identifikatortyp 
+            WHERE rel_vorgang_id.vorgang_id = vorgang.id AND 
+                    identifikatortyp.id = rel_vorgang_id.typ AND
                     identifikatortyp.api_key = $3 AND
-                    rel_gsvh_id.identifikator = $4)";
+                    rel_vorgang_id.identifikator = $4)";
         tracing::trace!("Executing Query: {}", query);
         let mut result: HashSet<GSVHID> = HashSet::new();
 
@@ -102,9 +102,9 @@ pub async fn gsvh_merge_candidates(
         result.drain().collect::<Vec<_>>()
     } else {
         // select where title is pretty equal and the stations belong to the same 
-        let query = "SELECT gesetzesvorhaben.id, titel FROM gesetzesvorhaben, gesetzestyp
-        WHERE SIMILARITY(gesetzesvorhaben.titel, $1) > 0.8
-        AND gesetzesvorhaben.typ = gesetzestyp.id
+        let query = "SELECT vorgang.id, titel FROM vorgang, gesetzestyp
+        WHERE SIMILARITY(vorgang.titel, $1) > 0.8
+        AND vorgang.typ = gesetzestyp.id
         AND gesetzestyp.api_key = $2";
         tracing::trace!("Executing Query: {}", query);
         let titel = model.titel.clone();
@@ -131,12 +131,12 @@ pub async fn gsvh_merge_candidates(
         0 => MergeState::NoMatch,
         1 => MergeState::OneMatch((
             result[0].id,
-            super::retrieve::gsvh_by_id(result[0].id, connection).await?,
+            super::retrieve::vorgang_by_id(result[0].id, connection).await?,
         )),
         _ => {
             let mut asvec = vec![];
             for i in result {
-                asvec.push((i.id, super::retrieve::gsvh_by_id(i.id, connection).await?));
+                asvec.push((i.id, super::retrieve::vorgang_by_id(i.id, connection).await?));
             }
             MergeState::AmbiguousMatch(asvec)
         }
@@ -144,47 +144,47 @@ pub async fn gsvh_merge_candidates(
 }
 
 /// Updates a GSVH based on similarity.
-pub fn update_gsvh(
-    model: &models::Gesetzesvorhaben,
-    candidate: (i32, models::Gesetzesvorhaben),
+pub fn update_vorgang(
+    model: &models::Vorgang,
+    candidate: (i32, models::Vorgang),
     connection: &mut PgConnection,
 ) -> Result<()> {
     let db_id = candidate.0;
-    diesel::update(schema::gesetzesvorhaben::table)
-        .filter(schema::gesetzesvorhaben::id.eq(db_id))
+    diesel::update(schema::vorgang::table)
+        .filter(schema::vorgang::id.eq(db_id))
         .set((
-            schema::gesetzesvorhaben::verfaend.eq(model.verfassungsaendernd),
+            schema::vorgang::verfaend.eq(model.verfassungsaendernd),
         ))
         .execute(connection)?;
-    diesel::delete(schema::rel_gsvh_init::table)
-        .filter(schema::rel_gsvh_init::gsvh_id.eq(db_id))
+    diesel::delete(schema::rel_vorgang_init::table)
+        .filter(schema::rel_vorgang_init::vorgang_id.eq(db_id))
         .execute(connection)?;
-    diesel::insert_into(schema::rel_gsvh_init::table)
+    diesel::insert_into(schema::rel_vorgang_init::table)
         .values(
             model
                 .initiatoren
                 .iter()
                 .map(|init| {
                     (
-                        schema::rel_gsvh_init::gsvh_id.eq(db_id),
-                        schema::rel_gsvh_init::initiator.eq(init.clone()),
+                        schema::rel_vorgang_init::vorgang_id.eq(db_id),
+                        schema::rel_vorgang_init::initiator.eq(init.clone()),
                     )
                 })
                 .collect::<Vec<_>>(),
         )
         .execute(connection)?;
-    diesel::delete(schema::rel_gsvh_links::table)
-        .filter(schema::rel_gsvh_links::gsvh_id.eq(db_id))
+    diesel::delete(schema::rel_vorgang_links::table)
+        .filter(schema::rel_vorgang_links::vorgang_id.eq(db_id))
         .execute(connection)?;
     if let Some(links) = model.links.as_ref() {
-        diesel::insert_into(schema::rel_gsvh_links::table)
+        diesel::insert_into(schema::rel_vorgang_links::table)
             .values(
                 links
                     .iter()
                     .map(|link| {
                         (
-                            schema::rel_gsvh_links::gsvh_id.eq(db_id),
-                            schema::rel_gsvh_links::link.eq(link.clone()),
+                            schema::rel_vorgang_links::vorgang_id.eq(db_id),
+                            schema::rel_vorgang_links::link.eq(link.clone()),
                         )
                     })
                     .collect::<Vec<_>>(),
@@ -202,7 +202,7 @@ pub fn update_gsvh(
             station.parl_id = parlament.id AND
             stationstyp.api_key = $1 AND
             parlament.api_key = $2 AND
-            (SIMILARITY(station.gremium, $3) > 0.5
+            (FALSE
             OR EXISTS (
                 SELECT 1 FROM dokument, rel_station_dokument WHERE 
                 rel_station_dokument.stat_id = station.id AND
@@ -237,7 +237,7 @@ pub fn update_gsvh(
             station.parl_id = parlament.id AND
             stationstyp.api_key = $1 AND
             parlament.api_key = $2 AND
-            (SIMILARITY(station.gremium, $3) > 0.8
+            ( 
             OR EXISTS (
                 SELECT 1 FROM dokument, rel_station_dokument WHERE 
                 rel_station_dokument.stat_id = station.id AND
@@ -252,11 +252,9 @@ pub fn update_gsvh(
         )};
         let typ = station.typ.clone();
         let parl = station.parlament.clone();
-        let gremium = station.gremium.clone();
         let result = diesel::sql_query(similarity_query.as_str())
             .bind::<diesel::sql_types::Text, _>(typ.to_string())
             .bind::<diesel::sql_types::Text, _>(parl.to_string())
-            .bind::<diesel::sql_types::Text, _>(gremium)
             .bind::<diesel::sql_types::Integer, _>(db_id)
             .get_results::<STATID>(connection)?
             .iter()
@@ -269,10 +267,9 @@ pub fn update_gsvh(
             diesel::update(schema::station::table)
                 .filter(schema::station::id.eq(stat_id))
                 .set((
-                    schema::station::gremium.eq(station.gremium.clone()),
-                    schema::station::trojaner.eq(station.trojaner.clone().unwrap_or(false)),
+                    schema::station::trojanergefahr.eq(station.trojanergefahr.clone().unwrap_or(0) as i32),
                     schema::station::link.eq(station.link.clone()),
-                    schema::station::datum.eq(chrono::NaiveDateTime::from(station.datum).and_utc()),
+                    schema::station::zeitpunkt.eq(station.zeitpunkt),
                 ))
                 .execute(connection)?;
             // rep sw
@@ -342,8 +339,9 @@ pub fn update_gsvh(
                         super::insert::insert_dokument(stellungnahme.dokument.clone(), connection)?;
                     diesel::insert_into(schema::stellungnahme::table)
                         .values((
-                            schema::stellungnahme::meinung.eq(stellungnahme.meinung),
+                            schema::stellungnahme::meinung.eq(stellungnahme.meinung as i32),
                             schema::stellungnahme::dok_id.eq(dok_id),
+                            schema::stellungnahme::volltext.eq(stellungnahme.volltext.clone()),
                             schema::stellungnahme::stat_id.eq(stat_id),
                             schema::stellungnahme::lobbyreg_link.eq(stellungnahme
                                 .lobbyregister_link
@@ -361,13 +359,13 @@ pub fn update_gsvh(
     Ok(())
 }
 
-pub async fn run(model: &models::Gesetzesvorhaben, server: &LTZFServer) -> Result<()> {
+pub async fn run(model: &models::Vorgang, server: &LTZFServer) -> Result<()> {
     let connection = server.database.get().await?;
     tracing::debug!(
         "Looking for Merge Candidates for GSVH with api_id: {:?}",
         model.api_id
     );
-    let candidates = gsvh_merge_candidates(model, &connection).await?;
+    let candidates = vorgang_merge_candidates(model, &connection).await?;
     match candidates {
         MergeState::NoMatch => {
             tracing::info!(
@@ -378,7 +376,7 @@ pub async fn run(model: &models::Gesetzesvorhaben, server: &LTZFServer) -> Resul
             //create GSVH
             connection
                 .interact(move |conn| {
-                    conn.transaction(|conn| super::insert::insert_gsvh(&model, conn))
+                    conn.transaction(|conn| super::insert::insert_vorgang(&model, conn))
                 })
                 .await??;
         }
@@ -390,7 +388,7 @@ pub async fn run(model: &models::Gesetzesvorhaben, server: &LTZFServer) -> Resul
             );
             let model = model.clone();
             connection
-                .interact(move |conn| conn.transaction(move |conn| update_gsvh(&model, one, conn)))
+                .interact(move |conn| conn.transaction(move |conn| update_vorgang(&model, one, conn)))
                 .await??;
             //update GSVH
         }
@@ -424,7 +422,7 @@ mod scenariotests{
     use diesel::prelude::*;
     use deadpool_diesel::postgres::{Pool, Manager, Connection};
     use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
-    use openapi::models::{self, GsvhGetQueryParams};
+    use openapi::models::{self, VorgangGetHeaderParams, VorgangGetQueryParams};
     use serde::Deserialize;
     use crate::LTZFServer;
 
@@ -437,18 +435,18 @@ mod scenariotests{
     #[allow(unused)]
     struct TestScenario<'obj>{
         name: &'obj str,
-        context: Vec<models::Gesetzesvorhaben>,
-        gsvh: models::Gesetzesvorhaben,
-        result: Vec<models::Gesetzesvorhaben>,
+        context: Vec<models::Vorgang>,
+        vorgang: models::Vorgang,
+        result: Vec<models::Vorgang>,
         shouldfail: bool,
         server: LTZFServer,
         span: tracing::Span,
     }
     #[derive(Deserialize)]
     struct PTS{
-        context: Vec<models::Gesetzesvorhaben>,
-        gsvh: models::Gesetzesvorhaben,
-        result: Vec<models::Gesetzesvorhaben>,
+        context: Vec<models::Vorgang>,
+        vorgang: models::Vorgang,
+        result: Vec<models::Vorgang>,
         #[serde(default = "default_bool")]
         shouldfail: bool
     }
@@ -478,13 +476,13 @@ mod scenariotests{
             conn.run_pending_migrations(MIGRATIONS).map(|_| ()))
             .await.unwrap().unwrap();
             info!("Migrations applied");
-            for gsvh in pts.context.iter() {
-                super::run(gsvh, &server).await.unwrap()
+            for vorgang in pts.context.iter() {
+                super::run(vorgang, &server).await.unwrap()
             }
             Self {
                 name,
                 context: pts.context,
-                gsvh: pts.gsvh,
+                vorgang: pts.vorgang,
                 result: pts.result,
                 shouldfail: pts.shouldfail,
                 span,
@@ -496,24 +494,26 @@ mod scenariotests{
         }
         async fn push(&self) {
             info!("Running main Merge test");
-            super::run(&self.gsvh, &self.server).await.unwrap();
+            super::run(&self.vorgang, &self.server).await.unwrap();
         }
         async fn check(&self) {
             info!("Checking for Correctness");
-            let paramock = GsvhGetQueryParams{
-                ggtyp: None, 
-                if_modified_since: None,
+            let paramock = VorgangGetQueryParams{
+                ggtyp: None,
                 initiator_contains_any: None, 
                 limit: Some((self.result.len()*2) as i32),
                 offset: None};
-            let db_gsvhs = crate::db::retrieve::gsvh_by_parameter(
-                paramock, &mut self.get_conn().await).await.unwrap();
-            let mut set = HashSet::with_capacity(db_gsvhs.len());
+            let hparamock = VorgangGetHeaderParams{
+                if_modified_since: None,
+            };
+            let db_vorgangs = crate::db::retrieve::vorgang_by_parameter(
+                paramock, hparamock, &mut self.get_conn().await).await.unwrap();
+            let mut set = HashSet::with_capacity(db_vorgangs.len());
             for thing in self.result.iter() {
                 tracing::info!("Adding `{}` to result set", thing.api_id);
                 set.insert(serde_json::to_string(thing).unwrap());
             }
-            for thing in db_gsvhs.iter() {
+            for thing in db_vorgangs.iter() {
                 let serialized = serde_json::to_string(thing).unwrap();
                 let result = set.remove(&serialized);
                 if !result{

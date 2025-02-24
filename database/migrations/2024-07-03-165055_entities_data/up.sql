@@ -40,7 +40,7 @@ CREATE TABLE vorgang (
     verfaend BOOLEAN NOT NULL,
     wahlperiode INTEGER NOT NULL,
     typ INTEGER NOT NULL REFERENCES vorgangstyp(id) ON DELETE CASCADE,
-    CONSTRAINT unique_vorgang_titel_typ UNIQUE (titel, typ)
+    CONSTRAINT unique_vorgang_titel_typ UNIQUE (titel, typ, wahlperiode)
 );
 CREATE TABLE rel_vorgang_init(
     vorgang_id INTEGER NOT NULL REFERENCES vorgang(id) ON DELETE CASCADE,
@@ -96,8 +96,8 @@ CREATE TABLE station (
     typ INTEGER NOT NULL REFERENCES stationstyp(id) ON DELETE CASCADE,
     titel VARCHAR,
 
-    zeitpunkt TIMESTAMP WITH TIME ZONE NOT NULL,
-    trojanergefahr INTEGER NOT NULL,
+    zeitpunkt TIMESTAMP WITH TIME ZONE,
+    trojanergefahr INTEGER,
     link VARCHAR
 );
 CREATE TABLE rel_station_ausschusssitzung(

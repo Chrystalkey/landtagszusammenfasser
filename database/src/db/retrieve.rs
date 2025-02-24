@@ -7,41 +7,42 @@ use diesel::prelude::*;
 use openapi::models;
 
 mod db_models {
-    use chrono::NaiveDate;
     use diesel::prelude::*;
     use uuid::Uuid;
 
     #[derive(Queryable)]
-    pub struct Gesetzesvorhaben {
+    pub struct Vorgang {
         pub id: i32,
+        pub wahlperiode: i32,
         pub api_id: Uuid,
         pub verfassungsaendernd: bool,
         pub titel: String,
         pub typ: String,
     }
     pub struct Station {
+        pub titel: Option<String>,
         pub parlament: i32,
         pub stationstyp: i32,
-        pub gremium: String,
-        pub datum: NaiveDate,
-        pub trojaner: bool,
+        pub zeitpunkt: Option<chrono::DateTime<chrono::Utc>>,
+        pub trojaner: Option<i32>,
         pub link: Option<String>,
     }
 }
 
-pub async fn gsvh_by_id(id: i32, connection: &Connection) -> Result<models::Gesetzesvorhaben> {
-    use schema::gesetzesvorhaben::dsl;
-    let res: db_models::Gesetzesvorhaben = connection
+pub async fn vorgang_by_id(id: i32, connection: &Connection) -> Result<models::Vorgang> {
+    use schema::vorgang::dsl;
+    let res: db_models::Vorgang = connection
         .interact(move |conn| {
-            schema::gesetzesvorhaben::table
+            schema::vorgang::table
                 .filter(dsl::id.eq(id))
-                .inner_join(schema::gesetzestyp::table)
+                .inner_join(schema::vorgangstyp::table)
                 .select((
                     dsl::id,
+                    dsl::wahlperiode,
                     dsl::api_id,
                     dsl::verfaend,
                     dsl::titel,
-                    schema::gesetzestyp::dsl::api_key,
+                    schema::vorgangstyp::dsl::api_key,
                 ))
                 .get_result(conn)
         })
@@ -49,37 +50,37 @@ pub async fn gsvh_by_id(id: i32, connection: &Connection) -> Result<models::Gese
 
     let links = connection
         .interact(move |conn| {
-            schema::rel_gsvh_links::table
-                .select(schema::rel_gsvh_links::link)
-                .filter(schema::rel_gsvh_links::gsvh_id.eq(res.id))
+            schema::rel_vorgang_links::table
+                .select(schema::rel_vorgang_links::link)
+                .filter(schema::rel_vorgang_links::vorgang_id.eq(res.id))
                 .get_results::<String>(conn)
         })
         .await??;
     let initiatoren = connection
         .interact(move |conn| {
-            schema::rel_gsvh_init::table
-                .select(schema::rel_gsvh_init::initiator)
-                .filter(schema::rel_gsvh_init::gsvh_id.eq(res.id))
+            schema::rel_vorgang_init::table
+                .select(schema::rel_vorgang_init::initiator)
+                .filter(schema::rel_vorgang_init::vorgang_id.eq(res.id))
                 .get_results::<String>(conn)
         })
         .await??;
     let init_personen = as_option(connection
         .interact(move |conn| {
-            schema::rel_gsvh_init_person::table
-                .select(schema::rel_gsvh_init_person::initiator)
-                .filter(schema::rel_gsvh_init_person::gsvh_id.eq(res.id))
+            schema::rel_vorgang_init_person::table
+                .select(schema::rel_vorgang_init_person::initiator)
+                .filter(schema::rel_vorgang_init_person::vorgang_id.eq(res.id))
                 .get_results::<String>(conn)
         })
         .await??);
 
     let ids = connection
         .interact(move |conn| {
-            schema::rel_gsvh_id::table
-                .filter(schema::rel_gsvh_id::gsvh_id.eq(id))
+            schema::rel_vorgang_id::table
+                .filter(schema::rel_vorgang_id::vorgang_id.eq(id))
                 .inner_join(schema::identifikatortyp::table)
                 .select((
                     schema::identifikatortyp::api_key,
-                    schema::rel_gsvh_id::identifikator,
+                    schema::rel_vorgang_id::identifikator,
                 ))
                 .get_results::<(String, String)>(conn)
         })
@@ -94,7 +95,7 @@ pub async fn gsvh_by_id(id: i32, connection: &Connection) -> Result<models::Gese
     let stat_ids: Vec<i32> = connection
         .interact(move |conn| {
             schema::station::table
-                .filter(schema::station::gsvh_id.eq(id))
+                .filter(schema::station::vorgang_id.eq(id))
                 .select(schema::station::id)
                 .get_results::<i32>(conn)
         })
@@ -105,11 +106,12 @@ pub async fn gsvh_by_id(id: i32, connection: &Connection) -> Result<models::Gese
         stationen.push(station_by_id(sid, connection).await?);
     }
 
-    Ok(models::Gesetzesvorhaben {
+    Ok(models::Vorgang {
         api_id: res.api_id,
         titel: res.titel,
+        wahlperiode: res.wahlperiode as u32,
         verfassungsaendernd: res.verfassungsaendernd,
-        typ: models::Gesetzestyp::from_str(res.typ.as_str())
+        typ: models::Vorgangstyp::from_str(res.typ.as_str())
             .map_err(|e| DataValidationError::InvalidEnumValue { msg: e })?,
         initiatoren,
         initiator_personen: init_personen,
@@ -118,7 +120,9 @@ pub async fn gsvh_by_id(id: i32, connection: &Connection) -> Result<models::Gese
         stationen: stationen,
     })
 }
-
+pub async fn ausschusssitzung_by_id(id: i32, connection: &Connection) -> Result<models::Ausschusssitzung>{
+    todo!("Implement");
+}
 pub async fn station_by_id(id: i32, connection: &Connection) -> Result<models::Station> {
     let mut doks = vec![];
     let dids = connection
@@ -160,9 +164,9 @@ pub async fn station_by_id(id: i32, connection: &Connection) -> Result<models::S
     let rval: (
         i32,
         i32,
-        String,
-        crate::DateTime,
-        bool,
+        Option<crate::DateTime>,
+        Option<i32>,
+        Option<String>,
         Option<String>,
     ) = connection
         .interact(move |conn| {
@@ -171,10 +175,10 @@ pub async fn station_by_id(id: i32, connection: &Connection) -> Result<models::S
                 .select((
                     schema::station::parl_id,
                     schema::station::typ,
-                    schema::station::gremium,
-                    schema::station::datum,
-                    schema::station::trojaner,
+                    schema::station::zeitpunkt,
+                    schema::station::trojanergefahr,
                     schema::station::link,
+                    schema::station::titel,
                 ))
                 .first(conn)
         })
@@ -182,10 +186,10 @@ pub async fn station_by_id(id: i32, connection: &Connection) -> Result<models::S
     let scaffold = db_models::Station {
         parlament: rval.0,
         stationstyp: rval.1,
-        gremium: rval.2,
-        datum: rval.3.date_naive(),
-        trojaner: rval.4,
-        link: rval.5,
+        zeitpunkt: rval.2,
+        trojaner: rval.3,
+        link: rval.4,
+        titel: rval.5,
     };
     let (parl, styp) = connection
         .interact(move |conn| {
@@ -201,7 +205,7 @@ pub async fn station_by_id(id: i32, connection: &Connection) -> Result<models::S
             )
         })
         .await?;
-    let betroffene_texte = connection
+    let bt = connection
         .interact(move |conn| {
             schema::rel_station_gesetz::table
                 .filter(schema::rel_station_gesetz::stat_id.eq(id))
@@ -209,6 +213,24 @@ pub async fn station_by_id(id: i32, connection: &Connection) -> Result<models::S
                 .get_results::<String>(conn)
         })
         .await??;
+    let betroffene_texte = if bt.is_empty(){None}else{Some(bt)};
+
+    let ass_ids : Vec<i32> = connection.interact(move |conn|
+        schema::rel_station_ausschusssitzung::table
+        .filter(schema::rel_station_ausschusssitzung::stat_id.eq(id))
+        .select(schema::rel_station_ausschusssitzung::as_id)
+        .get_results::<i32>(conn)
+    ).await??;
+    let as_objects : Option<Vec<models::Ausschusssitzung>> = if !ass_ids.is_empty() {
+        let mut res = vec![];
+        for ass_id in ass_ids{
+            res.push(ausschusssitzung_by_id(ass_id, connection).await?);
+        }
+        Some(res)
+    } else {
+        None
+    };
+
     return Ok(models::Station {
         parlament: models::Parlament::from_str(parl?.as_str())
             .map_err(|e| DataValidationError::InvalidEnumValue { msg: e })?,
@@ -217,10 +239,11 @@ pub async fn station_by_id(id: i32, connection: &Connection) -> Result<models::S
         dokumente: doks,
         schlagworte: Some(schlagworte),
         stellungnahmen: Some(stellungnahmen),
-        gremium: scaffold.gremium,
-        datum: scaffold.datum,
+        zeitpunkt : scaffold.zeitpunkt,
         betroffene_texte,
-        trojaner: Some(scaffold.trojaner),
+        trojanergefahr: scaffold.trojaner.map(|x| x as u8),
+        titel: scaffold.titel,
+        ausschusssitzungen: as_objects,
         link: scaffold.link,
     });
 }
@@ -229,7 +252,7 @@ pub async fn stellungnahme_by_id(
     id: i32,
     connection: &Connection,
 ) -> Result<models::Stellungnahme> {
-    let rval: (i32, Option<i32>, Option<String>) = connection
+    let rval: (i32, i32, Option<String>, Option<String>) = connection
         .interact(move |conn| {
             schema::stellungnahme::table
                 .filter(schema::stellungnahme::id.eq(id))
@@ -237,6 +260,7 @@ pub async fn stellungnahme_by_id(
                     schema::stellungnahme::dok_id,
                     schema::stellungnahme::meinung,
                     schema::stellungnahme::lobbyreg_link,
+                    schema::stellungnahme::volltext,
                 ))
                 .first(conn)
         })
@@ -244,7 +268,8 @@ pub async fn stellungnahme_by_id(
 
     return Ok(models::Stellungnahme {
         dokument: dokument_by_id(rval.0, connection).await?,
-        meinung: rval.1,
+        meinung: rval.1 as u8,
+        volltext: rval.3,
         lobbyregister_link: rval.2,
     });
 }
@@ -257,6 +282,7 @@ pub async fn dokument_by_id(id: i32, connection: &Connection) -> Result<models::
         String,
         Option<String>,
         String,
+        Option<String>,
     ) = connection
         .interact(move |conn| {
             use schema::dokument::dsl;
@@ -265,11 +291,12 @@ pub async fn dokument_by_id(id: i32, connection: &Connection) -> Result<models::
                 .inner_join(schema::dokumententyp::table)
                 .select((
                     dsl::titel,
-                    dsl::datum,
+                    dsl::last_mod,
                     dsl::link,
                     dsl::hash,
                     dsl::zusammenfassung,
                     schema::dokumententyp::dsl::api_key,
+                    dsl::volltext,
                 ))
                 .first(conn)
         })
@@ -310,40 +337,42 @@ pub async fn dokument_by_id(id: i32, connection: &Connection) -> Result<models::
         schlagworte,
         autoren,
         autorpersonen,
+        volltext: ret.6,
         typ: models::Dokumententyp::from_str(ret.5.as_str())
             .map_err(|e| DataValidationError::InvalidEnumValue { msg: e })?,
     });
 }
 
 #[derive(QueryableByName, Debug, PartialEq, Eq, Hash, Clone)]
-#[diesel(table_name=schema::gesetzesvorhaben)]
+#[diesel(table_name=schema::vorgang)]
 struct GSVHID {
     id: i32,
 }
 
-pub async fn gsvh_by_parameter(
-    params: models::GsvhGetQueryParams,
+pub async fn vorgang_by_parameter(
+    params: models::VorgangGetQueryParams,
+    hparam: models::VorgangGetHeaderParams,
     connection: &mut Connection,
-) -> Result<Vec<models::Gesetzesvorhaben>> {
-    let pretable_join = "SELECT gesetzesvorhaben.id, MAX(station.datum) as moddate FROM gesetzesvorhaben, station, gesetzestyp, rel_gsvh_init
-    WHERE gesetzesvorhaben.id = station.gsvh_id 
-    AND gesetzesvorhaben.id = rel_gsvh_init.gsvh_id
-    AND gesetzesvorhaben.typ = gesetzestyp.id";
+) -> Result<Vec<models::Vorgang>> {
+    let pretable_join = "SELECT vorgang.id, MAX(station.datum) as moddate FROM vorgang, station, vorgangstyp, rel_vorgang_init
+    WHERE vorgang.id = station.vorgang_id 
+    AND vorgang.id = rel_vorgang_init.vorgang_id
+    AND vorgang.typ = vorgangstyp.id";
     let mut param_counter = 0;
     let query = format!(
-        "WITH gsvh_moddate as ({}
+        "WITH vorgang_moddate as ({}
         {}
         {}
-        GROUP BY gesetzesvorhaben.id
+        GROUP BY vorgang.id
     )
-    SELECT gsvh_moddate.id FROM gsvh_moddate
+    SELECT vorgang_moddate.id FROM vorgang_moddate
     {}
     ORDER BY moddate DESC
     {}
     {}", pretable_join,
-        if params.ggtyp.is_some() {param_counter += 1;format!("AND gesetzestyp.api_key = ${}", param_counter)} else {String::new()},
+        if params.ggtyp.is_some() {param_counter += 1;format!("AND vorgangstyp.api_key = ${}", param_counter)} else {String::new()},
         if params.initiator_contains_any.is_some() {param_counter += 1;format!("AND ${} = ANY(rel_gsvh_init.initiator)", param_counter)} else {String::new()},
-        if params.if_modified_since.is_some() {param_counter += 1;format!("AND moddate >= ${}", param_counter)} else {String::new()},
+        if hparam.if_modified_since.is_some() {param_counter += 1;format!("AND moddate >= ${}", param_counter)} else {String::new()},
         if params.limit.is_some() {param_counter += 1;format!("LIMIT ${}", param_counter)} else {String::new()},
         if params.offset.is_some() {param_counter += 1;format!("OFFSET ${}", param_counter)} else {String::new()}
     );
@@ -357,7 +386,7 @@ pub async fn gsvh_by_parameter(
     if let Some(any_init) = params.initiator_contains_any{
         diesel_query = diesel_query.bind::<diesel::sql_types::Array<diesel::sql_types::Text>, _>(any_init);
     }
-    if let Some(moddate) = params.if_modified_since{
+    if let Some(moddate) = hparam.if_modified_since{
         diesel_query = diesel_query.bind::<diesel::sql_types::Timestamp, _>(moddate.naive_utc());
     }
     if let Some(limit) = params.limit{
@@ -373,7 +402,7 @@ pub async fn gsvh_by_parameter(
 
     let mut vector = vec![];
     for id in ids{
-        vector.push(super::retrieve::gsvh_by_id(id.id, connection).await?);
+        vector.push(super::retrieve::vorgang_by_id(id.id, connection).await?);
     }
     Ok(vector)
 }

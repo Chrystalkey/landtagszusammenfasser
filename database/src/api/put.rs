@@ -1,10 +1,10 @@
 use crate::{Result, LTZFServer};
-use openapi::{apis::default::GsvhPutResponse, models};
+use openapi::{apis::default::VorgangPutResponse, models};
 
-pub async fn api_v1_gesetzesvorhaben_gsvh_id_put(
+pub async fn api_v1_vorgang_id_put(
     _server: &LTZFServer,
-    _path_params: models::GsvhPutPathParams,
-    _body: models::Gesetzesvorhaben,
-) -> Result<GsvhPutResponse>{
+    _path_params: models::VorgangPutPathParams,
+    _body: models::Vorgang,
+) -> Result<VorgangPutResponse>{
     todo!();
 }

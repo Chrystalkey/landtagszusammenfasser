@@ -193,8 +193,8 @@ diesel::table! {
         parl_id -> Int4,
         typ -> Int4,
         titel -> Nullable<Varchar>,
-        zeitpunkt -> Timestamptz,
-        trojanergefahr -> Int4,
+        zeitpunkt -> Nullable<Timestamptz>,
+        trojanergefahr -> Nullable<Int4>,
         link -> Nullable<Varchar>,
     }
 }
