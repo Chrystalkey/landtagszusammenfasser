@@ -5,6 +5,22 @@ use crate::Result;
 use diesel::prelude::*;
 use super::schema;
 
+mod db_models{
+    use diesel::prelude::*;
+
+    pub struct ID{
+        pub id: i32
+    }
+    impl QueryableByName<diesel::pg::Pg> for ID{
+        fn build<'a>(row: &impl diesel::row::NamedRow<'a, diesel::pg::Pg>) -> diesel::deserialize::Result<Self> {
+            Ok(
+                ID { id: 
+                    diesel::row::NamedRow::get(row, "id")?
+                 }
+            )
+        }
+    }
+}
 /// Inserts a new GSVH into the database.
 pub fn insert_vorgang(
     api_vorgang: &models::Vorgang,
@@ -150,9 +166,33 @@ pub fn insert_station(
         tracing::warn!("{}", &string);
         return Err(crate::error::LTZFError::Validation { source: crate::error::DataValidationError::InvalidEnumValue { msg: string } });
     }
-    if let Some(_) = stat.ausschusssitzungen {
-        let string = "Ausschussitzungen müssen über den Endpoint /ausschusssitzungen hinzugefügt werden. Diese werden ignoriert";
+    if let Some(auss) = stat.ausschusssitzungen {
+        let string = 
+        "Ausschussitzungen werden über den Endpoint /ausschusssitzungen hinzugefügt. 
+        Die Daten der Ausschusssitzungen hier werden ignoriert";
         tracing::warn!(string);
+
+        for ass in auss {
+            // find a potentially corresponding AS in the db.
+            let stmt_rs = diesel::sql_query(
+                "SELECT ausschusssitzung.id FROM ausschusssitzung, ausschuss
+WHERE
+ausschuss.id = ausschusssitzung.as_id
+AND termin BETWEEN $1 AND $2
+AND SIMILARITY(ausschuss.name, $3) > 0.6
+ORDER BY SIMILARITY(ausschuss.name, $3) DESC
+LIMIT 1;")
+            .bind::<diesel::sql_types::Timestamptz, _>(ass.termin.checked_sub_signed(chrono::TimeDelta::hours(6)).unwrap())
+            .bind::<diesel::sql_types::Timestamptz, _>(ass.termin.checked_add_signed(chrono::TimeDelta::hours(6)).unwrap())
+            .bind::<diesel::sql_types::VarChar, _>(ass.ausschuss.name)
+            .get_result::<db_models::ID>(connection)
+            .optional()?;
+            if let Some(asid) = stmt_rs{
+                let asid = asid.id;
+                todo!()
+                // set the tops there to reference this vorgang
+            }
+        }
     }
 
     // betroffene gesetzestexte
@@ -259,11 +299,14 @@ pub fn insert_dokument(
                 schema::dokumententyp::table.select(schema::dokumententyp::id)
                 .filter(schema::dokumententyp::api_key.eq(&dok.typ.to_string()))
                 .first::<i32>(connection)?
-            )
+            ),
+            dsl::volltext.eq(dok.volltext),
+            dsl::drucksnr.eq(dok.drucksnr)
         )
     )
     .returning(dsl::id)
     .get_result::<i32>(connection)?;
+    // Schlagworte
     if let Some(sw) = dok.schlagworte{
         diesel::insert_into(schema::schlagwort::table)
         .values(

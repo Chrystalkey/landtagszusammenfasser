@@ -27,6 +27,33 @@ mod db_models {
         pub trojaner: Option<i32>,
         pub link: Option<String>,
     }
+    
+    #[derive(PartialEq, Debug)]
+    pub struct Top {
+        pub id: i32,
+        pub nummer: i32,
+        pub titel: String,
+        pub vorgang_id: Option<uuid::Uuid>
+    }
+
+    impl QueryableByName<diesel::pg::Pg> for Top{
+        fn build<'a>(row: &impl diesel::row::NamedRow<'a, diesel::pg::Pg>) -> diesel::deserialize::Result<Self> {
+            let id = 
+            diesel::row::NamedRow::get::<diesel::sql_types::Int4, _>(row, "id")?;
+            let nummer = 
+            diesel::row::NamedRow::get::<diesel::sql_types::Int4, _>(row, "nummer")?;
+            let titel = 
+            diesel::row::NamedRow::get::<diesel::sql_types::VarChar, _>(row, "titel")?;
+            let vorgang_id = diesel::row::NamedRow::get
+            ::<diesel::sql_types::Nullable<diesel::sql_types::Uuid>, _>(row,"api_id")?;
+            Ok(Top{
+                id,
+                nummer,
+                titel,
+                vorgang_id
+            })
+        }
+    }
 }
 
 pub async fn vorgang_by_id(id: i32, connection: &Connection) -> Result<models::Vorgang> {
@@ -120,8 +147,73 @@ pub async fn vorgang_by_id(id: i32, connection: &Connection) -> Result<models::V
         stationen: stationen,
     })
 }
-pub async fn ausschusssitzung_by_id(id: i32, connection: &Connection) -> Result<models::Ausschusssitzung>{
-    todo!("Implement");
+
+pub async fn ausschusssitzung_by_id(id: i32, connection: &Connection) -> Result<models::Ausschusssitzung> {
+    let temps:(i32, bool, crate::DateTime)  = connection.interact(move |conn|{
+        schema::ausschusssitzung::table
+        .select ((schema::ausschusssitzung::as_id, schema::ausschusssitzung::public, schema::ausschusssitzung::termin))
+        .filter(schema::ausschusssitzung::id.eq(id))
+        .first(conn)
+    }).await??;
+    let termin = temps.2;
+    let as_temp : (String, String) = 
+    connection.interact(move |conn|{
+        schema::ausschuss::table
+        .inner_join(schema::parlament::table)
+        .filter(schema::ausschuss::id.eq(temps.0))
+        .select((schema::ausschuss::columns::name, schema::parlament::api_key))
+        .first(conn)
+    }).await??;
+    let ausschuss = models::Ausschuss{
+        name: as_temp.0,
+        parlament: models::Parlament::from_str(&as_temp.1).map_err(|e| LTZFError::Validation { source: DataValidationError::InvalidEnumValue { msg: e } })?
+    };
+    let mut pre_tops = connection.interact(move |conn|{
+        diesel::sql_query(
+            "SELECT top.id as id, top.nummer as nummer, vorgang.api_id as api_id, top.titel as titel FROM top
+            JOIN rel_ass_tops ON rel_ass_tops.top_id = top.id AND rel_ass_tops.ass_id = $1
+            LEFT JOIN vorgang ON top.vorgang_id = vorgang.id;"
+        ).bind::<diesel::sql_types::Integer, _>(id)
+        .get_results::<db_models::Top>(conn)
+    }).await??
+    .drain(..)
+    .map(|x| (models::Top {
+        nummer: x.nummer as u32,
+        titel: x.titel,
+        vorgang_id: x.vorgang_id,
+        drucksachen: None
+    }, x.id)).collect::<Vec<_>>();
+    let mut tops = Vec::with_capacity(pre_tops.len());
+    for (mut top, tid) in pre_tops.drain(..){
+        let drucks = connection.interact(move |conn|{
+            schema::tops_drucks::table
+            .filter(schema::tops_drucks::top_id.eq(tid))
+            .select(schema::tops_drucks::drucks_nr)
+            .get_results::<String>(conn)
+        }).await??;
+        top.drucksachen = as_option(drucks);
+        tops.push(top);
+    }
+    let mut has_experts = connection.interact(move |conn|{
+        schema::rel_ass_experten::table
+        .inner_join(schema::experte::table)
+        .select((schema::experte::name, schema::experte::fachgebiet))
+        .filter(schema::rel_ass_experten::ass_id.eq(id))
+        .get_results::<(String, String)>(conn)
+    }).await??;
+    let experten = 
+    as_option(has_experts.drain(..)
+    .map(|(name, fachgebiet)| models::Experte{
+            fachgebiet,
+            name
+        }).collect::<Vec<_>>());
+    Ok(models::Ausschusssitzung{
+        ausschuss,
+        experten,
+        public: temps.1,
+        termin,
+        tops
+    })
 }
 pub async fn station_by_id(id: i32, connection: &Connection) -> Result<models::Station> {
     let mut doks = vec![];
@@ -252,7 +344,7 @@ pub async fn stellungnahme_by_id(
     id: i32,
     connection: &Connection,
 ) -> Result<models::Stellungnahme> {
-    let rval: (i32, i32, Option<String>, Option<String>) = connection
+    let rval: (i32, i32, Option<String>) = connection
         .interact(move |conn| {
             schema::stellungnahme::table
                 .filter(schema::stellungnahme::id.eq(id))
@@ -260,7 +352,6 @@ pub async fn stellungnahme_by_id(
                     schema::stellungnahme::dok_id,
                     schema::stellungnahme::meinung,
                     schema::stellungnahme::lobbyreg_link,
-                    schema::stellungnahme::volltext,
                 ))
                 .first(conn)
         })
@@ -269,7 +360,6 @@ pub async fn stellungnahme_by_id(
     return Ok(models::Stellungnahme {
         dokument: dokument_by_id(rval.0, connection).await?,
         meinung: rval.1 as u8,
-        volltext: rval.3,
         lobbyregister_link: rval.2,
     });
 }
@@ -282,6 +372,7 @@ pub async fn dokument_by_id(id: i32, connection: &Connection) -> Result<models::
         String,
         Option<String>,
         String,
+        Option<String>,
         Option<String>,
     ) = connection
         .interact(move |conn| {
@@ -297,6 +388,7 @@ pub async fn dokument_by_id(id: i32, connection: &Connection) -> Result<models::
                     dsl::zusammenfassung,
                     schema::dokumententyp::dsl::api_key,
                     dsl::volltext,
+                    dsl::drucksnr,
                 ))
                 .first(conn)
         })
@@ -340,6 +432,7 @@ pub async fn dokument_by_id(id: i32, connection: &Connection) -> Result<models::
         volltext: ret.6,
         typ: models::Dokumententyp::from_str(ret.5.as_str())
             .map_err(|e| DataValidationError::InvalidEnumValue { msg: e })?,
+        drucksnr: ret.7
     });
 }
 

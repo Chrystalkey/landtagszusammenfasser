@@ -15,6 +15,7 @@ DROP TABLE station;
 DROP TABLE rel_ass_tops;
 DROP TABLE rel_ass_experten;
 DROP TABLE ausschusssitzung;
+DROP TABLE tops_drucks;
 DROP TABLE top;
 
 DROP TABLE rel_vorgang_links;

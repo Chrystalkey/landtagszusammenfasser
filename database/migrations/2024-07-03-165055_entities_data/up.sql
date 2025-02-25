@@ -12,7 +12,8 @@ CREATE TABLE dokument (
     link VARCHAR NOT NULL,
     hash VARCHAR NOT NULL,
     zusammenfassung VARCHAR,
-    typ INTEGER NOT NULL REFERENCES dokumententyp(id)
+    typ INTEGER NOT NULL REFERENCES dokumententyp(id),
+    drucksnr VARCHAR
 );
 
 CREATE TABLE rel_dok_autor(
@@ -70,13 +71,20 @@ CREATE TABLE rel_vorgang_links(
 CREATE TABLE top(
     id SERIAL PRIMARY KEY,
     vorgang_id INTEGER REFERENCES vorgang(id),
-    titel VARCHAR NOT NULL
+    titel VARCHAR NOT NULL,
+    number INTEGER NOT NULL
+);
+CREATE TABLE tops_drucks(
+    top_id INTEGER NOT NULL REFERENCES top(id) ON DELETE CASCADE,
+    drucks_nr VARCHAR NOT NULL,
+    PRIMARY KEY (top_id, drucks_nr)
 );
 
 CREATE TABLE ausschusssitzung(
     id SERIAL PRIMARY KEY,
     termin TIMESTAMP WITH TIME ZONE NOT NULL,
-    as_id INTEGER NOT NULL REFERENCES ausschuss(id)
+    public BOOLEAN NOT NULL,
+    as_id INTEGER NOT NULL REFERENCES ausschuss(id) ON DELETE CASCADE
 );
 CREATE TABLE rel_ass_experten(
     ass_id INTEGER NOT NULL REFERENCES ausschusssitzung(id) ON DELETE CASCADE,
@@ -125,8 +133,8 @@ CREATE TABLE rel_station_gesetz (
 
 CREATE TABLE stellungnahme (
     id SERIAL PRIMARY KEY,
-    stat_id INTEGER NOT NULL REFERENCES station(id) ON DELETE CASCADE,
-    dok_id INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE,
+    stat_id INTEGER NOT NULL REFERENCES station(id) ON DELETE CASCADE, -- this is whatever this relates to
+    dok_id INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE, -- this is the content
     meinung INTEGER NOT NULL,
     lobbyreg_link VARCHAR,
     volltext VARCHAR

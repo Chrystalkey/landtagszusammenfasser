@@ -33,6 +33,7 @@ diesel::table! {
     ausschusssitzung (id) {
         id -> Int4,
         termin -> Timestamptz,
+        public -> Bool,
         as_id -> Int4,
     }
 }
@@ -47,6 +48,7 @@ diesel::table! {
         hash -> Varchar,
         zusammenfassung -> Nullable<Varchar>,
         typ -> Int4,
+        drucksnr -> Nullable<Varchar>,
     }
 }
 
@@ -222,6 +224,14 @@ diesel::table! {
         id -> Int4,
         vorgang_id -> Nullable<Int4>,
         titel -> Varchar,
+        number -> Int4,
+    }
+}
+
+diesel::table! {
+    tops_drucks (top_id, drucks_nr) {
+        top_id -> Int4,
+        drucks_nr -> Varchar,
     }
 }
 
@@ -273,6 +283,7 @@ diesel::joinable!(station -> vorgang (vorgang_id));
 diesel::joinable!(stellungnahme -> dokument (dok_id));
 diesel::joinable!(stellungnahme -> station (stat_id));
 diesel::joinable!(top -> vorgang (vorgang_id));
+diesel::joinable!(tops_drucks -> top (top_id));
 diesel::joinable!(vorgang -> vorgangstyp (typ));
 
 diesel::allow_tables_to_appear_in_same_query!(
@@ -304,6 +315,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     stationstyp,
     stellungnahme,
     top,
+    tops_drucks,
     vorgang,
     vorgangstyp,
 );

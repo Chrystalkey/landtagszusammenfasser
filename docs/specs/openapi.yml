@@ -310,6 +310,8 @@ components:
         - "last_mod"
         - "link"
       properties:
+        drucksnr:
+          type: "string"
         volltext:
           type: "string"
         titel:
@@ -359,8 +361,6 @@ components:
         lobbyregister_link:
           type: "string"
           format: "uri"
-        volltext:
-          type: "string"
     station:
       type: "object"
       description: "Station ist in vielerlei hinsicht das Kernstück der API der Vorgänge. Jeder Vorgang besteht aus Stationen und die Stationen haben nur wenige verpflichtende Datenfelder.\
@@ -480,6 +480,7 @@ components:
       type: "object"
       required:
         - "parlament"
+        - "name"
       properties:
         parlament:
           $ref: "#/components/schemas/parlament"
@@ -489,15 +490,29 @@ components:
     top:
       type: "object"
       required: 
+        - "nummer"
         - "titel"
       properties:
+        nummer:
+          type: "integer"
+          minimum: 0
+          description: "Nummer des TOPs in einer Sitzung"
         titel:
           type: "string"
         vorgang_id:
           type: "string"
           format: "uuid"
+        drucksachen:
+          type: "array"
+          description: "Die Drucksachen, die in diesem TOP besprochen werden sollen"
+          items:
+            type: string
+
     experte:
       type: "object"
+      required:
+        - "name"
+        - "fachgebiet"
       properties:
         name:
           type: "string"
@@ -506,7 +521,15 @@ components:
     ausschusssitzung:
       type: "object"
       description: "Sitzung oder Anhörung. Eine Anhörung wird es, wenn Experten geladen werden"
+      required:
+        - "termin"
+        - "ausschuss"
+        - "tops"
+        - "public"
       properties:
+        public:
+          type: "boolean"
+          
         termin:
           type: "string"
           format: "date-time"

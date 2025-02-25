@@ -154,6 +154,7 @@ pub fn update_vorgang(
         .filter(schema::vorgang::id.eq(db_id))
         .set((
             schema::vorgang::verfaend.eq(model.verfassungsaendernd),
+            schema::vorgang::wahlperiode.eq(model.wahlperiode as i32),
         ))
         .execute(connection)?;
     diesel::delete(schema::rel_vorgang_init::table)
@@ -341,7 +342,6 @@ pub fn update_vorgang(
                         .values((
                             schema::stellungnahme::meinung.eq(stellungnahme.meinung as i32),
                             schema::stellungnahme::dok_id.eq(dok_id),
-                            schema::stellungnahme::volltext.eq(stellungnahme.volltext.clone()),
                             schema::stellungnahme::stat_id.eq(stat_id),
                             schema::stellungnahme::lobbyreg_link.eq(stellungnahme
                                 .lobbyregister_link
