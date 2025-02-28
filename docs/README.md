@@ -1,16 +1,5 @@
 # Landtagszusammenfasser
 
-## Überblick
-
-Dieses Projekt ist ein Tool um einen Überblick über die Entwicklung von Gesetzen in den Ländern zu geben.
-Es ist in drei Teile geteilt: 
-1. Die Datenbankanwendung, die zentral die Daten verwaltet und die API bereitstellt
-2. eine Website, die die Daten herunterlädt und Menschenlesbar aufbereitet
-3. eine Sammlung and Scrapern("Collectors"), die die Daten von verschiedenen Quellen sammeln und in die Datenbank einspeichern
-
-Die Lese-API ist dabei ohne Authentifizierung verfügbar. Die Schreib-API (also die Collectors) sind dagegen mit einer API-Key Authentifizierung versehen um
-Spam und Missbrauch zu verhindern.
-
 ## API Kurzbeschreibung
 
 Die API ist in drei Teile geteilt:
