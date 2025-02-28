@@ -6,5 +6,5 @@ DELETE FROM dokumententyp CASCADE;
 DELETE FROM parlament CASCADE;
 DELETE FROM stationstyp CASCADE;
 
-DELETE FROM identifikatortyp CASCADE;
+DELETE FROM vg_ident_typ CASCADE;
 DELETE FROM vorgangstyp CASCADE;

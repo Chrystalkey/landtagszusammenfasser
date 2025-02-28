@@ -35,7 +35,7 @@ paths:
         "404":
           description: "Content not found"
     put:
-      operationId: "vorgang_put"
+      operationId: "vorgang_id_put"
       description: API Access for the Admins without the merge just replacing vorgang
       parameters:
         - name: "vorgang_id"
@@ -102,16 +102,24 @@ paths:
           schema:
             type: "string"
             format: "date-time"
+        - name: "wp"
+          in: "query"
+          required: false
+          schema:
+            type: "integer"
+            minimum: 0
         - name: "limit"
           in: "query"
           required: false
           schema:
             type: "integer"
+            minimum: 1
         - name: "offset"
           in: "query"
           required: false
           schema:
             type: "integer"
+            minimum: 1
         - name: "initiator-contains-any"
           in: query
           required: false
@@ -126,8 +134,8 @@ paths:
           description: "Gesetzgebungstyp"
           schema:
             $ref: "#/components/schemas/vorgangstyp"
-    post:
-      operationId: "vorgang_post"
+    put:
+      operationId: "vorgang_put"
       description: "Pushing a new vorgang"
       requestBody:
         required: true
@@ -189,6 +197,154 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
       security:
         - apiKey: [] 
+  /api/v1/ausschusssitzung:
+    get:
+      operationId: "as_get"
+      description: "Gibt eine Liste gefilterter Ausschusssitzungen zurück"
+      parameters:
+        - name: "If-Modified-Since"
+          in: "header"
+          required: false
+          schema:
+            type: "string"
+            format: "date-time"
+        - name: "wp"
+          in: query
+          schema:
+            type: "integer"
+            minimum: 0
+        - name: "limit"
+          in: "query"
+          required: false
+          schema:
+            type: "integer"
+            minimum: 1
+        - name: "offset"
+          in: "query"
+          required: false
+          schema:
+            type: "integer"
+            minimum: 1
+        - name: "vorgang_id"
+          in: query
+          required: false
+          description: "API ID eines Vorgangs. Liefert Ausschusssitzungen, deren TOPs diesen Vorgang referenzieren"
+          schema:
+            type: "string"
+            format: "uuid"
+
+      responses:
+        "200":
+          $ref: "#/components/responses/ASGetResponse"
+        "204":
+          description: "No Content found for the specified parameters"
+        "304":
+          description: "No new changes"
+        "416":
+          description: "Request Range not satisfiable. Dates before the existence of the BRP or in the future are excluded for example"
+        "400":
+          description: "Bad Request"
+
+    put:
+      operationId: "as_put"
+      description: "Neue Ausschussitzung Bekanntmachen"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ausschusssitzung"
+      parameters:
+        - name: "collector"
+          in: query
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
+      responses:
+        "201":
+          description: "Successfully Integrated the Object"
+        "400":
+          description: "Bad Request"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "409":
+          description: "Conflict. This Ausschusssitzungs-ID already exists"
+      security:
+        - apiKey: []
+  /api/v1/ausschusssitzung/{as_id}:
+    get:
+      operationId: "as_get_by_id"
+      description: "Gibt Ausschussitzung mit dieser ID zurück"
+      parameters:
+        - name: "as_id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
+        - name: "If-Modified-Since"
+          in: "header"
+          required: false
+          schema:
+            type: "string"
+            format: "date-time"
+      responses:
+        "200":
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ausschusssitzung"
+        "304":
+          description: "No new changes"
+        "404":
+          description: "Content not found"
+    put:
+      operationId: "as_id_put"
+      description: API Access for the Admins without the merge just replacing vorgang
+      parameters:
+        - name: "as_id"
+          in: "path"
+          required: true
+          description: "The API ID of the vorgang that is to be affected"
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ausschusssitzung"
+      responses:
+        201:
+          description: "Created"
+        204:
+          description: "Content Unchanged"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+      security:
+        - apiKey: [] 
+    delete:
+      operationId: as_delete
+      parameters:
+        - name: "as_id"
+          in: "path"
+          required: true
+          description: "API ID of the AS to be deleted"
+          schema:
+            type: "string"
+            format: "uuid"
+      responses:
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        204:
+          description: "Deleted Successfully"
+        404:
+          description: "No Element with this ID"
+      security:
+        - apiKey: [] 
 components:
   securitySchemes:
       apiKey:
@@ -217,6 +373,17 @@ components:
                 type: "array"
                 items:
                   $ref: "#/components/schemas/vorgang"
+    ASGetResponse:
+      description: "Antwort auf eine gefilterte Anfrage zu Ausschusssitzungen"
+      content:
+        application/json:
+          schema:
+            type: "object"
+            properties:
+              payload:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/ausschusssitzung"
   schemas:
     create_api_key:
       type: "object"
@@ -236,26 +403,26 @@ components:
     parlament:
       type: "string"
       enum:
-        - "BT"
-        - "BR"
-        - "BV"
-        - "EK"
-        - "BB"
-        - "BY"
-        - "BE"
-        - "HB"
-        - "HH"
-        - "HE"
-        - "MV"
-        - "NI"
-        - "NW"
-        - "RP"
-        - "SL"
-        - "SN"
-        - "TH"
-        - "SH"
-        - "BW"
-        - "ST"
+        - "BT" # Bundestag
+        - "BR" # Bundesrat
+        - "BV" # Bundesversammlung
+        - "EK" # Europakammer des Bundesrats
+        - "BB" # Brandenburg
+        - "BY" # Bayern
+        - "BE" # Berlin
+        - "HB" # Hansestadt Bremen
+        - "HH" # Hansestadt Hamburg
+        - "HE" # Hessen
+        - "MV" # Mecklenburg-Vorpommern
+        - "NI" # Niedersachsen
+        - "NW" # Nordrhein-Westfahlen
+        - "RP" # Rheinland-Pfalz
+        - "SL" # Saarland
+        - "SN" # Sachsen
+        - "TH" # Thüringen
+        - "SH" # Schleswig-Holstein
+        - "BW" # Baden Württemberg
+        - "ST" # Sachsen Anhalt
     vorgangstyp:
       type: "string"
       enum:
@@ -284,14 +451,16 @@ components:
         - "postparl-gsblt" # Veröffentlichung im Gesetzesblatt
         - "postparl-kraft" # In Kraft getreten
         - "sonstig"        # anders, email me
-    identifikatortyp:
+    vg_ident_typ:
+      description: "An identification for the whole process from start to finish"
       type: "string"
       enum:
         - "initdrucks"
         - "vorgnr"
+        - "api-id"
         - "sonstig"        # anders, email me
-      description: "An identification for the whole process from start to finish"
-    dokumententyp:
+    doktyp:
+      description: "The type of a document"
       type: "string"
       enum:
         - "entwurf"
@@ -300,23 +469,26 @@ components:
         - "topliste"
         - "stellungnahme"
         - "sonstig"       # anders, email me
-      description: "The type of a document"
     dokument:
       type: "object"
       required:
         - "titel"
         - "hash"
         - "typ"
-        - "last_mod"
+        - "letzte-modifikation"
         - "link"
       properties:
+        api_id:
+          type: "string"
+          format: "uuid"
+          description: "optional, here for future references. Is generated by the server."
         drucksnr:
           type: "string"
         volltext:
           type: "string"
         titel:
           type: "string"
-        last_mod:
+        letzte_modifikation:
           type: "string"
           format: "date-time"
         link:
@@ -341,9 +513,9 @@ components:
           items:
             type: "string"
             example: "Staatsregierung, Fraktion die Grünen, Fraktion CDU/CSU"
-            description: "The authors of the document if they are not persons, this is to be done at the collector level"
+            description: "The authors of the document if they are not persons"
         typ:
-          $ref: "#/components/schemas/dokumententyp"
+          $ref: "#/components/schemas/doktyp"
     stellungnahme:
       type: "object"
       description: "Wrapper um `dokument`, der noch ein bisschen mehr Kontext mitgibt."
@@ -374,14 +546,17 @@ components:
         titel:
           type: "string"
           description: "Optionaler Titel, falls die restlichen Daten keinen hinreichenden Rückschluss zulassen"
+        api_id:
+          type: "string"
+          format: "uuid"
+          description: "optional, here for future references. Is generated by the server."
         zeitpunkt:
           type: "string"
           format: "date-time"
-        ausschusssitzungen:
-          type: "array"
-          description: "Liste von Ausschussitzungen. Kann leer sein, wenn es keine Ausschussberatung ist"
-          items:
-            $ref: "#/components/schemas/ausschusssitzung"
+        gremium:
+          type: string
+          description: "Freitextfeld. Meist Ausschussnamen oder Ministerien. 'Plenum' ist reserviert für Parlamentsberatungen, 'Volk' für Volksabstimmungen"
+          example: "Ausschuss für Innereien und Gemüseaufläufe"
         dokumente:
           type: "array"
           items:
@@ -391,10 +566,11 @@ components:
           items:
             type: "string"
             example: "§ 1 Abs. 1 Satz 1"
-            description: "The text that is affected by the station"
+            description: "Gesetze, die von dem geplanten Vorgang berührt werden."
         link:
           type: "string"
           format: "uri"
+          description: "Link zu einer Übersichtsseite zu dieser Station. _NICHT_ zu einem Dokument (PDF)"
         parlament:
           $ref: "#/components/schemas/parlament"
         schlagworte:
@@ -413,7 +589,6 @@ components:
           type: "integer"
           minimum: 1
           maximum: 10
-    
     vorgang:
       type: "object"
       required:
@@ -454,7 +629,7 @@ components:
         ids:
           type: "array"
           items:
-            $ref: "#/components/schemas/identifikator"
+            $ref: "#/components/schemas/vg_ident"
         links:
           type: "array"
           items:
@@ -464,7 +639,7 @@ components:
           type: "array"
           items:
             $ref: "#/components/schemas/station"
-    identifikator:
+    vg_ident:
       type: "object"
       required:
         - "id"
@@ -474,7 +649,7 @@ components:
           type: "string"
           example: "123e4567-e"
         typ:
-          $ref: "#/components/schemas/identifikatortyp"
+          $ref: "#/components/schemas/vg_ident_typ"
 
     ausschuss:
       type: "object"
@@ -489,6 +664,7 @@ components:
           example: "Ausschuss für Inneres und Gemüseauflauf"
     top:
       type: "object"
+      description: "Ein Tagesordnungspunkt. Muss Nummer und Titel enthalten, für den Rest siehe unten."
       required: 
         - "nummer"
         - "titel"
@@ -500,14 +676,17 @@ components:
         titel:
           type: "string"
         vorgang_id:
+          description: "Die Nummer eines Vorgangs. Wird beim Upload ignoriert, aber beim Download mitgegeben zusammen mit den konkreten Drucksachen"
           type: "string"
           format: "uuid"
         drucksachen:
           type: "array"
           description: "Die Drucksachen, die in diesem TOP besprochen werden sollen"
           items:
-            type: string
-
+            oneOf:
+              - type: string
+                description: "Drucksachennummer oder Dokumentenkennung"
+              - $ref: "#/components/schemas/dokument"
     experte:
       type: "object"
       required:
@@ -527,9 +706,12 @@ components:
         - "tops"
         - "public"
       properties:
+        api_id:
+          type: "string"
+          format: "uuid"
+          description: "optional, here for future references. Is generated by the server."
         public:
           type: "boolean"
-          
         termin:
           type: "string"
           format: "date-time"

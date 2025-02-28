@@ -6,6 +6,7 @@ CREATE TABLE ausschuss(
 
 CREATE TABLE dokument (
     id SERIAL PRIMARY KEY,
+    api_id UUID NOT NULL UNIQUE,
     titel VARCHAR NOT NULL,
     last_mod TIMESTAMP WITH TIME ZONE NOT NULL,
     volltext VARCHAR,
@@ -55,12 +56,12 @@ CREATE TABLE rel_vorgang_init_person(
     PRIMARY KEY (vorgang_id, initiator)
 );
 
-CREATE TABLE rel_vorgang_id (
+CREATE TABLE rel_vorgang_ident (
     vorgang_id INTEGER NOT NULL REFERENCES vorgang(id) ON DELETE CASCADE,
-    typ INTEGER NOT NULL REFERENCES identifikatortyp(id) ON DELETE CASCADE,
+    typ INTEGER NOT NULL REFERENCES vg_ident_typ(id) ON DELETE CASCADE,
     identifikator VARCHAR NOT NULL,
     PRIMARY KEY (vorgang_id, typ, identifikator)
-); 
+);
 
 CREATE TABLE rel_vorgang_links(
     id SERIAL PRIMARY KEY,
@@ -68,20 +69,20 @@ CREATE TABLE rel_vorgang_links(
     link VARCHAR NOT NULL,
     CONSTRAINT rel_vorgang_links_unique_combo UNIQUE (vorgang_id, link)
 );
-CREATE TABLE top(
+CREATE TABLE top (
     id SERIAL PRIMARY KEY,
-    vorgang_id INTEGER REFERENCES vorgang(id),
     titel VARCHAR NOT NULL,
-    number INTEGER NOT NULL
+    nummer INTEGER NOT NULL
 );
-CREATE TABLE tops_drucks(
+CREATE TABLE tops_doks(
     top_id INTEGER NOT NULL REFERENCES top(id) ON DELETE CASCADE,
-    drucks_nr VARCHAR NOT NULL,
-    PRIMARY KEY (top_id, drucks_nr)
+    dok_id INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE,
+    PRIMARY KEY (top_id, dok_id)
 );
 
 CREATE TABLE ausschusssitzung(
     id SERIAL PRIMARY KEY,
+    api_id UUID NOT NULL UNIQUE,
     termin TIMESTAMP WITH TIME ZONE NOT NULL,
     public BOOLEAN NOT NULL,
     as_id INTEGER NOT NULL REFERENCES ausschuss(id) ON DELETE CASCADE
@@ -99,6 +100,7 @@ CREATE TABLE rel_ass_tops(
 
 CREATE TABLE station (
     id SERIAL PRIMARY KEY,
+    api_id UUID NOT NULL UNIQUE,
     vorgang_id INTEGER NOT NULL REFERENCES vorgang(id) ON DELETE CASCADE,
     parl_id INTEGER NOT NULL REFERENCES parlament(id) ON DELETE CASCADE,
     typ INTEGER NOT NULL REFERENCES stationstyp(id) ON DELETE CASCADE,
@@ -106,7 +108,8 @@ CREATE TABLE station (
 
     zeitpunkt TIMESTAMP WITH TIME ZONE,
     trojanergefahr INTEGER,
-    link VARCHAR
+    link VARCHAR,
+    gremium VARCHAR
 );
 CREATE TABLE rel_station_ausschusssitzung(
     stat_id INTEGER NOT NULL REFERENCES station(id) ON DELETE  CASCADE,
@@ -139,35 +142,3 @@ CREATE TABLE stellungnahme (
     lobbyreg_link VARCHAR,
     volltext VARCHAR
 );
-
---- trigger & function to delete orphaned dokument from station reference
-CREATE OR REPLACE FUNCTION delete_orphaned_dokument_station() 
-RETURNS TRIGGER AS $$
-BEGIN
-    DELETE FROM dokument
-    WHERE id = OLD.dok_id
-      AND NOT EXISTS (SELECT 1 FROM rel_station_dokument WHERE dok_id = OLD.dok_id);
-    RETURN OLD;
-END;
-$$
- LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_delete_orphaned_dokument_station
-AFTER DELETE ON rel_station_dokument
-FOR EACH ROW EXECUTE FUNCTION delete_orphaned_dokument_station();
-
---- trigger & function to delete orphaned dokument from "stellungnahme" reference
-CREATE OR REPLACE FUNCTION delete_orphaned_dokument_stellungnahme() 
-RETURNS TRIGGER AS $$
-BEGIN
-    DELETE FROM dokument
-    WHERE id = OLD.dok_id
-      AND NOT EXISTS (SELECT 1 FROM stellungnahme WHERE dok_id = OLD.dok_id);
-    RETURN OLD;
-END;
-$$
- LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_delete_orphaned_dokument_stellungnahme
-AFTER DELETE ON stellungnahme
-FOR EACH ROW EXECUTE FUNCTION delete_orphaned_dokument_stellungnahme();

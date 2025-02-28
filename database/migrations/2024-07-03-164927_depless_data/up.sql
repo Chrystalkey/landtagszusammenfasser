@@ -6,7 +6,7 @@ CREATE TABLE
     );
 
 CREATE TABLE
-    identifikatortyp (
+    vg_ident_typ (
         id SERIAL PRIMARY KEY,
         api_key VARCHAR NOT NULL
     );

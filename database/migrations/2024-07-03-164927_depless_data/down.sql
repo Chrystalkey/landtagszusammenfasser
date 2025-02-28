@@ -3,5 +3,5 @@ DROP TABLE stationstyp;
 DROP TABLE dokumententyp;
 DROP TABLE schlagwort;
 DROP TABLE parlament;
-DROP TABLE identifikatortyp;
+DROP TABLE vg_ident_typ;
 DROP TABLE vorgangstyp;

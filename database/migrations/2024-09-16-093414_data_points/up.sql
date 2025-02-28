@@ -9,10 +9,11 @@ VALUES
     ('sonstig');
 
 INSERT INTO
-    identifikatortyp (api_key)
+    vg_ident_typ (api_key)
 VALUES
     ('initdrucks'),
     ('vorgnr'),
+    ('api-id'),
     ('sonstig');
 
 INSERT INTO
@@ -31,7 +32,8 @@ VALUES
     ('postparl-vesja'),
     ('postparl-vesne'),
     ('postparl-gsblt'),
-    ('postparl-kraft');
+    ('postparl-kraft'),
+    ('sonstig');
 
 INSERT INTO parlament(api_key) VALUES 
 ('BT'), ('BR'), ('BV'), ('EK'), 
