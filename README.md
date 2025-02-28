@@ -16,6 +16,9 @@ Die Lese-API ist dabei ohne Authentifizierung verfügbar. Die Schreib-API (also 
 ## Dokumentation
 Die Grundlegenden Konzepte, API-Beschreibung und Projektsetup ist in [docs/README.md](docs/README.md). Geh und lies, junger Padawan!
 
+## Contributing
+Eine grundlegende Setup-Beschreibung für die Projekte ist in [SETUP.md](SETUP.md), lies aber bitte auch [docs/README.md](docs/README.md).
+
 ## Lizenz
 
 Do whatever you want, just please mention our names :)
