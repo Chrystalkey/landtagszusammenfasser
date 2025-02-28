@@ -13,17 +13,53 @@ Spam und Missbrauch zu verhindern.
 
 ## API Kurzbeschreibung
 
-Die API ist in vier Teile geteilt:
-- GET /api/v1/gesetzesvorhaben oder GET /api/v1/gesetzesvorhaben/{gsvh_id}
-  Öffentliche Schnittstelle um Gesetzesvorhaben aus der Datenbank abzurufen, ohne authentifizierung
-- POST /api/v1/gesetzesvorhaben
-  Schnittstelle der Collectors, die neue Gesetzesvorhaben in die Datenbank einfügen ohne den internen Zustand der Datenbank zu kennen
+Die API ist in drei Teile geteilt:
+
+### 1. /api/v1/vorgang[/{vorgang_id}]
+- GET /api/v1/vorgang oder GET /api/v1/vorgang/{vorgang_id}
+  Öffentliche Schnittstelle um Vorgänge aus der Datenbank abzurufen, ohne authentifizierung
+- PUT /api/v1/vorgang
+  Schnittstelle der Collectors, die neue Vorgänge in die Datenbank einfügen ohne den internen Zustand der Datenbank zu kennen
+- PUT/DELETE /api/v1/vorgang/{vorgang_id}
+  Adminschnittstelle um den exakten Stand eines Vorganges zu setzen oder den gesamten Vorgang zu löschen.
+
+### 2. /api/v1/auth
 - POST/DELETE /api/v1/auth
   Schnittstelle um API-Keys zu verwalten
-- PUT /api/v1/gesetzesvorhaben/{gsvh_id}
-  Adminschnittstelle um den exakten Stand eines Gesetzesvorhabens zu editieren
+
+### 3. /api/v1/ausschusssitzung[/{as_id}]
+- GET
+  Öffentliche Schnittstelle um AS aus der Datenbank abzurufen, ohne authentifizierung
+- PUT /api/v1/ausschusssitzung
+  Schnittstelle der Collectors, die neue AS in die Datenbank einfügen ohne den internen Zustand der Datenbank zu kennen
+- PUT/DELETE /api/v1/ausschusssitzung/{as_id}
+  Adminschnittstelle um den exakten Stand eines Vorganges zu setzen oder den gesamten Vorgang zu löschen.
 
 Für details über die Schnittstellen selbst siehe die [Spezifikation](./specs/openapi.yml)
+
+## Allgemeines Datenkonzept
+Das Datenkonzept hinter diesem Dienst besteht aus zwei Hauptsäulen: Dem `Vorgang` und der `Ausschusssitzung`.
+
+Ein Vorgang ist die Gesamtheit aller `Station`en, die ein Gesetz oder Antrag in einem oder mehreren Parlamenten durchläuft.
+Eine `Station` beschreibt hierbei einen wichtigen Schritt in den Beratungen des Vorganges. 
+
+_Zum Beispiel:_
+_Ein Gesetz zur `Haarfärbeverpflichtung` wird eingebracht von der Regierung von Bayern ohne vorherige Vorhabensveröffentlichung._
+_Die erste Station im Parlament ist die `Initiative`._
+_Darauf folgt eine `1. Lesung` (nächste `Station`) und eine Ausschussberatung in den Aussschüssen für Inneres und Gemüseaufläufe und dem_
+_Ausschuss für Farbentheorie (= Zwei Stationen)._
+_Anschließend stimmt das Parlament dem Gesetz zu (=Station mit Typ `parl-akzeptanz`), und das Gesetz wird im Gesetzblatt veröffentlicht (=Station mit Typ `postparl-gsblt`)_
+_Das Gesetz tritt am 7.12.2077 in Kraft (=Station mit Typ `postparl-kraft`)_
+
+
+Eine Ausschussberatung besteht aus mehreren Sitzungen und Anhörungen des betreffenden Ausschusses. Da Ausschusssitzungen aber nicht nur eine 
+sondern mehrere Vorgänge behandeln können, sind sie ein eigenes Datenkonzept.
+
+Eine `Ausschusssitzung`(AS) ist ein terminiertes Zusammentreffen eines `Ausschuss`es, bei dem eine Liste an Tagesordnungspunkten(`TOP`s) besprochen werden.
+Jeder `TOP` ist genau einem oder keinem `Vorgang` zugeordnet.
+
+Die Zusammenhänge werden dynamisch up-to-date gehalten. Alle Drucksachen, die innerhalb einer Ausschussberatung (=Station mit Typ `parl-ausschber`) stattfinden, 
+sind sowohl der Station direkt, als auch den `TOP`s der jeweiligen Ausschusssitzungen zugeordnet.
 
 ### Authentifizierungskonzept
 Die Authentifizierung basiert auf API-Keys. Diese werden über die Datenbank vergeben und gelöscht. Dazu ist die Schnittstelle /api/v1/auth zuständig.
