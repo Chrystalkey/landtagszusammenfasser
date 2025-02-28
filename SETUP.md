@@ -11,6 +11,7 @@ To properly develop anything on this project, you need the dependencies not pref
 **General**
 - Docker (for linux)
 - Docker Compose
++ [Swagger Editor](https://editor.swagger.io/) # If you want to do API testing and development
 
 **Database**
 - Cargo and Rust(>=1.83)
@@ -20,14 +21,14 @@ To properly develop anything on this project, you need the dependencies not pref
 + pgcli
 
 **Webserver**
-- Python(>=3.13)
+- Python(>=3.12)
 - Poetry(>=1.4)
 - Zola(>=0.9)
 
 **Collector**
-- Python(>=3.13)
+- Python(>=3.12)
 - Poetry(>=1.4)
-+ redis
+- redis
 
 You will notice, the Python dependencies are the same versions.
 
@@ -40,6 +41,8 @@ cargo install diesel_cli --features=postgres --no-default-features
 ```
 
 A way to setup everything required on windows is:
+1. install wsl
+2. install docker for windows with the WSL backend
 ```powershell
 # scoop
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
@@ -52,19 +55,16 @@ curl -O "https://win.rustup.rs/x86_64"
 ./rustup-init.exe # follow on-screen instructions
 cargo install diesel_cli --features=postgres --no-default-features
 ```
-- install docker somehow afterwards with the WSL backend
-
 
 ### Optional Extras
 I always use postgres and redis as a docker container, just so I can delete / rerun everything in the blink of an eye. If you dont, you do you.
 
-pgcli made my life a lot easier on linux, so you might consider it.
+pgcli made my life a lot easier on linux, so you might consider it. 
 
 ### Shortcuts
 
 The `docker-compose.yml` on the top level sets up, compiles and runs everything in one ginourmeous step. For development, you may want to consider commenting out what you dont need and running the rest as-is with your software locally.
 
-## Deployment
-### Description
+### Development Deployment
 The `docker-compose.yml` on the top level sets up, compiles and runs everything in one ginourmeous step. 
-run `docker compose up --build -d` to just make it all up in one step. The default Port for the webserver is 8081 on localhost.
+run `docker compose up --build -d` to just make it all up in one step. The default Port for the webserver is 8081 on localhost. Remember to set the OPENAI_API_KEY and API_KEY variables properly
