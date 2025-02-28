@@ -101,7 +101,7 @@ pub fn insert_vorgang(
         use schema::rel_vorgang_id::dsl as dsl;
         let mut value_vec = vec![];
 
-        for id_entry in ids.iter(){
+        for id_entry in ids.iter() {
             let value= (
                 dsl::vorgang_id.eq(vorgang_id),
                 dsl::identifikator.eq(&id_entry.id),
@@ -166,33 +166,10 @@ pub fn insert_station(
         tracing::warn!("{}", &string);
         return Err(crate::error::LTZFError::Validation { source: crate::error::DataValidationError::InvalidEnumValue { msg: string } });
     }
-    if let Some(auss) = stat.ausschusssitzungen {
+    if let Some(_) = stat.ausschusssitzungen {
         let string = 
-        "Ausschussitzungen werden über den Endpoint /ausschusssitzungen hinzugefügt. 
-        Die Daten der Ausschusssitzungen hier werden ignoriert";
+        "Ausschussitzungen werden über den Endpoint /ausschusssitzungen hinzugefügt.\nDie Daten der Ausschusssitzungen hier werden ignoriert.";
         tracing::warn!(string);
-
-        for ass in auss {
-            // find a potentially corresponding AS in the db.
-            let stmt_rs = diesel::sql_query(
-                "SELECT ausschusssitzung.id FROM ausschusssitzung, ausschuss
-WHERE
-ausschuss.id = ausschusssitzung.as_id
-AND termin BETWEEN $1 AND $2
-AND SIMILARITY(ausschuss.name, $3) > 0.6
-ORDER BY SIMILARITY(ausschuss.name, $3) DESC
-LIMIT 1;")
-            .bind::<diesel::sql_types::Timestamptz, _>(ass.termin.checked_sub_signed(chrono::TimeDelta::hours(6)).unwrap())
-            .bind::<diesel::sql_types::Timestamptz, _>(ass.termin.checked_add_signed(chrono::TimeDelta::hours(6)).unwrap())
-            .bind::<diesel::sql_types::VarChar, _>(ass.ausschuss.name)
-            .get_result::<db_models::ID>(connection)
-            .optional()?;
-            if let Some(asid) = stmt_rs{
-                let asid = asid.id;
-                todo!()
-                // set the tops there to reference this vorgang
-            }
-        }
     }
 
     // betroffene gesetzestexte

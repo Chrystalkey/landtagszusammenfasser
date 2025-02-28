@@ -4,7 +4,7 @@ use axum::http::Method;
 use lettre::SmtpTransport;
 
 use crate::error::{DataValidationError, DatabaseError, LTZFError};
-use crate::Configuration;
+use crate::{db, Configuration};
 use axum_extra::extract::CookieJar;
 use deadpool_diesel::postgres::Pool;
 use openapi::apis::default::*;
@@ -127,24 +127,32 @@ impl openapi::apis::default::Default for LTZFServer {
         path_params: models::VorgangDeletePathParams,
     ) -> Result<VorgangDeleteResponse, ()> {
         tracing::trace!("vorgang_delete called with vorgang_id: {}", path_params.vorgang_id);
-        if claims.0 == auth::APIScope::Admin || claims.0 == auth::APIScope::KeyAdder{
-            unimplemented!("");
+        if claims.0 != auth::APIScope::Admin && claims.0 != auth::APIScope::KeyAdder{
+            return Ok(VorgangDeleteResponse::Status401_APIKeyIsMissingOrInvalid);
         }
-        Ok(VorgangDeleteResponse::Status401_APIKeyIsMissingOrInvalid)
+        let api_id = path_params.vorgang_id;
+        let result = db::delete::delete_vorgang_by_api_id(api_id, self).await
+        .map_err(|e|{
+            tracing::warn!("Could not delete Vorgang with ID `{}`: {}", api_id, e);
+        });
+        return result;
     }
-    #[doc = " VorgangGet - GET /api/v1/vorgang"]
+    #[doc = " VorgangIdPut - GET /api/v1/vorgang"]
     #[must_use]
     #[allow(clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    async fn vorgang_put(
+    async fn vorgang_id_put(
             &self,
             method: Method,
             host: Host,
             cookies: CookieJar,
             claims: Self::Claims,
-            path_params: models::VorgangPutPathParams,
+            path_params: models::VorgangIdPutPathParams,
             body: models::Vorgang,
-        ) -> Result<VorgangPutResponse, ()> {
+        ) -> Result<VorgangIdPutResponse, ()> {
             tracing::trace!("api_v1_vorgang_vorgang_id_put Called with path params: `{:?}`", path_params);
+            if claims.0 != auth::APIScope::Admin && claims.0 != auth::APIScope::KeyAdder{
+                return Ok(VorgangIdPutResponse::Status401_APIKeyIsMissingOrInvalid);
+            } 
             let out = put::api_v1_vorgang_id_put(self, path_params, body)
             .await
             .map_err(|e| todo!())?;
@@ -176,24 +184,24 @@ impl openapi::apis::default::Default for LTZFServer {
         }
     }
 
-    #[doc = " ApiV1VorgangPost - POST /api/v1/vorgang"]
+    #[doc = " ApiV1VorgangPost - PUT /api/v1/vorgang"]
     #[must_use]
     #[allow(clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    async fn vorgang_post(
+    async fn vorgang_put(
         &self,
         method: Method,
         host: Host,
         cookies: CookieJar,
             claims: Self::Claims,
-          query_params: models::VorgangPostQueryParams,
+          query_params: models::VorgangPutQueryParams,
                 body: models::Vorgang,
-        ) -> Result<VorgangPostResponse, ()> {
+        ) -> Result<VorgangPutResponse, ()> {
         tracing::trace!("api_v1_vorgang_post called by {:?}", query_params);
 
         let rval = post::api_v1_vorgang_post(self, body).await;
         match rval {
             Ok(_) => {
-                Ok(VorgangPostResponse::Status201_SuccessfullyIntegratedTheObject)
+                Ok(VorgangPutResponse::Status201_SuccessfullyIntegratedTheObject)
             }
             Err(e) => {
                 tracing::warn!("Error Occurred and Is Returned: {:?}", e.to_string());
@@ -206,14 +214,14 @@ impl openapi::apis::default::Default for LTZFServer {
                             "Unique Violation Error (Conflict on Input Data): {:?}",
                             info
                         );
-                        Ok(VorgangPostResponse::Status409_Conflict)
+                        Ok(VorgangPutResponse::Status409_Conflict)
                     },
                     LTZFError::Validation{source: DataValidationError::DuplicateApiId{id}} => {
-                        tracing::warn!("ApiID Equal Error: {:?}", id);
-                        Ok(VorgangPostResponse::Status409_Conflict)
+                        tracing::warn!("ApiID Equal: {:?}", id);
+                        Ok(VorgangPutResponse::Status409_Conflict)
                     },
                     LTZFError::Validation{source: DataValidationError::AmbiguousMatch{..}} =>{
-                        Ok(VorgangPostResponse::Status409_Conflict)
+                        Ok(VorgangPutResponse::Status409_Conflict)
                     }
                     _ => {
                         Err(())

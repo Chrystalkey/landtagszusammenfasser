@@ -70,11 +70,12 @@ pub async fn vorgang_merge_candidates(
     }
 
     let result = if let Some(ids) = model.ids.clone() {
-        let query = "SELECT vorgang.id, titel FROM vorgang, gesetzestyp
+        let query = "SELECT vorgang.id, titel FROM vorgang, vorgangstyp
         WHERE SIMILARITY(vorgang.titel, $1) > 0.8
-        AND vorgang.typ = gesetzestyp.id
-        AND gesetzestyp.api_key = $2
-        OR EXISTS(
+        AND vorgang.typ = vorgangstyp.id
+        AND vorgang.wahlperiode = $5
+        AND vorgangstyp.api_key = $2
+        OR EXISTS (
             SELECT 1 FROM rel_vorgang_id, identifikatortyp 
             WHERE rel_vorgang_id.vorgang_id = vorgang.id AND 
                     identifikatortyp.id = rel_vorgang_id.typ AND
@@ -86,6 +87,7 @@ pub async fn vorgang_merge_candidates(
         for id in ids {
             let stat = model.stationen[0].parlament.to_string();
             let titel = model.titel.clone();
+            let wp = model.wahlperiode;
             let id_result = connection
                 .interact(move |conn| {
                     diesel::sql_query(query)
@@ -93,6 +95,7 @@ pub async fn vorgang_merge_candidates(
                         .bind::<diesel::sql_types::Text, _>(titel)
                         .bind::<diesel::sql_types::Text, _>(id.typ.to_string())
                         .bind::<diesel::sql_types::Text, _>(id.id.clone())
+                        .bind::<diesel::sql_types::Integer, _>(wp as i32)
                         .get_results::<GSVHID>(conn)
                 })
                 .await??;
@@ -102,18 +105,21 @@ pub async fn vorgang_merge_candidates(
         result.drain().collect::<Vec<_>>()
     } else {
         // select where title is pretty equal and the stations belong to the same 
-        let query = "SELECT vorgang.id, titel FROM vorgang, gesetzestyp
+        let query = "SELECT vorgang.id, titel FROM vorgang, vorgangstyp
         WHERE SIMILARITY(vorgang.titel, $1) > 0.8
-        AND vorgang.typ = gesetzestyp.id
-        AND gesetzestyp.api_key = $2";
+        AND vorgang.typ = vorgangstyp.id
+        AND vorgangstyp.api_key = $2
+        AND vorgang.wahlperiode = $3";
         tracing::trace!("Executing Query: {}", query);
         let titel = model.titel.clone();
         let typ = model.typ.to_string();
+        let wp = model.wahlperiode;
         let result = connection
             .interact(move |conn| {
                 diesel::sql_query(query)
                     .bind::<diesel::sql_types::Text, _>(titel)
                     .bind::<diesel::sql_types::Text, _>(typ)
+                    .bind::<diesel::sql_types::Integer, _>(wp as i32)
                     .get_results::<GSVHID>(conn)
             })
             .await??;
@@ -144,7 +150,7 @@ pub async fn vorgang_merge_candidates(
 }
 
 /// Updates a GSVH based on similarity.
-pub fn update_vorgang(
+pub fn update_vorgang (
     model: &models::Vorgang,
     candidate: (i32, models::Vorgang),
     connection: &mut PgConnection,

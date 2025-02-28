@@ -32,6 +32,7 @@ diesel::table! {
 diesel::table! {
     ausschusssitzung (id) {
         id -> Int4,
+        api_id -> Uuid,
         termin -> Timestamptz,
         public -> Bool,
         as_id -> Int4,
@@ -41,6 +42,7 @@ diesel::table! {
 diesel::table! {
     dokument (id) {
         id -> Int4,
+        api_id -> Uuid,
         titel -> Varchar,
         last_mod -> Timestamptz,
         volltext -> Nullable<Varchar>,
@@ -71,13 +73,6 @@ diesel::table! {
         id -> Int4,
         name -> Varchar,
         fachgebiet -> Varchar,
-    }
-}
-
-diesel::table! {
-    identifikatortyp (id) {
-        id -> Int4,
-        api_key -> Varchar,
     }
 }
 
@@ -152,7 +147,7 @@ diesel::table! {
 }
 
 diesel::table! {
-    rel_vorgang_id (vorgang_id, typ, identifikator) {
+    rel_vorgang_ident (vorgang_id, typ, identifikator) {
         vorgang_id -> Int4,
         typ -> Int4,
         identifikator -> Varchar,
@@ -191,6 +186,7 @@ diesel::table! {
 diesel::table! {
     station (id) {
         id -> Int4,
+        api_id -> Uuid,
         vorgang_id -> Int4,
         parl_id -> Int4,
         typ -> Int4,
@@ -198,6 +194,7 @@ diesel::table! {
         zeitpunkt -> Nullable<Timestamptz>,
         trojanergefahr -> Nullable<Int4>,
         link -> Nullable<Varchar>,
+        gremium -> Nullable<Varchar>,
     }
 }
 
@@ -222,16 +219,22 @@ diesel::table! {
 diesel::table! {
     top (id) {
         id -> Int4,
-        vorgang_id -> Nullable<Int4>,
         titel -> Varchar,
-        number -> Int4,
+        nummer -> Int4,
     }
 }
 
 diesel::table! {
-    tops_drucks (top_id, drucks_nr) {
+    tops_doks (top_id, dok_id) {
         top_id -> Int4,
-        drucks_nr -> Varchar,
+        dok_id -> Int4,
+    }
+}
+
+diesel::table! {
+    vg_ident_typ (id) {
+        id -> Int4,
+        api_key -> Varchar,
     }
 }
 
@@ -272,8 +275,8 @@ diesel::joinable!(rel_station_dokument -> station (stat_id));
 diesel::joinable!(rel_station_gesetz -> station (stat_id));
 diesel::joinable!(rel_station_schlagwort -> schlagwort (sw_id));
 diesel::joinable!(rel_station_schlagwort -> station (stat_id));
-diesel::joinable!(rel_vorgang_id -> identifikatortyp (typ));
-diesel::joinable!(rel_vorgang_id -> vorgang (vorgang_id));
+diesel::joinable!(rel_vorgang_ident -> vg_ident_typ (typ));
+diesel::joinable!(rel_vorgang_ident -> vorgang (vorgang_id));
 diesel::joinable!(rel_vorgang_init -> vorgang (vorgang_id));
 diesel::joinable!(rel_vorgang_init_person -> vorgang (vorgang_id));
 diesel::joinable!(rel_vorgang_links -> vorgang (vorgang_id));
@@ -282,8 +285,8 @@ diesel::joinable!(station -> stationstyp (typ));
 diesel::joinable!(station -> vorgang (vorgang_id));
 diesel::joinable!(stellungnahme -> dokument (dok_id));
 diesel::joinable!(stellungnahme -> station (stat_id));
-diesel::joinable!(top -> vorgang (vorgang_id));
-diesel::joinable!(tops_drucks -> top (top_id));
+diesel::joinable!(tops_doks -> dokument (dok_id));
+diesel::joinable!(tops_doks -> top (top_id));
 diesel::joinable!(vorgang -> vorgangstyp (typ));
 
 diesel::allow_tables_to_appear_in_same_query!(
@@ -295,7 +298,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     dokument_versions,
     dokumententyp,
     experte,
-    identifikatortyp,
     parlament,
     rel_ass_experten,
     rel_ass_tops,
@@ -306,7 +308,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     rel_station_dokument,
     rel_station_gesetz,
     rel_station_schlagwort,
-    rel_vorgang_id,
+    rel_vorgang_ident,
     rel_vorgang_init,
     rel_vorgang_init_person,
     rel_vorgang_links,
@@ -315,7 +317,8 @@ diesel::allow_tables_to_appear_in_same_query!(
     stationstyp,
     stellungnahme,
     top,
-    tops_drucks,
+    tops_doks,
+    vg_ident_typ,
     vorgang,
     vorgangstyp,
 );
