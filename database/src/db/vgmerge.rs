@@ -36,9 +36,11 @@ pub enum MergeState<T> {
 pub async fn vorgang_merge_candidates(
     model: &models::Vorgang,
     executor: impl sqlx::PgExecutor<'_>,
+    srv: &LTZFServer,
 ) -> Result<MergeState<i32>> {
+    let obj = "merged Vorgang";
     let ident_t: Vec<_> = model.ids.as_ref().unwrap_or(&vec![]).iter().map(|x|x.id.clone()).collect();
-    let identt_t: Vec<_> = model.ids.as_ref().unwrap_or(&vec![]).iter().map(|x|x.typ.to_string()).collect();
+    let identt_t: Vec<_> = model.ids.as_ref().unwrap_or(&vec![]).iter().map(|x| srv.guard_ts(x.typ, model.api_id, obj).unwrap()).collect();
     let result = sqlx::query!(
         "WITH db_id_table AS (
 SELECT rel_vorgang_ident.vorgang_id as vgid, identifikator as ident, vg_ident_typ.api_key as idt_str
@@ -51,16 +53,13 @@ WHERE
 vorgang.api_id = $1 OR
 (
 vorgang.wahlperiode = $4 AND 
-vorgangstyp.api_key = $7 AND
+vorgangstyp.api_key = $5 AND
     EXISTS (SELECT * FROM UNNEST($2::text[], $3::text[]) as eingabe(ident, typ), db_id_table WHERE 
         db_id_table.vgid = vorgang.id AND
         eingabe.ident = db_id_table.ident AND
         eingabe.typ = db_id_table.idt_str
     )
-    OR
-    SIMILARITY(vorgang.titel, $5) > $6
-);", model.api_id, &ident_t[..], &identt_t[..], model.wahlperiode as i32, model.titel, TITLE_SIMILARITY_THRESHOLD,
-model.typ.to_string())
+);", model.api_id, &ident_t[..], &identt_t[..], model.wahlperiode as i32, srv.guard_ts(model.typ, model.api_id, obj)?)
     .fetch_all(executor).await?;
 
     tracing::debug!("Found {} matches for Vorgang with api_id: {}",result.len(),model.api_id);
@@ -77,17 +76,17 @@ model.typ.to_string())
         }
     })
 }
-pub async fn station_merge_candidates(model: &models::Station, executor: impl sqlx::PgExecutor<'_>)-> Result<MergeState<i32>> {
+pub async fn station_merge_candidates(model: &models::Station, executor: impl sqlx::PgExecutor<'_>,srv: &LTZFServer)-> Result<MergeState<i32>> {
     todo!()
 }
-pub async fn dokument_merge_candidates(model: &models::Station, executor: impl sqlx::PgExecutor<'_>)->Result<MergeState<i32>>{
+pub async fn dokument_merge_candidates(model: &models::Station, executor: impl sqlx::PgExecutor<'_>,srv: &LTZFServer)->Result<MergeState<i32>>{
     todo!()
 }
 
 pub async fn execute_merge_dokument (
     model: &models::Dokument,
     candidate: i32,
-    executor: impl sqlx::PgExecutor<'_>,
+    executor: impl sqlx::PgExecutor<'_>,srv: &LTZFServer
 ) -> Result<()> {
     let db_id = candidate;
     todo!()
@@ -95,7 +94,7 @@ pub async fn execute_merge_dokument (
 pub async fn execute_merge_station (
     model: &models::Station,
     candidate: i32,
-    executor: impl sqlx::PgExecutor<'_>,
+    executor: impl sqlx::PgExecutor<'_>,srv: &LTZFServer
 ) -> Result<()> {
     let db_id = candidate;
     todo!()
@@ -103,7 +102,7 @@ pub async fn execute_merge_station (
 pub async fn execute_merge_vorgang (
     model: &models::Vorgang,
     candidate: i32,
-    executor: impl sqlx::PgExecutor<'_>,
+    executor: impl sqlx::PgExecutor<'_>,srv: &LTZFServer
 ) -> Result<()> {
     let db_id = candidate;
     todo!()
@@ -114,7 +113,7 @@ pub async fn run_integration(model: &models::Vorgang, server: &LTZFServer) -> Re
     tracing::debug!(
         "Looking for Merge Candidates for Vorgang with api_id: {:?}",
         model.api_id);
-    let candidates = vorgang_merge_candidates(model, &mut *tx).await?;
+    let candidates = vorgang_merge_candidates(model, &mut *tx, server).await?;
     match candidates {
         MergeState::NoMatch => {
             tracing::info!(
@@ -122,7 +121,7 @@ pub async fn run_integration(model: &models::Vorgang, server: &LTZFServer) -> Re
                 model.api_id
             );
             let model = model.clone();
-            super::insert::insert_vorgang(&model, &mut tx).await?;
+            super::insert::insert_vorgang(&model, &mut tx, server).await?;
         }
         MergeState::OneMatch(one) => {
             let api_id = sqlx::query!("SELECT api_id FROM vorgang WHERE id=$1", one)
@@ -133,7 +132,7 @@ pub async fn run_integration(model: &models::Vorgang, server: &LTZFServer) -> Re
                 model.api_id
             );
             let model = model.clone();
-            execute_merge_vorgang(&model, one, &mut *tx).await?;
+            execute_merge_vorgang(&model, one, &mut *tx, server).await?;
         }
         MergeState::AmbiguousMatch(many) => {
             tracing::warn!("Ambiguous matches for Vorgang with api_id: {:?}", model.api_id);

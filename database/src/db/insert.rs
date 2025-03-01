@@ -1,20 +1,23 @@
 use openapi::models;
-use crate::Result;
+use crate::{LTZFServer, Result};
+use crate::utils::notify::*;
 
 /// Inserts a new GSVH into the database.
 pub async fn insert_vorgang(
     vg: &models::Vorgang,
-    tx: &mut sqlx::PgTransaction<'_>
+    tx: &mut sqlx::PgTransaction<'_>,
+    server: &LTZFServer,
 ) -> Result<i32> {
     tracing::info!("Inserting complete Vorgang into the database");
+    let obj = "vorgang";
     // master insert
     let vg_id = sqlx::query!("
     INSERT INTO vorgang(api_id, titel, verfaend, wahlperiode, typ)
     VALUES
     ($1, $2, $3, $4, (SELECT id FROM vorgangstyp WHERE api_key=$5))
     RETURNING vorgang.id;", 
-    vg.api_id, vg.titel, vg.verfassungsaendernd, vg.wahlperiode as i32, vg.typ.to_string()
-    ).map(|r|r.id).fetch_one(&mut **tx).await?;
+    vg.api_id, vg.titel, vg.verfassungsaendernd, vg.wahlperiode as i32, server.guard_ts(vg.typ, vg.api_id,obj)?)
+    .map(|r|r.id).fetch_one(&mut **tx).await?;
 
     // insert links
     sqlx::query!("INSERT INTO rel_vorgang_links(link, vorgang_id) SELECT val, $2 FROM UNNEST($1::text[]) as val", 
@@ -33,7 +36,7 @@ pub async fn insert_vorgang(
     let ident_list = vg.ids.as_ref().map(|x|x.iter()
     .map(|el|el.id.clone()).collect::<Vec<_>>());
     let identt_list = vg.ids.as_ref().map(|x|x.iter()
-    .map(|el|el.typ.to_string()).collect::<Vec<_>>());
+    .map(|el| server.guard_ts(el.typ, vg.api_id, obj).unwrap()).collect::<Vec<_>>());
     sqlx::query!("INSERT INTO rel_vorgang_ident (vorgang_id, typ, identifikator) 
     SELECT $1, id, ident.ident FROM 
     UNNEST($2::text[], $3::text[]) as ident(ident, typ)
@@ -43,7 +46,7 @@ pub async fn insert_vorgang(
     
     // insert stations
     for stat in &vg.stationen {
-        insert_station(stat.clone(), vg_id, tx).await?;
+        insert_station(stat.clone(), vg_id, tx, server).await?;
     }
     tracing::info!("Insertion Successful with ID: {}", vg_id);
     Ok(vg_id)
@@ -53,8 +56,11 @@ pub async fn insert_station(
     stat: models::Station,
     vorgang_id: i32,
     tx: &mut sqlx::PgTransaction<'_>,
+    srv: &LTZFServer
 ) -> Result<i32> {
     // master insert
+    let sapi = stat.api_id.unwrap_or(uuid::Uuid::now_v7());
+    let obj= "station";
     let stat_id = sqlx::query!(
         "INSERT INTO station (api_id, gremium, link, parl_id, titel, trojanergefahr, typ, zeitpunkt, vorgang_id)
         VALUES
@@ -62,8 +68,8 @@ pub async fn insert_station(
         (SELECT id FROM parlament WHERE api_key = $4), $5, $6, 
         (SELECT id FROM stationstyp WHERE api_key = $7), $8, $9)
         RETURNING station.id", 
-        stat.api_id.unwrap_or(uuid::Uuid::now_v7()), stat.gremium, stat.link,
-        stat.parlament.to_string(), stat.titel, stat.trojanergefahr.map(|x|x as i32), stat.typ.to_string(),
+        sapi, stat.gremium, stat.link,
+        stat.parlament.to_string(), stat.titel, stat.trojanergefahr.map(|x|x as i32), srv.guard_ts(stat.typ, sapi, obj)?,
         stat.zeitpunkt, vorgang_id
     ).map(|r|r.id)
     .fetch_one(&mut **tx).await?;
@@ -79,7 +85,7 @@ pub async fn insert_station(
     // assoziierte dokumente
     let mut did = Vec::with_capacity(stat.dokumente.len());
     for dokument in stat.dokumente{
-        did.push(insert_dokument(dokument, tx).await?);
+        did.push(insert_dokument(dokument, tx, srv).await?);
     }
     sqlx::query!("INSERT INTO rel_station_dokument(stat_id, dok_id) 
     SELECT $1, blub FROM UNNEST($2::int4[]) as blub", stat_id, &did[..])
@@ -93,7 +99,7 @@ pub async fn insert_station(
         for stln in stln {
             mng.push(stln.meinung as i32);
             lobby.push(stln.lobbyregister_link);
-            doks.push(insert_dokument(stln.dokument, tx).await?);
+            doks.push(insert_dokument(stln.dokument, tx, srv).await?);
         }
         sqlx::query!("INSERT INTO stellungnahme (stat_id, meinung, lobbyreg_link, dok_id)
         SELECT $1, mn, lobby, did FROM UNNEST($2::int4[], $3::text[], $4::int4[]) as blub(mn, lobby, did)",
@@ -126,15 +132,18 @@ fn sanitize_string(s: &str) -> String{
 }
 pub async fn insert_dokument(
     dok: models::Dokument,
-    tx: &mut sqlx::PgTransaction<'_>) 
+    tx: &mut sqlx::PgTransaction<'_>,
+    srv: &LTZFServer) 
     -> Result<i32> {
+    let dapi = dok.api_id.unwrap_or(uuid::Uuid::now_v7());
+    let obj= "Dokument";
     let did = sqlx::query!(
         "INSERT INTO dokument(api_id, titel, link, hash, last_mod, zusammenfassung, volltext, drucksnr, typ)
         VALUES(
             $1,$2,$3,$4,$5,$6,$7,$8,
             (SELECT id FROM dokumententyp WHERE api_key = $9)
-        )RETURNING id", dok.api_id.unwrap_or(uuid::Uuid::now_v7()), dok.titel, dok.link,dok.hash,
-        dok.letzte_modifikation,dok.zusammenfassung, dok.volltext, dok.drucksnr, dok.typ.to_string()
+        )RETURNING id", dapi, dok.titel, dok.link,dok.hash,
+        dok.letzte_modifikation,dok.zusammenfassung, dok.volltext, dok.drucksnr, srv.guard_ts(dok.typ, dapi, obj)?
     ).map(|r|r.id).fetch_one(&mut **tx).await?;
 
     // Schlagworte

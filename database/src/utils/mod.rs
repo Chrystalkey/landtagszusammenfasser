@@ -1,33 +1,14 @@
 use deadpool_diesel::postgres::Pool;
 use diesel_migrations::MigrationHarness;
-use lettre::{Message, Transport};
 use tokio::signal;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations};
 
-use crate::{error::*, LTZFServer, Result};
+use crate::{error::*, Result};
+
+pub mod notify;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations/");
-
-pub fn send_email(subject: String, body: String, state: &LTZFServer) -> Result<()> {
-    if state.mailer.is_none() {
-        return Ok(());
-    }
-    let email = Message::builder()
-        .from(
-            format!("Landtagszusammenfasser <{}>", state.config.mail_sender.as_ref().unwrap())
-                .parse()
-                .unwrap(),
-        )
-        .to(state.config.mail_recipient.as_ref().unwrap().parse().unwrap())
-        .subject(subject.clone())
-        .body(body.clone())
-        .unwrap();
-    tracing::info!("Mail was Sent. Subject: {}", subject);
-    tracing::debug!("Mail Contents:\n{}", body);
-    state.mailer.as_ref().unwrap().send(&email)?;
-    Ok(())
-}
 
 pub async fn shutdown_signal() {
     let ctrl_c = async {
@@ -52,7 +33,13 @@ pub async fn shutdown_signal() {
     _ = terminate => {},
     }
 }
-
+pub fn as_option<T>(v: Vec<T>) -> Option<Vec<T>> {
+    if v.is_empty() {
+        None
+    } else {
+        Some(v)
+    }
+}
 // Function to initialize tracing for logging
 pub fn init_tracing() {
     tracing_subscriber::registry()

@@ -12,7 +12,6 @@ use openapi::models;
 
 mod auth;
 mod get;
-mod post;
 mod put;
 
 pub struct LTZFServer {
@@ -198,9 +197,9 @@ impl openapi::apis::default::Default for LTZFServer {
           query_params: models::VorgangPutQueryParams,
                 body: models::Vorgang,
         ) -> Result<VorgangPutResponse, ()> {
-        tracing::trace!("api_v1_vorgang_post called by {:?}", query_params);
+        tracing::trace!("api_v1_vorgang_put called by {:?}", query_params);
 
-        let rval = post::api_v1_vorgang_post(self, body).await;
+        let rval = put::api_v1_vorgang_put(self, body).await;
         match rval {
             Ok(_) => {
                 Ok(VorgangPutResponse::Status201_SuccessfullyIntegratedTheObject)

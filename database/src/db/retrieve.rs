@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use crate::error::*;
 use openapi::models;
+use crate::utils::as_option;
 
 pub async fn vorgang_by_id(id: i32, executor: &mut sqlx::PgTransaction<'_>) -> Result<models::Vorgang> {
     let pre_vg = sqlx::query!(
@@ -242,12 +243,4 @@ pub async fn vorgang_by_parameter(
         vector.push(super::retrieve::vorgang_by_id(id, executor).await?);
     }
     Ok(vector)
-}
-
-fn as_option<T>(v: Vec<T>) -> Option<Vec<T>> {
-    if v.is_empty() {
-        None
-    } else {
-        Some(v)
-    }
 }
