@@ -17,16 +17,18 @@ mod put;
 
 pub struct LTZFServer {
     pub database: Pool,
+    pub sqlx_db: sqlx::PgPool,
     pub mailer: Option<SmtpTransport>,
     pub config: Configuration,
 }
 pub type LTZFArc = std::sync::Arc<LTZFServer>;
 impl LTZFServer {
-    pub fn new(database: Pool, mailer: Option<SmtpTransport>, config: Configuration) -> Self {
+    pub fn new(database: Pool, sqlx_db: sqlx::PgPool, mailer: Option<SmtpTransport>, config: Configuration) -> Self {
         Self {
             database,
             mailer,
             config,
+            sqlx_db,
         }
     }
 }
@@ -230,4 +232,55 @@ impl openapi::apis::default::Default for LTZFServer {
             }
         }
     }
+    /// AsDelete - DELETE /api/v1/ausschusssitzung/{as_id}
+    async fn as_delete(
+        &self,
+        method: Method,
+        host: Host,
+        cookies: CookieJar,
+            claims: Self::Claims,
+          path_params: models::AsDeletePathParams,
+        ) -> Result<AsDeleteResponse, ()>{todo!()}
+    
+        /// AsGet - GET /api/v1/ausschusssitzung
+        async fn as_get(
+        &self,
+        method: Method,
+        host: Host,
+        cookies: CookieJar,
+          header_params: models::AsGetHeaderParams,
+          query_params: models::AsGetQueryParams,
+        ) -> Result<AsGetResponse, ()>{todo!()}
+    
+        /// AsGetById - GET /api/v1/ausschusssitzung/{as_id}
+        async fn as_get_by_id(
+        &self,
+        method: Method,
+        host: Host,
+        cookies: CookieJar,
+          header_params: models::AsGetByIdHeaderParams,
+          path_params: models::AsGetByIdPathParams,
+        ) -> Result<AsGetByIdResponse, ()>{todo!()}
+    
+        /// AsIdPut - PUT /api/v1/ausschusssitzung/{as_id}
+        async fn as_id_put(
+        &self,
+        method: Method,
+        host: Host,
+        cookies: CookieJar,
+            claims: Self::Claims,
+          path_params: models::AsIdPutPathParams,
+                body: models::Ausschusssitzung,
+        ) -> Result<AsIdPutResponse, ()>{todo!()}
+    
+        /// AsPut - PUT /api/v1/ausschusssitzung
+        async fn as_put(
+        &self,
+        method: Method,
+        host: Host,
+        cookies: CookieJar,
+            claims: Self::Claims,
+          query_params: models::AsPutQueryParams,
+                body: models::Ausschusssitzung,
+        ) -> Result<AsPutResponse, ()>{todo!()}
 }

@@ -50,6 +50,9 @@ error_from!(uuid::Error, Validation, DataValidationError, UuidParse);
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub))]
 pub enum DatabaseError {
+    #[snafu(display("SQLX Database Operation Failed: {source}"))]
+    Sqlx{source: sqlx::Error},
+
     #[snafu(display("Database operation error: {source}"))]
     Operation { source: diesel::result::Error },
     
@@ -78,6 +81,7 @@ error_from!(deadpool_diesel::Error, Database, DatabaseError, DeadpoolError);
 error_from!(deadpool_diesel::InteractError, Database, DatabaseError, Interaction);
 error_from!(diesel_migrations::MigrationError, Database, DatabaseError, Migration);
 error_from!(deadpool::managed::BuildError, Database, DatabaseError, Build);
+error_from!(sqlx::Error, Database, DatabaseError, Sqlx);
 error_from!(Box<dyn std::error::Error + Sync + Send>, Database, DatabaseError, Unknown);
 
 #[derive(Debug, Snafu)]

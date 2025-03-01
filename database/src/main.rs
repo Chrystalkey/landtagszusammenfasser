@@ -1,5 +1,3 @@
-#![recursion_limit = "2048"]
-
 mod api;
 mod db;
 mod error;
@@ -8,6 +6,7 @@ mod utils;
 use std::sync::Arc;
 
 use clap::Parser;
+use sqlx;
 use deadpool_diesel::postgres::{Manager, Pool};
 
 use error::LTZFError;
@@ -83,7 +82,6 @@ impl Configuration {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    use diesel::prelude::*;
     dotenv::dotenv().ok();
     init_tracing();
 
@@ -94,17 +92,16 @@ async fn main() -> Result<()> {
     let listener = TcpListener::bind(format!("{}:{}", config.host, config.port)).await?;
 
     tracing::debug!("Started Listener");
-    let db_pool = config.build_pool().await?;
+    let sqlx_db = sqlx::postgres::PgPoolOptions::new()
+    .max_connections(5)
+    .connect(&config.db_url).await?;
 
     let mut available = false;
     for i in 0..14 {
-        let r = db_pool.get().await;
+        let r = sqlx_db.acquire().await;
         match r {
             Ok(_) => {available = true;break;}
-            Err(deadpool_diesel::PoolError::Backend(deadpool_diesel::Error::Connection(
-                ConnectionError::BadConnection(e)
-            ))) => {
-                tracing::warn!("{}", e);
+            Err(sqlx::Error::PoolTimedOut) => { tracing::warn!("Connection to Database `{}` timed out", config.db_url);
             },
             _ => {let _ = r?;}
         }
@@ -128,41 +125,23 @@ async fn main() -> Result<()> {
         tracing::debug!("Started Mailer");
         Some(mailer.unwrap())
     };
-
-    // Apply pending database migrations
+    // Apply pending database migrations through diesel
+    let db_pool = config.build_pool().await?;
     run_migrations(&db_pool).await?;
     tracing::debug!("Applied Migrations");
 
     // Run Key Administrative Functions
-    let connection = db_pool.get().await.unwrap();
     let keyadder_hash = digest(config.keyadder_key.as_str());
 
-    connection.interact(|conn|{
-        conn.transaction(|conn|{
-            let id = diesel::insert_into(db::schema::api_keys::table)
-            .values((
-                db::schema::api_keys::key_hash.eq(keyadder_hash.clone()),
-                db::schema::api_keys::scope.eq(db::schema::api_scope::table.filter(db::schema::api_scope::api_key.eq("keyadder")).select(db::schema::api_scope::id).first::<i32>(conn)?),
-                db::schema::api_keys::created_by.eq(None as Option<i32>)
-            ))
-            .on_conflict_do_nothing()
-            .returning(db::schema::api_keys::id)
-            .get_result::<i32>(conn)
-            .optional()?;
-            if id == None {
-                return Ok(());
-            }
-            // set the key to refer to itself
-            diesel::update(db::schema::api_keys::table)
-            .filter(db::schema::api_keys::key_hash.eq(keyadder_hash))
-            .set(db::schema::api_keys::created_by.eq(id))
-            .execute(conn)?;
-            Ok::<(), LTZFError>(())
-        })
-    }).await??;
+    sqlx::query_as(
+        "INSERT INTO api_keys(key_hash, scope, created_by)
+        VALUES
+        ($1, (SELECT id FROM api_scope WHERE api_key = 'keyadder' LIMIT 1), (SELECT last_value FROM api_keys_id_seq))
+        ON CONFLICT DO NOTHING;")
+    .bind(keyadder_hash)
+    .fetch_one(&sqlx_db).await?;
 
-
-    let state = Arc::new(LTZFServer::new(db_pool, mailer, config));
+    let state = Arc::new(LTZFServer::new(db_pool, sqlx_db, mailer, config));
     tracing::debug!("Constructed Server State");
 
     // Init Axum router

@@ -212,7 +212,6 @@ diesel::table! {
         dok_id -> Int4,
         meinung -> Int4,
         lobbyreg_link -> Nullable<Varchar>,
-        volltext -> Nullable<Varchar>,
     }
 }
 

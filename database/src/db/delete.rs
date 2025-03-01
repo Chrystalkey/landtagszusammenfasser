@@ -1,20 +1,16 @@
 use crate::{LTZFServer, Result};
-use crate::db::schema;
 use uuid::Uuid;
-use diesel::prelude::*;
 use openapi::apis::default::VorgangDeleteResponse;
 
 pub async fn delete_vorgang_by_api_id(
     api_id: Uuid,
     server: &LTZFServer
-) -> Result<VorgangDeleteResponse>{
-    let connection = server.database.get().await?;
-    let aff_rows  = connection.interact(move |conn|{
-        diesel::delete(schema::vorgang::table)
-        .filter(schema::vorgang::api_id.eq(api_id))
-        .execute(conn)
-    }).await??;
-    if aff_rows == 0{
+) -> Result<VorgangDeleteResponse> {
+    let thing: Option<(i32,)> = sqlx::query_as("DELETE FROM vorgang WHERE api_id = $1 RETURNING 1")
+    .bind(api_id)
+    .fetch_optional(&server.sqlx_db).await?;
+
+    if thing.is_none() {
         return Ok(VorgangDeleteResponse::Status404_NoElementWithThisID);
     }
     Ok(VorgangDeleteResponse::Status204_DeletedSuccessfully)

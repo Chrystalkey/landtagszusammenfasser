@@ -3,9 +3,9 @@ use openapi::models;
 
 pub async fn api_v1_vorgang_post(
     server: &LTZFServer,
-    api_gsvh: models::Vorgang
+    api_vorgang: models::Vorgang
 )-> Result<()> {
     tracing::trace!("api_v1_vorgang_post called");
-    db::merge::run(&api_gsvh, server).await?;
+    db::vgmerge::run_integration(&api_vorgang, server).await?;
     Ok(())
 }

@@ -139,6 +139,5 @@ CREATE TABLE stellungnahme (
     stat_id INTEGER NOT NULL REFERENCES station(id) ON DELETE CASCADE, -- this is whatever this relates to
     dok_id INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE, -- this is the content
     meinung INTEGER NOT NULL,
-    lobbyreg_link VARCHAR,
-    volltext VARCHAR
+    lobbyreg_link VARCHAR
 );

@@ -128,10 +128,10 @@ paths:
             type: array
             items:
               type: string
-        - name: "ggtyp"
+        - name: "vgtyp"
           in: query
           required: false
-          description: "Gesetzgebungstyp"
+          description: Vorgangstyp"
           schema:
             $ref: "#/components/schemas/vorgangstyp"
     put:
