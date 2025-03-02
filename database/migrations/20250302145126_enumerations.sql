@@ -1,0 +1,97 @@
+-- tables that do not require any foreign keys
+CREATE TABLE
+    vorgangstyp (
+        vgtyp_id SERIAL PRIMARY KEY,
+        value VARCHAR NOT NULL
+    );
+
+CREATE TABLE
+    vg_ident_typ (
+        vgit_id SERIAL PRIMARY KEY,
+        value VARCHAR NOT NULL
+    );
+
+CREATE TABLE
+    parlament (
+        p_id SERIAL PRIMARY KEY,
+        value VARCHAR NOT NULL
+    );
+
+CREATE TABLE
+    schlagwort (
+        sw_id SERIAL PRIMARY KEY,
+        value VARCHAR UNIQUE NOT NULL
+    );
+
+CREATE TABLE
+    dokumententyp (
+        dtyp_id SERIAL PRIMARY KEY,
+        value VARCHAR NOT NULL
+    );
+
+CREATE TABLE
+    stationstyp (
+        styp_id SERIAL PRIMARY KEY,
+        value VARCHAR NOT NULL
+    );
+
+CREATE TABLE experte(
+    exp_id SERIAL PRIMARY KEY,
+    name VARCHAR NOT NULL,
+    fachgebiet VARCHAR NOT NULL
+);
+
+INSERT INTO
+    vorgangstyp (value)
+VALUES
+    ('gg-einspruch'),
+    ('gg-zustimmung'),
+    ('gg-land-parl'),
+    ('gg-land-volk'),
+    ('sonstig');
+
+INSERT INTO
+    vg_ident_typ (value)
+VALUES
+    ('initdrucks'),
+    ('vorgnr'),
+    ('api-id'),
+    ('sonstig');
+
+INSERT INTO
+    stationstyp (value)
+VALUES
+    ('preparl-regent'),
+    ('preparl-eckpup'),
+    ('preparl-regbsl'),
+    ('preparl-vbegde'),
+    ('parl-initiativ'),
+    ('parl-ausschber'),
+    ('parl-vollvlsgn'),
+    ('parl-akzeptanz'),
+    ('parl-ablehnung'),
+    ('parl-ggentwurf'),
+    ('postparl-vesja'),
+    ('postparl-vesne'),
+    ('postparl-gsblt'),
+    ('postparl-kraft'),
+    ('sonstig');
+
+INSERT INTO parlament(value) VALUES 
+('BT'), ('BR'), ('BV'), ('EK'), 
+('BB'), ('BY'), ('BE'), ('HB'), 
+('HH'), ('HE'), ('MV'), ('NI'), 
+('NW'), ('RP'), ('SL'), ('SN'), 
+('SH'), ('TH'), ('BW'), ('ST');
+
+INSERT INTO
+    dokumententyp (value)
+VALUES
+    ('entwurf'),
+    ('drucksache'),
+    ('protokoll'),
+    ('topliste'),
+    ('stellungnahme'),
+    ('sonstig');
+
+CREATE EXTENSION pg_trgm;

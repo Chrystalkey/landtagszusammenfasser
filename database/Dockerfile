@@ -2,7 +2,7 @@ FROM oapi-preimage AS oapifile
 
 FROM rust:1.85 AS builder
 
-RUN apt update && apt install -y --no-install-recommends libpq-dev && rm -rf /var/lib/apt/lists/*
+# RUN apt update && apt install -y --no-install-recommends pkg-config && rm -rf /var/lib/apt/lists/*
 
 RUN adduser \
     --disabled-password \
@@ -25,24 +25,27 @@ RUN mkdir src && \
 COPY ./.sqlx ./.sqlx
 COPY ./src ./src
 COPY ./migrations ./migrations
-
+ENV SQLX_OFFLINE=true
 RUN touch src/main.rs && cargo build --release
 
-FROM debian:bookworm-slim AS runner
+FROM rust:1.85-slim-bookworm AS runner
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
             CMD curl -f "http://localhost:80" || exit 1
 
 
 RUN apt update \
-&&  apt install -y --no-install-recommends libpq5 \
-&&  rm -rf /var/lib/apt/lists/*
+&&  apt install -y --no-install-recommends libssl-dev pkg-config libpq5 \
+&&  rm -rf /var/lib/apt/lists/* \
+&& cargo install sqlx-cli
 
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /etc/group /etc/group
 COPY --from=builder --chmod=0100 --chown=ltzf-database:ltzf-database /app/target/release/ltzusfas-db /app/ltzusfas-db
+COPY docker-entry.sh /app/docker-entry.sh
 
 WORKDIR /app
 
 USER ltzf-database
-ENTRYPOINT ["/app/ltzusfas-db"]
+
+ENTRYPOINT ["bash", "/app/docker-entry.sh"]

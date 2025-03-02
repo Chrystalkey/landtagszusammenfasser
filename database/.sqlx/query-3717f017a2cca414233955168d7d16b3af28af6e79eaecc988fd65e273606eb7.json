@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM stellungnahme where stl_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "stl_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "stat_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "dok_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "meinung",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "lobbyreg_link",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "3717f017a2cca414233955168d7d16b3af28af6e79eaecc988fd65e273606eb7"
+}

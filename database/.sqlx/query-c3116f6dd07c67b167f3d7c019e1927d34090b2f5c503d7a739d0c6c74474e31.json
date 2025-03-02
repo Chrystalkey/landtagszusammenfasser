@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO rel_vg_ident (vg_id, vgit_id, identifikator) \n    SELECT $1, vgit_id, ident.ident FROM \n    UNNEST($2::text[], $3::text[]) as ident(ident, typ)\n    NATURAL LEFT JOIN vg_ident_typ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "TextArray",
+        "TextArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c3116f6dd07c67b167f3d7c019e1927d34090b2f5c503d7a739d0c6c74474e31"
+}

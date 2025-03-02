@@ -31,6 +31,9 @@ pub enum DataValidationError {
     InvalidEnumValue {
         msg: String
     },
+
+    #[snafu(display("Incomplete Data supplied: Expected to find `{input}` in DB but didn't"))]
+    IncompleteDataSupplied{input: String},
     
     #[snafu(display("Duplicate API ID: {id}"))]
     DuplicateApiId { id: Uuid },
@@ -52,12 +55,15 @@ error_from!(uuid::Error, Validation, DataValidationError, UuidParse);
 pub enum DatabaseError {
     #[snafu(display("SQLX Database Operation Failed: {source}"))]
     Sqlx{source: sqlx::Error},
+    #[snafu(display("Database Migration Failed: {source}"))]
+    Migration{source: sqlx::migrate::MigrateError},
 
     #[snafu(display("{source}"))]
     Unknown { source: Box<dyn std::error::Error + Sync + Send> },
 }
 
 error_from!(sqlx::Error, Database, DatabaseError, Sqlx);
+error_from!(sqlx::migrate::MigrateError, Database, DatabaseError, Migration);
 error_from!(Box<dyn std::error::Error + Sync + Send>, Database, DatabaseError, Unknown);
 
 #[derive(Debug, Snafu)]

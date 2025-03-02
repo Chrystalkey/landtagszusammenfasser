@@ -1,4 +1,4 @@
 pub mod insert;
 pub mod retrieve;
-pub mod vgmerge;
+pub mod merge;
 pub mod delete;

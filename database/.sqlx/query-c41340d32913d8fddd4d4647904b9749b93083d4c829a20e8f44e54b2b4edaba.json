@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE api_keys SET deleted=TRUE WHERE key_hash=$1 RETURNING key_id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "key_id",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "c41340d32913d8fddd4d4647904b9749b93083d4c829a20e8f44e54b2b4edaba"
+}

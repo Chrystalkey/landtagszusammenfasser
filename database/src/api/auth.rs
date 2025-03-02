@@ -46,11 +46,11 @@ async fn internal_extract_claims(server: &LTZFServer, headers: & axum::http::hea
     let key = key.unwrap().to_str()?;
     let hash = digest(key);
     tracing::trace!("Authenticating Key Hash {}", hash);
-    let table_rec = sqlx::query!("SELECT api_keys.id, deleted, expires_at, api_key as scope FROM api_keys
-    JOIN api_scope ON api_scope.id = api_keys.scope
-    WHERE key_hash = $1", hash)
+    let table_rec = sqlx::query!(
+        "SELECT api_keys.key_id, deleted, expires_at, value as scope FROM api_keys
+    NATURAL LEFT JOIN api_scope WHERE key_hash = $1", hash)
     .map(|r|
-        (r.id, r.deleted, r.expires_at, r.scope)
+        (r.key_id, r.deleted, r.expires_at, r.scope)
     )
     .fetch_optional(&server.sqlx_db).await?;
 
@@ -90,9 +90,9 @@ pub async fn auth_get(server: &LTZFServer, scope: APIScope, expires_at: Option<c
     let key = generate_api_key().await;
     let key_digest = digest(key.clone());
     
-    sqlx::query!("INSERT INTO api_keys(key_hash, created_by, expires_at, scope)
+    sqlx::query!("INSERT INTO api_keys(key_hash, created_by, expires_at, scope_id)
     VALUES
-    ($1, $2, $3, (SELECT id FROM api_scope WHERE api_key = $4))", 
+    ($1, $2, $3, (SELECT scope_id FROM api_scope WHERE value = $4))", 
     key_digest, created_by, expires_at.unwrap_or(chrono::Utc::now() + chrono::Duration::days(365)), scope.to_string()
     )
     .execute(&server.sqlx_db).await?;
@@ -107,7 +107,7 @@ pub async fn auth_delete(server: &LTZFServer, scope: APIScope, key: &str) -> Res
         return Ok(openapi::apis::default::AuthDeleteResponse::Status401_APIKeyIsMissingOrInvalid);
     }
     let hash = digest(key);
-    let ret = sqlx::query!("UPDATE api_keys SET deleted=TRUE WHERE key_hash=$1 RETURNING id", hash)
+    let ret = sqlx::query!("UPDATE api_keys SET deleted=TRUE WHERE key_hash=$1 RETURNING key_id", hash)
     .fetch_optional(&server.sqlx_db).await?;
 
     if let Some(_) = ret {

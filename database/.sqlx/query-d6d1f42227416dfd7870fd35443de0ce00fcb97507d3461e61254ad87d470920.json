@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT dok_id, dokument.drucksnr \n        FROM tops_doks NATURAL LEFT JOIN dokument\n        WHERE tops_doks.top_id = $1;",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "dok_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "drucksnr",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      true
+    ]
+  },
+  "hash": "d6d1f42227416dfd7870fd35443de0ce00fcb97507d3461e61254ad87d470920"
+}
