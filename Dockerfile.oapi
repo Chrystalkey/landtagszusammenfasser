@@ -3,7 +3,7 @@ FROM debian:bookworm-slim
 LABEL maintainer="Benedikt Schäfer"
 LABEL description="Pre-Image that generates openapi code from scratch every time the spec changes"
 LABEL version="0.1"
-
+ENV OPENAPI_GENERATOR_VERSION="7.11.0"
 RUN apt update && apt install -y --no-install-recommends maven jq curl \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir /app \
@@ -22,4 +22,4 @@ COPY docs/specs/openapi.yml ./openapi.yml
 RUN ./openapi-generator-cli generate -g python -i ./openapi.yml -o /app/oapicode-python && \
     ./openapi-generator-cli generate -g rust-axum -i ./openapi.yml -o /app/oapicode-rust
 
-ENTRYPOINT [ "echo", "\"hello world\"" ]
+ENTRYPOINT [ "./openapi-generator-cli", "version" ]

@@ -112,7 +112,6 @@ async fn main() -> Result<()> {
     if !available {
         return Err(LTZFError::Other{message: "Server Connection failed after 10 retries".into() });
     }
-    
     tracing::debug!("Started Database Pool");
     let mailer = config.build_mailer().await;
     let mailer = if let Err(e) = mailer {
@@ -133,19 +132,18 @@ async fn main() -> Result<()> {
     // Run Key Administrative Functions
     let keyadder_hash = digest(config.keyadder_key.as_str());
 
-    sqlx::query_as(
+    sqlx::query!(
         "INSERT INTO api_keys(key_hash, scope, created_by)
         VALUES
         ($1, (SELECT id FROM api_scope WHERE api_key = 'keyadder' LIMIT 1), (SELECT last_value FROM api_keys_id_seq))
-        ON CONFLICT DO NOTHING;")
-    .bind(keyadder_hash)
-    .fetch_one(&sqlx_db).await?;
+        ON CONFLICT DO NOTHING;", keyadder_hash)
+    .execute(&sqlx_db).await?;
 
     let state = Arc::new(LTZFServer::new(db_pool, sqlx_db, mailer, config));
     tracing::debug!("Constructed Server State");
 
     // Init Axum router
-    let app = openapi::server::new(state.clone());
+    let app  = openapi::server::new(state.clone());
     tracing::debug!("Constructed Router");
     tracing::info!(
         "Starting Server on {}:{}",

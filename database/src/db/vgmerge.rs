@@ -1,3 +1,4 @@
+#![allow(unused)]
 /// Handles merging of two datasets.
 /// in particular, stellungnahme & dokument are atomic.
 /// station and vorgang are not in the sense that vorgang.stations and station.stellungnahmen are appendable and deletable.
@@ -19,8 +20,6 @@
 
 use crate::{LTZFServer, Result};
 use openapi::models;
-
-pub const TITLE_SIMILARITY_THRESHOLD: f32 = 0.8;
 
 pub enum MergeState<T> {
     AmbiguousMatch(Vec<T>),
@@ -223,9 +222,6 @@ mod scenariotests{
                 span,
                 server,
             }
-        }
-        async fn get_conn(&self) -> Connection {
-            self.server.database.get().await.unwrap()
         }
         async fn push(&self) {
             info!("Running main Merge test");

@@ -1,6 +1,5 @@
 use openapi::models;
 use crate::{LTZFServer, Result};
-use crate::utils::notify::*;
 
 /// Inserts a new GSVH into the database.
 pub async fn insert_vorgang(
@@ -127,9 +126,7 @@ pub async fn insert_station(
 
     return Ok(stat_id);
 }
-fn sanitize_string(s: &str) -> String{
-    s.to_string()
-}
+
 pub async fn insert_dokument(
     dok: models::Dokument,
     tx: &mut sqlx::PgTransaction<'_>,

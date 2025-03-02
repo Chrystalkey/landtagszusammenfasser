@@ -13,6 +13,7 @@ else
     echo "Creating $DIRECTORY directory"
     mkdir "$DIRECTORY"
     cd "$DIRECTORY"
+    export OPENAPI_GENERATOR_VERSION="7.11.0"
     curl https://raw.githubusercontent.com/OpenAPITools/openapi-generator/master/bin/utils/openapi-generator-cli.sh > openapi-generator-cli
     chmod u+x openapi-generator-cli
     cd ..

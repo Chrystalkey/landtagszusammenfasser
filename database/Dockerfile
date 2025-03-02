@@ -1,6 +1,6 @@
 FROM oapi-preimage AS oapifile
 
-FROM rust:1.83 AS builder
+FROM rust:1.85 AS builder
 
 RUN apt update && apt install -y --no-install-recommends libpq-dev && rm -rf /var/lib/apt/lists/*
 
@@ -16,21 +16,13 @@ RUN adduser \
 WORKDIR /app
 
 COPY Cargo.toml Cargo.lock ./
-
-RUN mkdir src && \
-    echo "fn main() {}" > src/main.rs && \
-    cargo remove openapi && \
-    cargo build -r && \
-    rm -rf src
-
 COPY --from=oapifile /app/oapicode-rust ./oapicode
 
 RUN mkdir src && \
     echo "fn main() {}" > src/main.rs && \
-    cargo add openapi --path ./oapicode --features server && \
-    cargo build -r && \
-    rm -rf src
+    cargo build -r
 
+COPY ./.sqlx ./.sqlx
 COPY ./src ./src
 COPY ./migrations ./migrations
 
