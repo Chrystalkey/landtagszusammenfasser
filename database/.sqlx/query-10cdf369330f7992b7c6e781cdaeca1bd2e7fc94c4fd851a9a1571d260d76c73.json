@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO rel_vorgang_init_person(initiator, vorgang_id) SELECT val, $2 FROM UNNEST($1::text[])as val;",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "TextArray",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "10cdf369330f7992b7c6e781cdaeca1bd2e7fc94c4fd851a9a1571d260d76c73"
+}

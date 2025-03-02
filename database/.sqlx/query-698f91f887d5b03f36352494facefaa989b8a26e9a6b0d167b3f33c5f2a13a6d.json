@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT top.id as id, top.titel, top.nummer as nummer FROM top\n    JOIN rel_ass_tops ON rel_ass_tops.top_id = top.id AND rel_ass_tops.ass_id = $1;",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "titel",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "nummer",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "698f91f887d5b03f36352494facefaa989b8a26e9a6b0d167b3f33c5f2a13a6d"
+}

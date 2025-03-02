@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO rel_station_gesetz(stat_id, gesetz)\n        SELECT $1, blub FROM UNNEST($2::text[]) as blub",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "TextArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f15d5bf8f4bc9f53c1489fa6e1c13c95571a6a42332273da9d1fab9b79a6b0f0"
+}

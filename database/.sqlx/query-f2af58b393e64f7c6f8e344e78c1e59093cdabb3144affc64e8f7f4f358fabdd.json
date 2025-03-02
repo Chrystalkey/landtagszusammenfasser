@@ -1,0 +1,32 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH db_id_table AS (\nSELECT rel_vorgang_ident.vorgang_id as vgid, identifikator as ident, vg_ident_typ.api_key as idt_str\nFROM vg_ident_typ, rel_vorgang_ident \nWHERE vg_ident_typ.id = rel_vorgang_ident.typ)\n\nSELECT DISTINCT(vorgang.id), vorgang.api_id FROM vorgang\nJOIN vorgangstyp ON vorgang.typ = vorgangstyp.id\nWHERE\nvorgang.api_id = $1 OR\n(\nvorgang.wahlperiode = $4 AND \nvorgangstyp.api_key = $5 AND\n    EXISTS (SELECT * FROM UNNEST($2::text[], $3::text[]) as eingabe(ident, typ), db_id_table WHERE \n        db_id_table.vgid = vorgang.id AND\n        eingabe.ident = db_id_table.ident AND\n        eingabe.typ = db_id_table.idt_str\n    )\n);",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "api_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "TextArray",
+        "TextArray",
+        "Int4",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "f2af58b393e64f7c6f8e344e78c1e59093cdabb3144affc64e8f7f4f358fabdd"
+}

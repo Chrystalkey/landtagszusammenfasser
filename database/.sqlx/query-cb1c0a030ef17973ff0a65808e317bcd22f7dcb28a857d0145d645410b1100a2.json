@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT name, fachgebiet FROM experte, rel_ass_experten WHERE experte.id = rel_ass_experten.exp_id AND rel_ass_experten.ass_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "fachgebiet",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "cb1c0a030ef17973ff0a65808e317bcd22f7dcb28a857d0145d645410b1100a2"
+}

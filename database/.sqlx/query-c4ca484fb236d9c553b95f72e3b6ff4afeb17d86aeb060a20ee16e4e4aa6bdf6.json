@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT DISTINCT api_key FROM rel_dok_schlagwort JOIN schlagwort ON schlagwort.id=rel_dok_schlagwort.sw_id WHERE dok_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "api_key",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "c4ca484fb236d9c553b95f72e3b6ff4afeb17d86aeb060a20ee16e4e4aa6bdf6"
+}

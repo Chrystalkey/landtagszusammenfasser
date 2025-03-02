@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT api_key as typ, identifikator as ident FROM rel_vorgang_ident, vg_ident_typ\n        WHERE rel_vorgang_ident.typ = vg_ident_typ.id AND rel_vorgang_ident.vorgang_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "typ",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "ident",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "bd5e02ffe594aa0232315c713d3e42b2530236b90595d2c394105dfb1a2d6b22"
+}

@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n    INSERT INTO vorgang(api_id, titel, verfaend, wahlperiode, typ)\n    VALUES\n    ($1, $2, $3, $4, (SELECT id FROM vorgangstyp WHERE api_key=$5))\n    RETURNING vorgang.id;",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Varchar",
+        "Bool",
+        "Int4",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "9e7114a26208275874e71e5d405fd5dec939c20c991b1286dbcfab1b1015ef9b"
+}

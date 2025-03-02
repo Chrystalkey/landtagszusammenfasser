@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT api_id, as_id, public, termin FROM ausschusssitzung WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "api_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "as_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "public",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 3,
+        "name": "termin",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "80cb4cd73659b5f6a6192dfe89bddfb4a7a8c628f2fee825a27fe8ab0f131bcc"
+}
