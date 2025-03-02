@@ -1,14 +1,7 @@
-use deadpool_diesel::postgres::Pool;
-use diesel_migrations::MigrationHarness;
 use tokio::signal;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use diesel_migrations::{embed_migrations, EmbeddedMigrations};
-
-use crate::{error::*, Result};
 
 pub mod notify;
-
-pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations/");
 
 pub async fn shutdown_signal() {
     let ctrl_c = async {
@@ -49,15 +42,4 @@ pub fn init_tracing() {
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
-}
-
-// Function to run database migrations
-pub async fn run_migrations(pool: &Pool) -> Result<()> {
-    let conn: deadpool_diesel::postgres::Connection = pool.get().await?;
-    conn.interact(|conn| 
-        conn.run_pending_migrations(MIGRATIONS).map(|_| ()))
-        .await?
-        .map_err(|e| 
-                DatabaseError::Unknown { source: e })?;
-    Ok(())
 }

@@ -7,18 +7,19 @@ use std::sync::Arc;
 
 use clap::Parser;
 use sqlx;
-use deadpool_diesel::postgres::{Manager, Pool};
 
 use error::LTZFError;
 use lettre::{transport::smtp::authentication::Credentials, SmtpTransport};
 use tokio::net::TcpListener;
 use sha256::digest;
-
 pub use api::{LTZFArc, LTZFServer};
 pub use error::Result;
+use utils::{init_tracing, shutdown_signal};
+
 pub type DateTime = chrono::DateTime<chrono::Utc>;
 
-use utils::{init_tracing, run_migrations, shutdown_signal};
+pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");
+
 #[derive(Parser, Clone, Debug, Default)]
 #[command(author, version, about)]
 pub struct Configuration {
@@ -49,13 +50,6 @@ pub struct Configuration {
 }
 
 impl Configuration {
-    pub async fn build_pool(&self) -> Result<Pool> {
-        // Create a connection pool to the PostgreSQL database
-        let manager = Manager::new(self.db_url.as_str(), deadpool_diesel::Runtime::Tokio1);
-        let pool = Pool::builder(manager).build()?;
-        Ok(pool)
-    }
-
     pub async fn build_mailer(&self) -> Result<SmtpTransport> {
         if self.mail_server.is_none()
             || self.mail_user.is_none()
@@ -124,10 +118,6 @@ async fn main() -> Result<()> {
         tracing::debug!("Started Mailer");
         Some(mailer.unwrap())
     };
-    // Apply pending database migrations through diesel
-    let db_pool = config.build_pool().await?;
-    run_migrations(&db_pool).await?;
-    tracing::debug!("Applied Migrations");
 
     // Run Key Administrative Functions
     let keyadder_hash = digest(config.keyadder_key.as_str());
@@ -139,7 +129,7 @@ async fn main() -> Result<()> {
         ON CONFLICT DO NOTHING;", keyadder_hash)
     .execute(&sqlx_db).await?;
 
-    let state = Arc::new(LTZFServer::new(db_pool, sqlx_db, mailer, config));
+    let state = Arc::new(LTZFServer::new(sqlx_db, mailer, config));
     tracing::debug!("Constructed Server State");
 
     // Init Axum router

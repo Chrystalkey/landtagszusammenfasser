@@ -6,7 +6,6 @@ use lettre::SmtpTransport;
 use crate::error::{DataValidationError, DatabaseError, LTZFError};
 use crate::{db, Configuration};
 use axum_extra::extract::CookieJar;
-use deadpool_diesel::postgres::Pool;
 use openapi::apis::default::*;
 use openapi::models;
 
@@ -15,16 +14,14 @@ mod get;
 mod put;
 
 pub struct LTZFServer {
-    pub database: Pool,
     pub sqlx_db: sqlx::PgPool,
     pub mailer: Option<SmtpTransport>,
     pub config: Configuration,
 }
 pub type LTZFArc = std::sync::Arc<LTZFServer>;
 impl LTZFServer {
-    pub fn new(database: Pool, sqlx_db: sqlx::PgPool, mailer: Option<SmtpTransport>, config: Configuration) -> Self {
+    pub fn new(sqlx_db: sqlx::PgPool, mailer: Option<SmtpTransport>, config: Configuration) -> Self {
         Self {
-            database,
             mailer,
             config,
             sqlx_db,
@@ -107,7 +104,7 @@ impl openapi::apis::default::Default for LTZFServer {
             Err(e) => {
                 tracing::warn!("{}", e.to_string());
                 match e {
-                    LTZFError::Database{source: DatabaseError::Operation{source: diesel::result::Error::NotFound}} => {
+                    LTZFError::Database{source: DatabaseError::Sqlx{source: sqlx::Error::RowNotFound}} => {
                         tracing::warn!("Not Found Error: {:?}", e.to_string());
                         Ok(VorgangGetByIdResponse::Status404_ContentNotFound)
                     }
@@ -207,16 +204,6 @@ impl openapi::apis::default::Default for LTZFServer {
             Err(e) => {
                 tracing::warn!("Error Occurred and Is Returned: {:?}", e.to_string());
                 match e {
-                    LTZFError::Database{ source: DatabaseError::Operation{source: diesel::result::Error::DatabaseError(
-                        diesel::result::DatabaseErrorKind::UniqueViolation,
-                        info,
-                    )}} => {
-                        tracing::warn!(
-                            "Unique Violation Error (Conflict on Input Data): {:?}",
-                            info
-                        );
-                        Ok(VorgangPutResponse::Status409_Conflict)
-                    },
                     LTZFError::Validation{source: DataValidationError::DuplicateApiId{id}} => {
                         tracing::warn!("ApiID Equal: {:?}", id);
                         Ok(VorgangPutResponse::Status409_Conflict)

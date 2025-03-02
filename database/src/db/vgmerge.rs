@@ -150,9 +150,6 @@ mod scenariotests{
     use similar::ChangeTag;
     use std::panic::AssertUnwindSafe;
 
-    use diesel::prelude::*;
-    use deadpool_diesel::postgres::{Pool, Manager, Connection};
-    use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
     use openapi::models::{self, VorgangGetHeaderParams, VorgangGetQueryParams};
     use serde::Deserialize;
     use crate::LTZFServer;
@@ -160,7 +157,6 @@ mod scenariotests{
     #[allow(unused)]
     use tracing::{info, error, warn, debug};
 
-    pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations/");
     const DB_URL: &str = "postgres://mergeuser:mergepass@localhost:59512/mergecenter";
 
     #[allow(unused)]
@@ -183,15 +179,12 @@ mod scenariotests{
     }
     fn default_bool()->bool{ false }
     impl<'obj> TestScenario<'obj>{
-        async fn new(path: &'obj std::path::Path, conn: &Connection) -> Self {
+        async fn new(path: &'obj std::path::Path, server: &LTZFServer) -> Self {
             let name = path.file_stem().unwrap().to_str().unwrap();
             info!("Creating Merge Test Scenario with name: {}", name);
             let span = tracing::span!(tracing::Level::INFO, "Mergetest", name = name);
             let query = format!("CREATE DATABASE testing_{} WITH OWNER mergeuser;", name);
-            conn.interact(|conn| {
-                diesel::sql_query(query)
-                .execute(conn)
-            }).await.unwrap().unwrap();
+            todo!();
 
             let test_db_url = format!("postgres://mergeuser:mergepass@localhost:59512/testing_{}", name);
             let pts: PTS = serde_json::from_reader(std::fs::File::open(path).unwrap()).unwrap();
@@ -199,17 +192,11 @@ mod scenariotests{
                 config: crate::Configuration{
                     ..Default::default()
                 },
-                database: Pool::builder(Manager::new(&test_db_url,deadpool_diesel::Runtime::Tokio1)).build().unwrap(),
                 mailer: None,
                 sqlx_db: sqlx::postgres::PgPoolOptions::new()
                 .max_connections(5)
                 .connect(&test_db_url).await.unwrap()
             };
-            let conn = server.database.get().await.unwrap();
-            conn.interact(|conn| 
-            conn.run_pending_migrations(MIGRATIONS).map(|_| ()))
-            .await.unwrap().unwrap();
-            info!("Migrations applied");
             for vorgang in pts.context.iter() {
                 super::run_integration(vorgang, &server).await.unwrap()
             }
@@ -303,28 +290,7 @@ mod scenariotests{
     async fn test_merge_scenarios() {
         // set up database connection and clear it
         info!("Setting up Test Database Connection");
-        let pool = Pool::builder(Manager::new(DB_URL, deadpool_diesel::Runtime::Tokio1)).build().unwrap();
-        let mut available = false;
-        for i in 0..14 {
-            let r = pool.get().await;
-            match r {
-                Ok(_) => {available = true;break;}
-                Err(deadpool_diesel::PoolError::Backend(deadpool_diesel::Error::Connection(
-                    ConnectionError::BadConnection(e)
-                ))) => {
-                    tracing::warn!("{}", e);
-                },
-                _ => {let _ = r.unwrap();}
-            }
-            let milliseconds = 2i32.pow(i) as u64;
-            tracing::info!("DB Unavailable, Retrying in {} ms...", milliseconds);
-            std::thread::sleep(std::time::Duration::from_millis(milliseconds));
-        };
-        if !available {
-            panic!("Database unavailable");
-        }
 
-        let conn = pool.get().await.unwrap();
         for path in std::fs::read_dir("tests/testfiles").unwrap() {
             if let Ok(path) = path {
                 info!("Executing Scenario: {}", path.path().display());
@@ -333,17 +299,17 @@ mod scenariotests{
 
                 let mut shouldfail = false;
                 let result = AssertUnwindSafe(async {
-                    let scenario = TestScenario::new(&ptb, &conn).await;
+                    let scenario = TestScenario::new(&ptb, todo!()).await;
                     shouldfail = scenario.shouldfail;
                     scenario.run().await
                 }
                 ).catch_unwind().await;
-
-                let query = format!("DROP DATABASE testing_{}", name);
-                conn.interact(move |conn|{
-                    diesel::sql_query(query)
-                    .execute(conn)
-                }).await.unwrap().unwrap();
+                todo!();
+                // let query = format!("DROP DATABASE testing_{}", name);
+                // conn.interact(move |conn|{
+                //     diesel::sql_query(query)
+                //     .execute(conn)
+                // }).await.unwrap().unwrap();
                 if result.is_ok() == shouldfail {
                     assert!(false, "The Scenario did not behave as expected: {}", 
                     if shouldfail{"Succeeded, but should fail"}else{"Failed but should succeed"}
