@@ -6,7 +6,9 @@ use crate::utils::as_option;
 
 pub async fn vorgang_by_id(id: i32, executor: &mut sqlx::PgTransaction<'_>) -> Result<models::Vorgang> {
     let pre_vg = sqlx::query!(
-        "SELECT * FROM vorgang NATURAL LEFT JOIN vorgangstyp WHERE vorgang.vg_id = $1", id)
+        "SELECT v.*, vt.value FROM vorgang v
+        INNER JOIN vorgangstyp vt ON vt.id = v.typ
+        WHERE v.id = $1", id)
     .fetch_one(&mut **executor).await?;
 
     let links = sqlx::query!("SELECT link FROM rel_vorgang_links WHERE vg_id = $1", id)
@@ -18,16 +20,19 @@ pub async fn vorgang_by_id(id: i32, executor: &mut sqlx::PgTransaction<'_>) -> R
     let init_prsn = sqlx::query!("SELECT initiator FROM rel_vorgang_init_person WHERE vg_id = $1", id)
     .map(|row| row.initiator).fetch_all(&mut **executor).await?;
 
-    let ids = sqlx::query!("SELECT value as typ, identifikator as ident FROM rel_vg_ident
-        NATURAL LEFT JOIN vg_ident_typ WHERE rel_vg_ident.vg_id = $1", id)
+    let ids = sqlx::query!("
+    SELECT value as typ, identifikator as ident 
+    FROM rel_vg_ident r
+    INNER JOIN vg_ident_typ t ON t.id = r.typ
+    WHERE r.vg_id = $1", id)
         .map(|row| models::VgIdent{
         typ: models::VgIdentTyp::from_str(row.typ.as_str())
         .expect(format!("Could not convert database value `{}`into VgIdentTyp Variant", row.typ).as_str()),
         id: row.ident})
     .fetch_all(&mut **executor).await?;
 
-    let station_ids = sqlx::query!("SELECT stat_id FROM station WHERE vg_id = $1", id)
-    .map(|row| row.stat_id).fetch_all(&mut **executor).await?;
+    let station_ids = sqlx::query!("SELECT id FROM station WHERE vg_id = $1", id)
+    .map(|row| row.id).fetch_all(&mut **executor).await?;
 
     let mut stationen = vec![];
     for sid in station_ids {
@@ -51,78 +56,7 @@ pub async fn vorgang_by_id(id: i32, executor: &mut sqlx::PgTransaction<'_>) -> R
 }
 
 pub async fn ausschusssitzung_by_id(id: i32,  executor: &mut sqlx::PgTransaction<'_>) -> Result<models::Ausschusssitzung> {
-    let pre_as_rec = sqlx::query!("SELECT api_id, gr_id, public, termin FROM ausschusssitzung WHERE ass_id = $1", id)
-    .fetch_one(&mut **executor).await?;
-
-    let termin: crate::DateTime = pre_as_rec.termin.into();
-    let gremium = sqlx::query!("SELECT name, value as parl FROM gremium NATURAL LEFT JOIN parlament WHERE gremium.gr_id = $1", pre_as_rec.gr_id)
-    .map(|row|
-        if let Ok(parl) = models::Parlament::from_str(&row.parl){
-            Ok(models::Gremium{parlament: parl,name: row.name})
-        }else{
-            Err(DataValidationError::InvalidEnumValue { msg: format!("Tried to convert db val `{}` into parlament", row.parl) })
-        }
-    ).fetch_one(&mut **executor).await??;
-
-
-    let pre_tops = sqlx::query!("SELECT top_id as id, top.titel, top.nummer as nummer FROM rel_ass_tops 
-    NATURAL LEFT JOIN top
-    WHERE rel_ass_tops.ass_id = $1;", id)
-    .map(|row| (row.id, models::Top{
-        titel: row.titel,
-        nummer: row.nummer as u32,
-        drucksachen: None,
-        vorgang_id: None
-    })).fetch_all(&mut **executor).await?;
-    let mut tops = Vec::with_capacity(pre_tops.len());
-    for (topid, top) in pre_tops {
-        let doks_tops = sqlx::query!("SELECT dok_id, dokument.drucksnr 
-        FROM tops_doks NATURAL LEFT JOIN dokument
-        WHERE tops_doks.top_id = $1;", topid)
-        .map(|row| (row.dok_id, row.drucksnr)).fetch_all(&mut **executor).await?;
-        
-        let vg_nrs = sqlx::query!("SELECT vorgang.api_id, COUNT(rel_station_dokument.dok_id) as count FROM 
-        rel_station_dokument 
-        NATURAL LEFT JOIN station 
-        NATURAL LEFT JOIN  vorgang
-        WHERE rel_station_dokument.dok_id = ANY($1)
-        GROUP BY vorgang.vg_id ORDER BY count DESC;", &doks_tops.iter().map(|x|x.0).collect::<Vec<_>>())
-        .map(|row| row.api_id)
-        .fetch_one(&mut **executor).await?;
-        let mut doks = Vec::with_capacity(doks_tops.len());
-        for (id, drcks) in doks_tops {
-            if let Some(_) = drcks {
-                doks.push(dokument_by_id(id, executor).await?);
-            }
-        }
-        let doks = doks.drain(..)
-        .map(|d|models::DokRef::Dokument(Box::new(d)))
-        .collect::<Vec<_>>();
-        let top = models::Top{
-            vorgang_id: Some(vg_nrs),
-            drucksachen: as_option(doks),
-            ..top
-        };
-        tops.push(top);
-    }
-    
-    let experten = sqlx::query!("SELECT name, fachgebiet FROM rel_ass_experten
-    NATURAL LEFT JOIN experte
-    WHERE rel_ass_experten.ass_id = $1", id)
-    .map(|row| models::Experte{
-        name: row.name,
-        fachgebiet: row.fachgebiet
-    }).fetch_all(&mut **executor).await?;
-    let experten = as_option(experten);
-
-    Ok(models::Ausschusssitzung {
-        api_id : Some(pre_as_rec.api_id),
-        ausschuss: gremium,
-        experten,
-        public: pre_as_rec.public,
-        termin,
-        tops
-    })
+    todo!()
 }
 
 pub async fn station_by_id(id: i32,  executor:&mut sqlx::PgTransaction<'_>) -> Result<models::Station> {
@@ -132,29 +66,31 @@ pub async fn station_by_id(id: i32,  executor:&mut sqlx::PgTransaction<'_>) -> R
     for did in dokids {
         doks.push(dokument_by_id(did, executor).await?.into());
     }
-    let stlid = sqlx::query!("SELECT stl_id FROM stellungnahme WHERE stat_id = $1", id)
-    .map(|r|r.stl_id).fetch_all(&mut **executor).await?;
+    let stlid = sqlx::query!("SELECT id FROM stellungnahme WHERE stat_id = $1", id)
+    .map(|r|r.id).fetch_all(&mut **executor).await?;
     let mut stellungnahmen = Vec::with_capacity(stlid.len());
     for sid in stlid {
         stellungnahmen.push(stellungnahme_by_id(sid, executor).await?);
     }
     let sw = sqlx::query!(
-        "SELECT DISTINCT(value) FROM rel_station_schlagwort 
-        NATURAL LEFT JOIN schlagwort 
-        WHERE rel_station_schlagwort.stat_id = $1", id)
+        "SELECT DISTINCT(value) FROM rel_station_schlagwort r
+        LEFT JOIN schlagwort sw ON sw.id = r.sw_id
+        WHERE r.stat_id = $1", id)
     .map(|sw| sw.value).fetch_all(&mut **executor).await?;
     
     let bet_ges = sqlx::query!("SELECT gesetz FROM rel_station_gesetz WHERE stat_id = $1", id)
     .map(|r|r.gesetz).fetch_all(&mut **executor).await?;
     let temp_stat = sqlx::query!(
-        "SELECT *, parlament.value as parlv, stationstyp.value as stattyp
-        FROM station NATURAL LEFT JOIN parlament 
-        NATURAL LEFT JOIN gremium NATURAL LEFT JOIN stationstyp 
-        WHERE station.stat_id=$1", id)
+        "SELECT s.*, p.value as parlv, st.value as stattyp
+        FROM station s
+        INNER JOIN parlament p ON p.id = s.p_id
+        INNER JOIN stationstyp st ON st.id = s.typ
+        WHERE s.id=$1", id)
         .fetch_one(&mut **executor).await?;
     
-    let gremium = sqlx::query!("SELECT parlament.value, gremium.name 
-        FROM gremium NATURAL LEFT JOIN parlament WHERE gremium.gr_id = $1", temp_stat.gr_id)
+    let gremium = sqlx::query!("
+    SELECT p.value, g.name FROM gremium g INNER JOIN parlament p on p.id = g.parl
+        WHERE g.id = $1", temp_stat.gr_id)
         .map(|x|models::Gremium{name: x.name, parlament: models::Parlament::from_str(&x.value).unwrap()})
         .fetch_optional(&mut **executor).await?;
 
@@ -167,7 +103,7 @@ pub async fn station_by_id(id: i32,  executor:&mut sqlx::PgTransaction<'_>) -> R
         schlagworte: as_option(sw),
         stellungnahmen: as_option(stellungnahmen),
         start_zeitpunkt : temp_stat.start_zeitpunkt,
-        letztes_update : temp_stat.letztes_update,
+        letztes_update : Some(temp_stat.letztes_update),
         betroffene_texte: as_option(bet_ges),
         trojanergefahr: temp_stat.trojanergefahr.map(|x| x as u8),
         titel: temp_stat.titel,
@@ -181,7 +117,7 @@ pub async fn stellungnahme_by_id(
     id: i32,
     executor:&mut sqlx::PgTransaction<'_>,
 ) -> Result<models::Stellungnahme> {
-    let temp = sqlx::query!("SELECT * FROM stellungnahme where stl_id = $1", id).fetch_one(&mut **executor).await?;
+    let temp = sqlx::query!("SELECT * FROM stellungnahme where id = $1", id).fetch_one(&mut **executor).await?;
 
     return Ok(models::Stellungnahme {
         dokument: dokument_by_id(temp.dok_id, executor).await?,
@@ -192,10 +128,15 @@ pub async fn stellungnahme_by_id(
 
 pub async fn dokument_by_id(id: i32,  executor:&mut sqlx::PgTransaction<'_>) -> Result<models::Dokument> {
     let rec = sqlx::query!(
-        "SELECT *, value as typ FROM dokument 
-        NATURAL LEFT JOIN dokumententyp WHERE dokument.dok_id = $1", id)
+        "SELECT d.*, value as typ_value FROM dokument d
+        INNER JOIN dokumententyp dt ON dt.id = d.typ
+        WHERE d.id = $1", id)
         .fetch_one(&mut **executor).await?;
-    let schlagworte = sqlx::query!("SELECT DISTINCT value FROM rel_dok_schlagwort NATURAL LEFT JOIN schlagwort WHERE dok_id = $1", id)
+    let schlagworte = sqlx::query!(
+        "SELECT DISTINCT value 
+        FROM rel_dok_schlagwort r
+        LEFT JOIN schlagwort sw ON sw.id = r.sw_id
+        WHERE dok_id = $1", id)
         .map(|r|r.value).fetch_all(&mut **executor).await?;
     let autoren = sqlx::query!("SELECT autor FROM rel_dok_autor WHERE dok_id = $1", id)
         .map(|r|r.autor).fetch_all(&mut **executor).await?;
@@ -215,7 +156,7 @@ pub async fn dokument_by_id(id: i32,  executor:&mut sqlx::PgTransaction<'_>) -> 
         schlagworte: as_option(schlagworte),
         autoren: as_option(autoren),
         autorpersonen: as_option(autorpersonen),
-        typ: models::Doktyp::from_str(rec.typ.as_str())
+        typ: models::Doktyp::from_str(rec.typ_value.as_str())
             .map_err(|e| DataValidationError::InvalidEnumValue { msg: e })?,
         drucksnr: rec.drucksnr
     });
@@ -229,13 +170,13 @@ pub async fn vorgang_by_parameter(
 
     let vg_list = sqlx::query!(
         "WITH pre_table AS (
-        SELECT vorgang.vg_id as id, MAX(station.start_zeitpunkt) as lastmod FROM vorgang
-            NATURAL LEFT JOIN vorgangstyp
-            NATURAL LEFT JOIN station
+        SELECT vorgang.id, MAX(station.start_zeitpunkt) as lastmod FROM vorgang
+            INNER JOIN vorgangstyp vt ON vt.id = vorgang.typ
+            LEFT JOIN station ON station.vg_id = vorgang.id
             WHERE TRUE
             AND vorgang.wahlperiode = COALESCE($1, vorgang.wahlperiode)
-            AND vorgangstyp.value = COALESCE($2, vorgangstyp.value)
-        GROUP BY vorgang.vg_id
+            AND vt.value = COALESCE($2, vt.value)
+        GROUP BY vorgang.id
         ORDER BY lastmod
         )
         SELECT * FROM pre_table WHERE

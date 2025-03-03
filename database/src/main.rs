@@ -1,7 +1,7 @@
-mod api;
-mod db;
-mod error;
-mod utils;
+pub(crate)mod api;
+pub(crate) mod db;
+pub(crate)mod error;
+pub(crate)mod utils;
 
 use std::sync::Arc;
 
@@ -12,6 +12,7 @@ use error::LTZFError;
 use lettre::{transport::smtp::authentication::Credentials, SmtpTransport};
 use tokio::net::TcpListener;
 use sha256::digest;
+
 pub use api::{LTZFArc, LTZFServer};
 pub use error::Result;
 use utils::{init_tracing, shutdown_signal};
@@ -107,6 +108,8 @@ async fn main() -> Result<()> {
         return Err(LTZFError::Other{message: "Server Connection failed after 10 retries".into() });
     }
     tracing::debug!("Started Database Pool");
+    sqlx::migrate!().run(&sqlx_db).await?;
+    tracing::debug!("Executed Migrations");
 
     let mailer = config.build_mailer().await;
     let mailer = if let Err(e) = mailer {
@@ -124,9 +127,9 @@ async fn main() -> Result<()> {
     let keyadder_hash = digest(config.keyadder_key.as_str());
 
     sqlx::query!(
-        "INSERT INTO api_keys(key_hash, scope_id, created_by)
+        "INSERT INTO api_keys(key_hash, scope, created_by)
         VALUES
-        ($1, (SELECT scope_id FROM api_scope WHERE value = 'keyadder' LIMIT 1), (SELECT last_value FROM api_keys_key_id_seq))
+        ($1, (SELECT id FROM api_scope WHERE value = 'keyadder' LIMIT 1), (SELECT last_value FROM api_keys_id_seq))
         ON CONFLICT DO NOTHING;", keyadder_hash)
     .execute(&sqlx_db).await?;
 

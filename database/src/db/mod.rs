@@ -2,3 +2,192 @@ pub mod insert;
 pub mod retrieve;
 pub mod merge;
 pub mod delete;
+
+mod scenariotest{
+    #![cfg(test)]
+    use std::collections::HashSet;
+    use futures::FutureExt;
+    use similar::ChangeTag;
+    use std::panic::AssertUnwindSafe;
+    use crate::LTZFServer;
+
+    use openapi::models::{self, VorgangGetHeaderParams, VorgangGetQueryParams};
+    use serde::Deserialize;
+
+    #[allow(unused)]
+    use tracing::{info, error, warn, debug};
+
+    const DB_URL: &str = "postgres://mergeuser:mergepass@localhost:59512/mergecenter";
+
+    #[allow(unused)]
+    struct TestScenario<'obj>{
+        name: &'obj str,
+        context: Vec<models::Vorgang>,
+        vorgang: models::Vorgang,
+        result: Vec<models::Vorgang>,
+        shouldfail: bool,
+        server: LTZFServer,
+        span: tracing::Span,
+    }
+    #[derive(Deserialize)]
+    struct PTS {
+        context: Vec<models::Vorgang>,
+        vorgang: models::Vorgang,
+        result: Vec<models::Vorgang>,
+        #[serde(default = "default_bool")]
+        shouldfail: bool
+    }
+    fn default_bool()->bool{ false }
+    impl<'obj> TestScenario<'obj>{
+        async fn new(path: &'obj std::path::Path, server: &LTZFServer) -> Self {
+            let name = path.file_stem().unwrap().to_str().unwrap();
+            info!("Creating Merge Test Scenario with name: {}", name);
+            let span = tracing::span!(tracing::Level::INFO, "Mergetest", name = name);
+            let query = format!("CREATE DATABASE testing_{} WITH OWNER mergeuser;", name);
+            sqlx::query(&query).execute(&server.sqlx_db).await.unwrap();
+
+            let test_db_url = format!("postgres://mergeuser:mergepass@localhost:59512/testing_{}", name);
+            let pts: PTS = serde_json::from_reader(std::fs::File::open(path).unwrap()).unwrap();
+            let server = LTZFServer {
+                config: crate::Configuration{
+                    ..Default::default()
+                },
+                mailer: None,
+                sqlx_db: sqlx::postgres::PgPoolOptions::new()
+                .max_connections(5)
+                .connect(&test_db_url).await.unwrap()
+            };
+            sqlx::migrate!().run(&server.sqlx_db).await.unwrap();
+            for vorgang in pts.context.iter() {
+                crate::db::merge::vorgang::run_integration(vorgang, &server).await.unwrap()
+            }
+            Self {
+                name,
+                context: pts.context,
+                vorgang: pts.vorgang,
+                result: pts.result,
+                shouldfail: pts.shouldfail,
+                span,
+                server,
+            }
+        }
+        async fn push(&self) {
+            info!("Running main Merge test");
+            crate::db::merge::vorgang::run_integration(&self.vorgang, &self.server).await.unwrap();
+        }
+        async fn check(&self) {
+            info!("Checking for Correctness");
+            let paramock = VorgangGetQueryParams{
+                vgtyp: None,
+                wp: None,
+                initiator_contains_any: None, 
+                limit: Some((self.result.len()*2) as i32),
+                offset: None};
+            let hparamock = VorgangGetHeaderParams{
+                if_modified_since: None,
+            };
+            let mut tx = self.server.sqlx_db.begin().await.unwrap();
+            let db_vorgangs = crate::db::retrieve::vorgang_by_parameter(
+                paramock, hparamock, &mut tx).await.unwrap();
+            tx.rollback().await.unwrap();
+            let mut set = HashSet::with_capacity(db_vorgangs.len());
+            for thing in self.result.iter() {
+                tracing::info!("Adding `{}` to result set", thing.api_id);
+                set.insert(serde_json::to_string(thing).unwrap());
+            }
+            for thing in db_vorgangs.iter() {
+                let serialized = serde_json::to_string(thing).unwrap();
+                let result = set.remove(&serialized);
+                if !result{
+                    assert!(result, 
+                        "Database value with api_id `{}` was not present in the result set, which contained: {:?}.\n\nDetails:\n{}", 
+                    thing.api_id, 
+                    self.result.iter().map(|e|e.api_id).collect::<Vec<uuid::Uuid>>(), display_set_strdiff(&serialized, set));
+                }
+            }
+            assert!(set.is_empty(), "Values were expected, but not at all present in the result set: {:?}", set);
+        }
+        async fn run(self) {
+            self.push().await;
+            self.check().await;
+        }
+    }
+
+    fn display_set_strdiff(s: &str, set: HashSet<String>) -> String {
+        let mut prio = 0.;
+        let mut pe_diff = None;
+        for element in set.iter(){
+            let diff = similar::TextDiff::from_chars(s, element);
+            if prio < diff.ratio(){
+                prio = diff.ratio();
+                pe_diff = Some(diff);
+            }
+        }
+        if let Some(diff) = pe_diff{
+            let mut s = String::new();
+            let mut diffiter = diff.iter_all_changes().filter(|x| x.tag() != ChangeTag::Equal);
+            let mut current_sign = ChangeTag::Equal;
+            while let Some(el) = diffiter.next(){
+                let sign = match el.tag() {
+                    ChangeTag::Equal => continue,
+                    ChangeTag::Delete => "-",
+                    ChangeTag::Insert => "+"
+                };
+                if el.tag() != current_sign{
+                    s = format!("{}\n{:05}: {}| {}", s, el.old_index().unwrap_or(0), sign, el.value());
+                    current_sign = el.tag();
+                } else {
+                    s = format!("{}{}", s, el.value());
+                }
+            }
+            s
+        }
+        else{
+            format!("Set is empty")
+        }
+    }
+
+    #[tokio::test]
+    async fn test_merge_scenarios() {
+        // set up database connection and clear it
+        info!("Setting up Test Database Connection");
+        let master_server = LTZFServer{
+            config: crate::Configuration{
+                ..Default::default()
+            },
+            mailer: None,
+            sqlx_db: sqlx::postgres::PgPoolOptions::new()
+            .max_connections(5)
+            .connect(DB_URL).await.unwrap()
+        };
+
+        for path in std::fs::read_dir("tests/testfiles").unwrap() {
+            if let Ok(path) = path {
+                info!("Executing Scenario: {}", path.path().display());
+                let ptb = path.path();
+                let name = ptb.file_stem().unwrap().to_str().unwrap();
+
+                let mut shouldfail = false;
+                let result = AssertUnwindSafe(async {
+                    let scenario = TestScenario::new(&ptb, &master_server).await;
+                    shouldfail = scenario.shouldfail;
+                    scenario.run().await
+                }
+                ).catch_unwind().await;
+
+                // let query = format!("DROP DATABASE testing_{}", name);
+                // sqlx::query(&query)
+                // .execute(&master_server.sqlx_db).await.unwrap();
+                
+                if result.is_ok() == shouldfail {
+                    assert!(false, "The Scenario did not behave as expected: {}", 
+                    if shouldfail{"Succeeded, but should fail"}else{"Failed but should succeed"}
+                    );
+                }
+            }else{
+                error!("Error: {:?}", path.unwrap_err())
+            }
+        }
+
+    }
+}

@@ -1,88 +1,10 @@
 {
-    "context": [
-        {
-            "api_id": "123e4567-e89b-12d3-a456-426614174000",
-            "titel": "string",
-            "verfassungsaendernd": true,
-            "initiatoren": [
-              "Staatsministerium für Justiz"
-            ],
-            "initiator_personen": [
-              "Ach, Manfred (CSU)"
-            ],
-            "typ": "bgg-einspruch",
-            "ids": [
-              {
-                "id": "123e4567-e",
-                "typ": "initdrucks"
-              }
-            ],
-            "links": [
-              "string"
-            ],
-            "stationen": [
-              {
-                "datum": "2025-02-02",
-                "gremium": "Ausschuss für Inneres und Gemüseaufläufe",
-                "dokumente": [
-                  {
-                    "titel": "string",
-                    "last_mod": "2025-02-02T09:50:13.131Z",
-                    "link": "string",
-                    "hash": "string",
-                    "zusammenfassung": "string",
-                    "schlagworte": [
-                      "string"
-                    ],
-                    "autorpersonen": [
-                      "Ach, Manfred (CSU)"
-                    ],
-                    "autoren": [
-                      "Staatsregierung, Fraktion die Grünen, Fraktion CDU/CSU"
-                    ],
-                    "typ": "entwurf"
-                  }
-                ],
-                "betroffene_texte": [
-                  "§ 1 Abs. 1 Satz 1"
-                ],
-                "link": "string",
-                "parlament": "BT",
-                "schlagworte": [
-                  "string"
-                ],
-                "stellungnahmen": [
-                  {
-                    "dokument": {
-                      "titel": "string",
-                      "last_mod": "2025-02-02T09:50:13.131Z",
-                      "link": "string",
-                      "hash": "string",
-                      "zusammenfassung": "string",
-                      "schlagworte": [
-                        "string"
-                      ],
-                      "autorpersonen": [
-                        "Ach, Manfred (CSU)"
-                      ],
-                      "autoren": [
-                        "Staatsregierung, Fraktion die Grünen, Fraktion CDU/CSU"
-                      ],
-                      "typ": "entwurf"
-                    },
-                    "meinung": 0,
-                    "lobbyregister_link": "string"
-                  }
-                ],
-                "typ": "preparl-regent",
-                "trojaner": true
-              }
-            ]
-          }
-    ],
-    "gsvh": {
-      "api_id": "123e4567-e89b-12d3-a456-426614174001",
+    "context": [],
+    "vorgang": {
+      "api_id": "123e4567-e89b-12d3-a456-426614174000",
       "titel": "string",
+      "kurztitel": "string",
+      "wahlperiode": 0,
       "verfassungsaendernd": true,
       "initiatoren": [
         "Staatsministerium für Justiz"
@@ -90,7 +12,7 @@
       "initiator_personen": [
         "Ach, Manfred (CSU)"
       ],
-      "typ": "bgg-einspruch",
+      "typ": "gg-einspruch",
       "ids": [
         {
           "id": "123e4567-e",
@@ -102,15 +24,27 @@
       ],
       "stationen": [
         {
-          "datum": "2025-02-02",
-          "gremium": "Ausschuss für Inneres und Gemüseaufläufe",
+          "titel": "string",
+          "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "start_zeitpunkt": "2025-03-03T14:39:36.022Z",
+          "letztes_update": "2025-03-03T14:39:36.022Z",
+          "gremium": {
+            "parlament": "BT",
+            "name": "Ausschuss für Inneres und Gemüseauflauf"
+          },
           "dokumente": [
             {
+              "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              "drucksnr": "string",
+              "typ": "entwurf",
               "titel": "string",
-              "last_mod": "2025-02-02T09:50:13.131Z",
-              "link": "string",
-              "hash": "string",
+              "kurztitel": "string",
+              "vorwort": "string",
+              "volltext": "string",
               "zusammenfassung": "string",
+              "letzte_modifikation": "2025-03-03T14:39:36.022Z",
+              "link": "string",
+              "hash": "aae9df89e8dfa9esd89a8de9e89f8a9eadf9e8",
               "schlagworte": [
                 "string"
               ],
@@ -119,8 +53,7 @@
               ],
               "autoren": [
                 "Staatsregierung, Fraktion die Grünen, Fraktion CDU/CSU"
-              ],
-              "typ": "entwurf"
+              ]
             }
           ],
           "betroffene_texte": [
@@ -134,11 +67,17 @@
           "stellungnahmen": [
             {
               "dokument": {
+                "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                "drucksnr": "string",
+                "typ": "entwurf",
                 "titel": "string",
-                "last_mod": "2025-02-02T09:50:13.131Z",
+                "kurztitel": "string",
+                "vorwort": "string",
+                "volltext": "string",
+                "zusammenfassung": "string",
+                "letzte_modifikation": "2025-03-03T14:39:36.022Z",
                 "link": "string",
                 "hash": "string",
-                "zusammenfassung": "string",
                 "schlagworte": [
                   "string"
                 ],
@@ -147,21 +86,22 @@
                 ],
                 "autoren": [
                   "Staatsregierung, Fraktion die Grünen, Fraktion CDU/CSU"
-                ],
-                "typ": "entwurf"
+                ]
               },
-              "meinung": 0,
+              "meinung": 10,
               "lobbyregister_link": "string"
             }
           ],
           "typ": "preparl-regent",
-          "trojaner": true
+          "trojanergefahr": 10
         }
       ]
     },
     "result": [{
       "api_id": "123e4567-e89b-12d3-a456-426614174000",
       "titel": "string",
+      "kurztitel": "string",
+      "wahlperiode": 0,
       "verfassungsaendernd": true,
       "initiatoren": [
         "Staatsministerium für Justiz"
@@ -169,7 +109,7 @@
       "initiator_personen": [
         "Ach, Manfred (CSU)"
       ],
-      "typ": "bgg-einspruch",
+      "typ": "gg-einspruch",
       "ids": [
         {
           "id": "123e4567-e",
@@ -181,15 +121,25 @@
       ],
       "stationen": [
         {
-          "datum": "2025-02-02",
-          "gremium": "Ausschuss für Inneres und Gemüseaufläufe",
+          "titel": "string",
+          "start_zeitpunkt": "2025-03-03T14:39:36.022Z",
+          "letztes_update": "2025-03-03T14:39:36.022Z",
+          "gremium": {
+            "parlament": "BT",
+            "name": "Ausschuss für Inneres und Gemüseauflauf"
+          },
           "dokumente": [
             {
+              "drucksnr": "string",
+              "typ": "entwurf",
               "titel": "string",
-              "last_mod": "2025-02-02T09:50:13.131Z",
+              "kurztitel": "string",
+              "vorwort": "string",
+              "volltext": "string",
+              "zusammenfassung": "string",
+              "letzte_modifikation": "2025-03-03T14:39:36.022Z",
               "link": "string",
               "hash": "string",
-              "zusammenfassung": "string",
               "schlagworte": [
                 "string"
               ],
@@ -198,8 +148,7 @@
               ],
               "autoren": [
                 "Staatsregierung, Fraktion die Grünen, Fraktion CDU/CSU"
-              ],
-              "typ": "entwurf"
+              ]
             }
           ],
           "betroffene_texte": [
@@ -213,11 +162,17 @@
           "stellungnahmen": [
             {
               "dokument": {
+                "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                "drucksnr": "string",
+                "typ": "entwurf",
                 "titel": "string",
-                "last_mod": "2025-02-02T09:50:13.131Z",
+                "kurztitel": "string",
+                "vorwort": "string",
+                "volltext": "string",
+                "zusammenfassung": "string",
+                "letzte_modifikation": "2025-03-03T14:39:36.022Z",
                 "link": "string",
                 "hash": "string",
-                "zusammenfassung": "string",
                 "schlagworte": [
                   "string"
                 ],
@@ -226,15 +181,14 @@
                 ],
                 "autoren": [
                   "Staatsregierung, Fraktion die Grünen, Fraktion CDU/CSU"
-                ],
-                "typ": "entwurf"
+                ]
               },
-              "meinung": 0,
+              "meinung": 10,
               "lobbyregister_link": "string"
             }
           ],
           "typ": "preparl-regent",
-          "trojaner": true
+          "trojanergefahr": 10
         }
       ]
     }]

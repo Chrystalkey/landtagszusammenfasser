@@ -1,42 +1,42 @@
 -- tables that do not require any foreign keys
 CREATE TABLE
     vorgangstyp (
-        vgtyp_id SERIAL PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         value VARCHAR NOT NULL
     );
 
 CREATE TABLE
     vg_ident_typ (
-        vgit_id SERIAL PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         value VARCHAR NOT NULL
     );
 
 CREATE TABLE
     parlament (
-        p_id SERIAL PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         value VARCHAR NOT NULL
     );
 
 CREATE TABLE
     schlagwort (
-        sw_id SERIAL PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         value VARCHAR UNIQUE NOT NULL
     );
 
 CREATE TABLE
     dokumententyp (
-        dtyp_id SERIAL PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         value VARCHAR NOT NULL
     );
 
 CREATE TABLE
     stationstyp (
-        styp_id SERIAL PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         value VARCHAR NOT NULL
     );
 
 CREATE TABLE experte(
-    exp_id SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     name VARCHAR NOT NULL,
     fachgebiet VARCHAR NOT NULL
 );

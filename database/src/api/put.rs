@@ -10,8 +10,8 @@ pub async fn api_v1_vorgang_id_put(
     tracing::trace!("api_v1_vorgang_id_put called");
     let mut tx = server.sqlx_db.begin().await?;
     let api_id = path_params.vorgang_id;
-    let db_id = sqlx::query!("SELECT vg_id FROM vorgang WHERE api_id = $1", api_id)
-    .map(|x|x.vg_id).fetch_one(&mut *tx).await?;
+    let db_id = sqlx::query!("SELECT id FROM vorgang WHERE api_id = $1", api_id)
+    .map(|x|x.id).fetch_one(&mut *tx).await?;
     let db_cmpvg = retrieve::vorgang_by_id(db_id, &mut tx).await?;
     if db_cmpvg == body {
         return Ok(VorgangIdPutResponse::Status204_ContentUnchanged);

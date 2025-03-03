@@ -12,16 +12,17 @@ pub async fn insert_vorgang(
     let obj = "vorgang";
     // master insert
     let vg_id = sqlx::query!("
-    INSERT INTO vorgang(api_id, titel, kurztitel, verfaend, wahlperiode, vgtyp_id)
+    INSERT INTO vorgang(api_id, titel, kurztitel, verfaend, wahlperiode, typ)
     VALUES
-    ($1, $2, $3, $4, $5, (SELECT vgtyp_id FROM vorgangstyp WHERE value=$6))
-    RETURNING vorgang.vg_id;", 
+    ($1, $2, $3, $4, $5, (SELECT id FROM vorgangstyp WHERE value=$6))
+    RETURNING vorgang.id;", 
     vg.api_id, vg.titel, vg.kurztitel, vg.verfassungsaendernd, vg.wahlperiode as i32, 
     server.guard_ts(vg.typ, vg.api_id,obj)?)
-    .map(|r|r.vg_id).fetch_one(&mut **tx).await?;
+    .map(|r|r.id).fetch_one(&mut **tx).await?;
 
     // insert links
-    sqlx::query!("INSERT INTO rel_vorgang_links(link, vg_id) SELECT val, $2 FROM UNNEST($1::text[]) as val", 
+    sqlx::query!("INSERT INTO rel_vorgang_links(link, vg_id) 
+    SELECT val, $2 FROM UNNEST($1::text[]) as val", 
     vg.links.as_ref().map(|x| &x[..]), vg_id)
     .execute(&mut **tx).await?;
 
@@ -40,10 +41,10 @@ pub async fn insert_vorgang(
     let identt_list = vg.ids.as_ref().map(|x|x.iter()
     .map(|el| server.guard_ts(el.typ, vg.api_id, obj).unwrap()).collect::<Vec<_>>());
 
-    sqlx::query!("INSERT INTO rel_vg_ident (vg_id, vgit_id, identifikator) 
-    SELECT $1, vgit_id, ident.ident FROM 
+    sqlx::query!("INSERT INTO rel_vg_ident (vg_id, typ, identifikator) 
+    SELECT $1, t.id, ident.ident FROM 
     UNNEST($2::text[], $3::text[]) as ident(ident, typ)
-    NATURAL LEFT JOIN vg_ident_typ",
+    INNER JOIN vg_ident_typ t ON t.value = ident.typ",
     vg_id, ident_list.as_ref().map(|x| &x[..]), identt_list.as_ref().map(|x| &x[..]))
     .execute(&mut **tx).await?;
     
@@ -63,20 +64,23 @@ pub async fn insert_station(
 ) -> Result<i32> {
     // master insert
     let sapi = stat.api_id.unwrap_or(uuid::Uuid::now_v7());
+    if let Some(id) = sqlx::query!("SELECT id FROM station WHERE api_id = $1", sapi).fetch_optional(&mut **tx).await?{
+        return Ok(id.id);
+    } 
     let obj= "station";
     let stat_id = sqlx::query!(
         "INSERT INTO station 
-        (api_id, gr_id, link, p_id, titel, trojanergefahr, styp_id, start_zeitpunkt, vg_id, letztes_update)
+        (api_id, gr_id, link, p_id, titel, trojanergefahr, typ, start_zeitpunkt, vg_id, letztes_update)
         VALUES
         ($1,
-        (SELECT gr_id   FROM gremium        WHERE name = $2), $3, 
-        (SELECT p_id    FROM parlament      WHERE value = $4), $5, $6, 
-        (SELECT styp_id FROM stationstyp    WHERE value = $7), $8, $9, $10)
-        RETURNING station.stat_id", 
+        (SELECT id FROM gremium        WHERE name = $2), $3, 
+        (SELECT id FROM parlament      WHERE value = $4), $5, $6, 
+        (SELECT id FROM stationstyp    WHERE value = $7), $8, $9, $10)
+        RETURNING station.id", 
         sapi, stat.gremium.map(|x|x.name), stat.link,
         stat.parlament.to_string(), stat.titel, stat.trojanergefahr.map(|x|x as i32), srv.guard_ts(stat.typ, sapi, obj)?,
         stat.start_zeitpunkt, vg_id, stat.letztes_update
-    ).map(|r|r.stat_id)
+    ).map(|r|r.id)
     .fetch_one(&mut **tx).await?;
 
     // betroffene gesetzestexte
@@ -94,8 +98,8 @@ pub async fn insert_station(
             match dokument{
                 models::DokRef::String(s) => {
                     let uuid = Uuid::parse_str(&*s)?;
-                    if let Some(id) = sqlx::query!("SELECT dok_id FROM dokument WHERE api_id = $1", uuid)
-                    .map(|r|r.dok_id).fetch_optional(&mut **tx).await?{
+                    if let Some(id) = sqlx::query!("SELECT id FROM dokument WHERE api_id = $1", uuid)
+                    .map(|r|r.id).fetch_optional(&mut **tx).await?{
                         id
                     }else{
                         return Err(crate::error::LTZFError::Validation { source: crate::error::DataValidationError::IncompleteDataSupplied { input: *s } })
@@ -126,19 +130,20 @@ pub async fn insert_station(
     }
     // schlagworte
     sqlx::query!("
-        WITH existing_ids AS (SELECT DISTINCT sw_id FROM schlagwort WHERE value = ANY($1::text[])),
+        WITH 
+        existing_ids AS (SELECT DISTINCT id FROM schlagwort WHERE value = ANY($1::text[])),
         inserted AS(
             INSERT INTO schlagwort(value) 
             SELECT DISTINCT(key) FROM UNNEST($1::text[]) as key
             ON CONFLICT DO NOTHING
-            RETURNING sw_id
+            RETURNING id
         ),
         allofthem AS(
-            SELECT sw_id FROM inserted UNION SELECT sw_id FROM existing_ids
+            SELECT id FROM inserted UNION SELECT id FROM existing_ids
         )
 
         INSERT INTO rel_station_schlagwort(stat_id, sw_id)
-        SELECT $2, allofthem.sw_id FROM allofthem",
+        SELECT $2, allofthem.id FROM allofthem",
         stat.schlagworte.as_ref().map(|x|&x[..]), stat_id
     )
     .execute(&mut **tx).await?;
@@ -152,32 +157,35 @@ pub async fn insert_dokument(
     srv: &LTZFServer) 
     -> Result<i32> {
     let dapi = dok.api_id.unwrap_or(uuid::Uuid::now_v7());
+    if let Some(id) = sqlx::query!("SELECT id FROM dokument WHERE api_id = $1", dapi).fetch_optional(&mut **tx).await?{
+        return Ok(id.id);
+    } 
     let obj= "Dokument";
     let did = sqlx::query!(
-        "INSERT INTO dokument(api_id, drucksnr, dtyp_id, titel, kurztitel, vorwort, volltext, zusammenfassung, last_mod, link, hash)
+        "INSERT INTO dokument(api_id, drucksnr, typ, titel, kurztitel, vorwort, volltext, zusammenfassung, last_mod, link, hash)
         VALUES(
-            $1,$2, (SELECT dtyp_id FROM dokumententyp WHERE value = $3), 
+            $1,$2, (SELECT id FROM dokumententyp WHERE value = $3), 
             $4,$5,$6,$7,$8,$9,$10,$11
-        )RETURNING dok_id", 
+        )RETURNING id", 
         dapi, dok.drucksnr,  srv.guard_ts(dok.typ, dapi, obj)?, dok.titel, dok.kurztitel, dok.vorwort, 
         dok.volltext,dok.zusammenfassung, dok.letzte_modifikation, dok.link, dok.hash
-    ).map(|r|r.dok_id).fetch_one(&mut **tx).await?;
+    ).map(|r|r.id).fetch_one(&mut **tx).await?;
 
     // Schlagworte
     sqlx::query!("
-        WITH existing_ids AS (SELECT DISTINCT sw_id FROM schlagwort WHERE value = ANY($1::text[])),
+        WITH existing_ids AS (SELECT DISTINCT id FROM schlagwort WHERE value = ANY($1::text[])),
         inserted AS(
             INSERT INTO schlagwort(value) 
             SELECT DISTINCT(key) FROM UNNEST($1::text[]) as key
             ON CONFLICT DO NOTHING
-            RETURNING sw_id
+            RETURNING id
         ),
         allofthem AS(
-            SELECT sw_id FROM inserted UNION SELECT sw_id FROM existing_ids
+            SELECT id FROM inserted UNION SELECT id FROM existing_ids
         )
 
         INSERT INTO rel_dok_schlagwort(dok_id, sw_id)
-        SELECT $2, allofthem.sw_id FROM allofthem",
+        SELECT $2, allofthem.id FROM allofthem",
         dok.schlagworte.as_ref().map(|x|&x[..]), did
     )
     .execute(&mut **tx).await?;
