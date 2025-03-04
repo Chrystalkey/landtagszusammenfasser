@@ -14,6 +14,36 @@ impl LTZFServer{
     }
 }
 
+pub fn notify_new_enum_entry<T: std::fmt::Debug>(
+    identifier: Uuid,
+    object: &str,
+    new_entry: &T,
+    server: &LTZFServer,
+) -> Result<()> {
+    let subject = format!("Neuer Eintrag des Typs `{}` wurde generiert, da nicht vorhanden. Auf Konsistenz mit dem Datensatz überprüfen.",stringify!(T));
+    let body = format!(
+        "Während einer Insert Operation für {} `{}` wurde der Eintrag `{:?}` neu generiert.\n
+        ", object, identifier, new_entry
+    );
+    send_email(subject, body, server)?;
+
+    Ok(())
+}
+pub fn notify_ambiguous_match<T: std::fmt::Debug>(
+    api_ids: Vec<Uuid>,
+    object: &T,
+    at_loc: &str,
+    server: &LTZFServer
+) -> Result<()> {
+    let subject = format!("Mehrere Datensätze gefunden die neuem Objekt ähnlich sind. Bitte um Konfliktauflösung.");
+    let body = format!(
+        "Während: `{}` wurde folgendes Objekt wurde hochgeladen: {:#?}.
+        Folgende Objekte in der Datenbank sind ähnlich: {:#?}", at_loc, object, api_ids
+    );
+    send_email(subject, body, server)?;
+    Ok(())
+}
+
 pub fn notify_unknown_variant<T>(
     api_id: Uuid,
     object: &str,

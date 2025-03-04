@@ -1,23 +1,15 @@
 #![allow(unused)]
 use crate::error::DataValidationError;
+use crate::utils::notify::notify_ambiguous_match;
 /// Handles merging of two datasets.
-/// in particular, stellungnahme & dokument are atomic.
-/// station and vorgang are not in the sense that vorgang.stations and station.stellungnahmen are appendable and deletable.
-/// This means the merge strategy is in general to:
-/// 1. find a vorgang that is matching enough
-///     a. if found exactly one, update the vorgang, see 2.
-///     b. if found more than one, send a message to the admins to select one
-///     c. if found none, create a new vorgang, return
-/// 2. if a., then update the vorgang properties
-/// 3. for each station in the new vorgang, find a matching station
-///     a. if found exactly one, update it, see 4.
-///     b. if found more than one, send a message to the admins to select one
-///     c. if found none, create a new station & insert
-/// 4. if a., then update station properties
-/// 5. for each stellungnahme in the new station, find a matching stellungnahme
-///    a. if found exactly one, replace it
-///    b. if found more than one, send a message to the admins to select one
-///    c. if found none, create a new stellungnahme & insert
+/// vorgang, station and dokument are mergeable, meaning their data is not atomic.
+/// Stellungnahme is handled like dokument with the rest being overridable data points
+/// API_ID or other uniquely identifying information is not overridden, but preserved.
+/// array-like structures are merged by a modified union operation: 
+/// for each element:
+///     - if it is mergeable and one merge candidate found, merge
+///     - if it is not mergeable and has a match in the existing set, the existing element takes precedence and is not replaced
+///     - if it is not mergeable and has no match it is added to the set.
 
 use crate::{LTZFServer, Result};
 use crate::db::insert;
@@ -282,7 +274,13 @@ pub async fn execute_merge_station (
                         tracing::debug!("Found exactly one match with db id: {}. Merging...", matchmod);
                         execute_merge_dokument(&**dok,matchmod, tx, srv).await?;
                     }
-                    MergeState::AmbiguousMatch(matche) => {todo!("Error out")}
+                    MergeState::AmbiguousMatch(matches) => {
+                        let api_ids = sqlx::query!("SELECT api_id FROM dokument WHERE id = ANY($1::int4[])", &matches[..])
+                        .map(|r| r.api_id)
+                        .fetch_all(&mut **tx).await?;
+                        notify_ambiguous_match(api_ids, &**dok, "execute merge station.dokumente", srv)?;
+                        return Err(DataValidationError::AmbiguousMatch { message: format!("Ambiguous match, see notification") }.into());
+                    }
                 }
             }
         }
@@ -291,16 +289,80 @@ pub async fn execute_merge_station (
         .execute(&mut **tx).await?;
     }
     // stellungnahmen
-    todo!("TODO: You stopped here!")
+    for stln in model.stellungnahmen.as_ref().unwrap_or(&vec![]) {
+        match dokument_merge_candidates(&stln.dokument, &mut **tx, srv).await? {
+            MergeState::NoMatch => {
+                let did = insert::insert_dokument(stln.dokument.clone(), tx, srv).await?;
+                sqlx::query!("INSERT INTO stellungnahme(stat_id, dok_id, meinung, lobbyreg_link)
+                VALUES($1, $2, $3, $4);", db_id, did, stln.meinung as i32, stln.lobbyregister_link)
+                .execute(&mut **tx).await?;
+            },
+            MergeState::OneMatch(did) => {
+                execute_merge_dokument(&stln.dokument, did, tx, srv).await?;
+                sqlx::query!("UPDATE stellungnahme SET 
+                meinung=$1, lobbyreg_link=$2", stln.meinung as i32, stln.lobbyregister_link)
+                .execute(&mut **tx).await?;
+            }
+            MergeState::AmbiguousMatch(matches) => {
+                let api_ids = sqlx::query!("SELECT api_id FROM dokument WHERE id = ANY($1::int4[])", &matches[..])
+                        .map(|r| r.api_id)
+                        .fetch_all(&mut **tx).await?;
+                notify_ambiguous_match(api_ids, stln, "execute merge station.stellungnahmen", srv)?;
+                return Err(DataValidationError::AmbiguousMatch { message: format!("Ambiguous match, see notification") }.into());
+            }
+        };
+    }
+    Ok(())
 }
 
 pub async fn execute_merge_vorgang (
     model: &models::Vorgang,
     candidate: i32,
-    executor: impl sqlx::PgExecutor<'_>,srv: &LTZFServer
+    tx: &mut sqlx::PgTransaction<'_>,
+    srv: &LTZFServer
 ) -> Result<()> {
     let db_id = candidate;
-    todo!()
+    let obj = "Vorgang";
+    let vapi = model.api_id;
+    /// master insert
+    sqlx::query!("UPDATE vorgang SET
+    titel = $1, kurztitel = $2, 
+    verfaend = $3, wahlperiode = $4,
+    typ = (SELECT id FROM vorgangstyp WHERE value = $5)",
+    model.titel, model.kurztitel, model.verfassungsaendernd, 
+    model.wahlperiode as i32, srv.guard_ts(model.typ, vapi, obj)?)
+    .execute(&mut **tx).await?;
+    /// initiatoren / initpersonen
+    sqlx::query!("INSERT INTO rel_vorgang_init (vg_id, initiator)
+    SELECT $1, blub FROM UNNEST($2::text[]) as blub
+    ON CONFLICT DO NOTHING", db_id, &model.initiatoren[..])
+    .execute(&mut **tx).await?;
+    let initp = model.initiator_personen.clone().unwrap_or(vec![]);
+    sqlx::query!("INSERT INTO rel_vorgang_init_person (vg_id, initiator)
+    SELECT $1, blub FROM UNNEST($2::text[]) as blub
+    ON CONFLICT DO NOTHING", db_id, &initp[..])
+    .execute(&mut **tx).await?;
+    /// links
+    let links = model.links.clone().unwrap_or(vec![]);
+    sqlx::query!("INSERT INTO rel_vorgang_links (vg_id, link)
+    SELECT $1, blub FROM UNNEST($2::text[]) as blub
+    ON CONFLICT DO NOTHING", db_id, &links[..])
+    .execute(&mut **tx).await?;
+    /// identifikatoren
+    let ident_list = model.ids.as_ref().map(|x|x.iter()
+    .map(|el|el.id.clone()).collect::<Vec<_>>());
+
+    let identt_list = model.ids.as_ref().map(|x|x.iter()
+    .map(|el| srv.guard_ts(el.typ, model.api_id, obj).unwrap()).collect::<Vec<_>>());
+
+    sqlx::query!("INSERT INTO rel_vg_ident (vg_id, typ, identifikator)
+    SELECT $1, vit.id, ident FROM 
+    UNNEST($2::text[], $3::text[]) blub(typ_value, ident)
+    INNER JOIN vg_ident_typ vit ON vit.value = typ_value
+    ON CONFLICT DO NOTHING
+    ", db_id, identt_list.as_ref().map(|x| &x[..]), ident_list.as_ref().map(|x| &x[..]))
+    .execute(&mut **tx).await?;
+    Ok(())
 }
 
 pub async fn run_integration(model: &models::Vorgang, server: &LTZFServer) -> Result<()> {
@@ -327,7 +389,7 @@ pub async fn run_integration(model: &models::Vorgang, server: &LTZFServer) -> Re
                 model.api_id
             );
             let model = model.clone();
-            execute_merge_vorgang(&model, one, &mut *tx, server).await?;
+            execute_merge_vorgang(&model, one, &mut tx, server).await?;
         }
         MergeState::AmbiguousMatch(many) => {
             tracing::warn!("Ambiguous matches for Vorgang with api_id: {:?}", model.api_id);

@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE vorgang SET\n    titel = $1, kurztitel = $2, \n    verfaend = $3, wahlperiode = $4,\n    typ = (SELECT id FROM vorgangstyp WHERE value = $5)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Varchar",
+        "Bool",
+        "Int4",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "945cdde4fbbe905c7c1b9de20ccbd4d850d64874ee84132dda364a58e5753a87"
+}

@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO rel_dok_autor(dok_id, autor)\n    SELECT $1, blub FROM UNNEST($2::text[]) as blub ON CONFLICT DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "TextArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "790fbfa42706f16cb641e8d2ff648b691f58ebcdffd4c45810d3b13ba88cee58"
+}

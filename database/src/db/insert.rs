@@ -1,6 +1,6 @@
 use openapi::models;
 use uuid::Uuid;
-use crate::{LTZFServer, Result};
+use crate::{utils::notify::notify_new_enum_entry, LTZFServer, Result};
 
 /// Inserts a new GSVH into the database.
 pub async fn insert_vorgang(
@@ -69,11 +69,20 @@ pub async fn insert_station(
         return Ok(id.id);
     }
     let gr_id = if let Some(gremium) = stat.gremium{
-        let id = sqlx::query!("INSERT INTO gremium(name, parl) 
-        VALUES ($1, (SELECT id FROM parlament WHERE value=$2)) 
-        ON CONFLICT(name, parl) DO UPDATE SET name=$1 RETURNING id",
-        gremium.name, gremium.parlament.to_string()).map(|r|r.id).fetch_one(&mut **tx).await?;
-        Some(id)
+        let id_ex = sqlx::query!(
+            "SELECT gremium.id FROM gremium
+            INNER JOIN parlament ON parlament.id=gremium.parl
+            WHERE name = $1 AND value=$2", gremium.name, gremium.parlament.to_string())
+        .fetch_optional(&mut **tx).await?;
+        if id_ex.is_none(){
+            let id = sqlx::query!("INSERT INTO gremium(name, parl) 
+            VALUES ($1, (SELECT id FROM parlament WHERE value=$2)) RETURNING id",
+            gremium.name, gremium.parlament.to_string()).map(|r|r.id).fetch_one(&mut **tx).await?;
+            notify_new_enum_entry(sapi, "Station", &gremium, srv)?;
+            Some(id)
+        }else{
+            id_ex.map(|x|x.id)
+        }
     }else {
         None
     };

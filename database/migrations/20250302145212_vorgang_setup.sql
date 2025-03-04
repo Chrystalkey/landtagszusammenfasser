@@ -72,7 +72,7 @@ CREATE TABLE rel_vg_ident (
 CREATE TABLE rel_vorgang_links(
     vg_id INTEGER NOT NULL REFERENCES vorgang(id) ON DELETE CASCADE,
     link VARCHAR NOT NULL,
-    CONSTRAINT rel_vorgang_links_unique_combo UNIQUE (vg_id, link)
+    PRIMARY KEY (vg_id, link)
 );
 
 CREATE TABLE station (
