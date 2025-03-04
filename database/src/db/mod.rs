@@ -93,10 +93,13 @@ mod scenariotest{
             for expected in self.result.iter() {
                 let mut found = false;
                 for db_out in db_vorgangs.iter() {
-                    if db_out == expected{
+                    if db_out == expected {
                         found = true;
                         break;
                     }
+                    assert!(db_out.api_id != expected.api_id, "Differing object have the same api id: `{}`. Difference:\n{}",
+                    db_out.api_id, display_strdiff(&serde_json::to_string_pretty(db_out).unwrap(), &serde_json::to_string_pretty(expected).unwrap())
+                    );
                 }
                 assert!(found, 
                     "Expected to find Vorgang with api_id `{}`, but was not present in the output set, which contained: {:?}.\n\nDetails(Output Set):\n{:#?}", 
@@ -118,7 +121,26 @@ mod scenariotest{
             self.check().await;
         }
     }
-
+    fn display_strdiff(s1: &str, s2: &str) -> String{
+        let diff = similar::TextDiff::from_chars(s1, s2);
+        let mut s = String::new();
+        let mut diffiter = diff.iter_all_changes().filter(|x| x.tag() != ChangeTag::Equal);
+        let mut current_sign = ChangeTag::Equal;
+        while let Some(el) = diffiter.next(){
+            let sign = match el.tag() {
+                ChangeTag::Equal => continue,
+                ChangeTag::Delete => "-",
+                ChangeTag::Insert => "+"
+            };
+            if el.tag() != current_sign{
+                s = format!("{}\n{:05}: {}| {}", s, el.old_index().unwrap_or(0), sign, el.value());
+                current_sign = el.tag();
+            } else {
+                s = format!("{}{}", s, el.value());
+            }
+        }
+        s
+    }
     fn display_set_strdiff(s: &str, set: HashSet<String>) -> String {
         let mut prio = 0.;
         let mut pe_diff = None;
