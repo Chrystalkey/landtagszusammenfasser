@@ -24,7 +24,8 @@ pub async fn vorgang_by_id(id: i32, executor: &mut sqlx::PgTransaction<'_>) -> R
     SELECT value as typ, identifikator as ident 
     FROM rel_vg_ident r
     INNER JOIN vg_ident_typ t ON t.id = r.typ
-    WHERE r.vg_id = $1", id)
+    WHERE r.vg_id = $1
+    ORDER BY ident ASC", id)
         .map(|row| models::VgIdent{
         typ: models::VgIdentTyp::from_str(row.typ.as_str())
         .expect(format!("Could not convert database value `{}`into VgIdentTyp Variant", row.typ).as_str()),
@@ -75,7 +76,8 @@ pub async fn station_by_id(id: i32,  executor:&mut sqlx::PgTransaction<'_>) -> R
     let sw = sqlx::query!(
         "SELECT DISTINCT(value) FROM rel_station_schlagwort r
         LEFT JOIN schlagwort sw ON sw.id = r.sw_id
-        WHERE r.stat_id = $1", id)
+        WHERE r.stat_id = $1
+        ORDER BY value DESC", id)
     .map(|sw| sw.value).fetch_all(&mut **executor).await?;
     
     let bet_ges = sqlx::query!("SELECT gesetz FROM rel_station_gesetz WHERE stat_id = $1", id)

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT DISTINCT(value) FROM rel_station_schlagwort r\n        LEFT JOIN schlagwort sw ON sw.id = r.sw_id\n        WHERE r.stat_id = $1",
+  "query": "SELECT DISTINCT(value) FROM rel_station_schlagwort r\n        LEFT JOIN schlagwort sw ON sw.id = r.sw_id\n        WHERE r.stat_id = $1\n        ORDER BY value DESC",
   "describe": {
     "columns": [
       {
@@ -18,5 +18,5 @@
       false
     ]
   },
-  "hash": "a8877a82129d2cd34a6f9aba73eaa84301f38fb92959e15f16f628c00a754d9f"
+  "hash": "d6d4537fed1b6de0bf182659552f926b9b35ff2bf478236a2d80917d82843137"
 }

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n    SELECT value as typ, identifikator as ident \n    FROM rel_vg_ident r\n    INNER JOIN vg_ident_typ t ON t.id = r.typ\n    WHERE r.vg_id = $1",
+  "query": "\n    SELECT value as typ, identifikator as ident \n    FROM rel_vg_ident r\n    INNER JOIN vg_ident_typ t ON t.id = r.typ\n    WHERE r.vg_id = $1\n    ORDER BY ident ASC",
   "describe": {
     "columns": [
       {
@@ -24,5 +24,5 @@
       false
     ]
   },
-  "hash": "255342e6507f6fc5a0612431a723131c9273c2510407027299f6d83feb2d839e"
+  "hash": "0375f3727653ff693e12d61b82c9aa3f7345fc27e530fd8c91f59385c31c74e9"
 }

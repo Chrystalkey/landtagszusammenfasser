@@ -96,10 +96,18 @@ mod scenariotest{
                     if db_out == expected {
                         found = true;
                         break;
+                    }else if db_out.api_id == expected.api_id || self.shouldfail {
+                        std::fs::write(format!("tests/{}_dumpa.json", self.name), 
+                        dump_objects(&expected, &db_out)).unwrap();
+                        assert!(false, "Differing object have the same api id: `{}`. Difference:\n{}",
+                        db_out.api_id, display_strdiff(&serde_json::to_string_pretty(db_out).unwrap(), &serde_json::to_string_pretty(expected).unwrap())
+                        );
                     }
-                    assert!(db_out.api_id != expected.api_id, "Differing object have the same api id: `{}`. Difference:\n{}",
-                    db_out.api_id, display_strdiff(&serde_json::to_string_pretty(db_out).unwrap(), &serde_json::to_string_pretty(expected).unwrap())
-                    );
+                    
+                }
+                if !found || self.shouldfail {
+                    std::fs::write(format!("tests/{}_dump.json", self.name), 
+                    serde_json::to_string_pretty(expected).unwrap()).unwrap();
                 }
                 assert!(found, 
                     "Expected to find Vorgang with api_id `{}`, but was not present in the output set, which contained: {:?}.\n\nDetails(Output Set):\n{:#?}", 
@@ -197,26 +205,31 @@ mod scenariotest{
                 let name = ptb.file_stem().unwrap().to_str().unwrap();
 
                 let mut shouldfail = false;
+                let scenario = TestScenario::new(&ptb, &master_server).await;
                 let result = AssertUnwindSafe(async {
-                    let scenario = TestScenario::new(&ptb, &master_server).await;
                     shouldfail = scenario.shouldfail;
                     scenario.run().await
                 }
                 ).catch_unwind().await;
-
-                let query = format!("DROP DATABASE testing_{}", name);
-                sqlx::query(&query)
-                .execute(&master_server.sqlx_db).await.unwrap();
                 
                 if result.is_ok() == shouldfail {
-                    assert!(false, "The Scenario did not behave as expected: {}", 
+                    assert!(false, "The Scenario {} did not behave as expected: {}", 
+                    name,
                     if shouldfail{"Succeeded, but should fail"}else{"Failed but should succeed"}
                     );
+                }else{
+                    let query = format!("DROP DATABASE testing_{}", name);
+                    sqlx::query(&query)
+                    .execute(&master_server.sqlx_db).await.unwrap();
                 }
             }else{
                 error!("Error: {:?}", path.unwrap_err())
             }
         }
-
+    }
+    fn dump_objects<T: serde::Serialize, S: serde::Serialize>(expected: &T, actual: &S) -> String {
+        format!("{{ \"expected-object\" : {},\n\"actual-object\" : {}}}", 
+        serde_json::to_string_pretty(expected).unwrap(), serde_json::to_string_pretty(actual).unwrap()
+        )
     }
 }
