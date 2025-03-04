@@ -1,4 +1,5 @@
 #![allow(unused)]
+use crate::error::DataValidationError;
 /// Handles merging of two datasets.
 /// in particular, stellungnahme & dokument are atomic.
 /// station and vorgang are not in the sense that vorgang.stations and station.stellungnahmen are appendable and deletable.
@@ -199,9 +200,100 @@ pub async fn execute_merge_station (
 ) -> Result<()> {
     let db_id = candidate;
     let obj = "merge station";
+    let sapi = sqlx::query!("SELECT api_id FROM station WHERE id = $1", db_id)
+    .map(|x| x.api_id).fetch_one(&mut **tx).await?;
     // pre-master updates
-    todo!()
+    let gr_id = if let Some(gremium) = &model.gremium {
+        let id = sqlx::query!("INSERT INTO gremium(name, parl) 
+        VALUES ($1, (SELECT id FROM parlament WHERE value=$2)) 
+        ON CONFLICT(name, parl) DO UPDATE SET name=$1 RETURNING id",
+        gremium.name, gremium.parlament.to_string()).map(|r|r.id).fetch_one(&mut **tx).await?;
+        Some(id)
+    }else {
+        None
+    };
+    // master update
+    sqlx::query!("UPDATE station SET 
+        gr_id = COALESCE($2, gr_id),
+        p_id = (SELECT id FROM parlament WHERE value = $3),
+        typ = (SELECT id FROM stationstyp WHERE value = $4),
+        titel = COALESCE($5, titel), 
+        start_zeitpunkt = $6, letztes_update = NOW(),
+        trojanergefahr = COALESCE($7, trojanergefahr),
+        link = COALESCE($8, link)
+        WHERE station.id = $1", 
+        db_id, gr_id, model.parlament.to_string(),
+        srv.guard_ts(model.typ, sapi, obj)?,
+        model.titel, model.start_zeitpunkt, model.trojanergefahr.map(|x| x as i32), model.link
+        ).execute(&mut **tx).await?;
+    // betroffene Texte
+    sqlx::query!(
+        "INSERT INTO rel_station_gesetz(stat_id, gesetz)
+        SELECT $1, blub FROM UNNEST($2::text[]) as blub
+        ON CONFLICT DO NOTHING",
+        db_id, model.betroffene_texte.as_ref().map(|x| &x[..])
+    )
+    .execute(&mut **tx).await?;
+    // schlagworte
+    sqlx::query!("
+    WITH 
+    existing_ids AS (SELECT DISTINCT id FROM schlagwort WHERE value = ANY($1::text[])),
+    inserted AS (
+        INSERT INTO schlagwort(value) 
+        SELECT DISTINCT(key) FROM UNNEST($1::text[]) as key
+        ON CONFLICT DO NOTHING
+        RETURNING id
+    ),
+    allofthem AS(
+        SELECT id FROM inserted UNION SELECT id FROM existing_ids
+    )
+
+    INSERT INTO rel_station_schlagwort(stat_id, sw_id)
+    SELECT $2, allofthem.id FROM allofthem",
+    model.schlagworte.as_ref().map(|x|&x[..]), db_id
+    )
+    .execute(&mut **tx).await?;
+    // dokumente
+    let mut insert_ids = vec![];
+    for dok in model.dokumente.iter(){
+        // if id & not in database: fail.
+        // if id & in database: add to list of associated documents
+        // if document: match & integrate or insert.
+        match dok{
+            models::DokRef::String(uuid) => {
+                let uuid = uuid::Uuid::parse_str(uuid)?;
+                let id = sqlx::query!("SELECT id FROM dokument d WHERE d.api_id = $1", uuid)
+                .map(|r|r.id).fetch_optional(&mut **tx).await?;
+                if id.is_none(){
+                    return Err(DataValidationError::IncompleteDataSupplied { 
+                        input: format!("Supplied uuid `{}` as document id for station `{}`, but no such ID is in the database.",
+                        uuid, sapi) }.into());
+                }
+                insert_ids.push(id.unwrap());
+            },
+            models::DokRef::Dokument(dok) =>{
+                let matches = dokument_merge_candidates(&*dok, &mut **tx, srv).await?;
+                match matches{
+                    MergeState::NoMatch => {
+                        let did = crate::db::insert::insert_dokument((**dok).clone(), tx, srv).await?;
+                        insert_ids.push(did);
+                    },
+                    MergeState::OneMatch(matchmod) => {
+                        tracing::debug!("Found exactly one match with db id: {}. Merging...", matchmod);
+                        execute_merge_dokument(&**dok,matchmod, tx, srv).await?;
+                    }
+                    MergeState::AmbiguousMatch(matche) => {todo!("Error out")}
+                }
+            }
+        }
+        sqlx::query!("INSERT INTO rel_station_dokument(stat_id, dok_id) 
+        SELECT $1, did FROM UNNEST($2::int4[]) as did", db_id, &insert_ids[..])
+        .execute(&mut **tx).await?;
+    }
+    // stellungnahmen
+    todo!("TODO: You stopped here!")
 }
+
 pub async fn execute_merge_vorgang (
     model: &models::Vorgang,
     candidate: i32,

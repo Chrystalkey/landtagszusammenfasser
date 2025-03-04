@@ -69,7 +69,9 @@ pub async fn insert_station(
         return Ok(id.id);
     }
     let gr_id = if let Some(gremium) = stat.gremium{
-        let id = sqlx::query!("INSERT INTO gremium(name, parl) VALUES ($1, (SELECT id FROM parlament WHERE value=$2)) ON CONFLICT DO NOTHING RETURNING id",
+        let id = sqlx::query!("INSERT INTO gremium(name, parl) 
+        VALUES ($1, (SELECT id FROM parlament WHERE value=$2)) 
+        ON CONFLICT(name, parl) DO UPDATE SET name=$1 RETURNING id",
         gremium.name, gremium.parlament.to_string()).map(|r|r.id).fetch_one(&mut **tx).await?;
         Some(id)
     }else {

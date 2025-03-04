@@ -112,7 +112,7 @@ mod scenariotest{
             }
             
             assert!(self.result.len()==db_vorgangs.len(), 
-            "Mismatch between the length of the expected set and the output set: {} (e) vs {} (o)\nOutput Set: {:?}", 
+            "Mismatch between the length of the expected set and the output set: {} (e) vs {} (o)\nOutput Set: {:#?}", 
             self.result.len(), db_vorgangs.len(), db_vorgangs);
 
         }
@@ -141,6 +141,7 @@ mod scenariotest{
         }
         s
     }
+    #[allow(unused)]
     fn display_set_strdiff(s: &str, set: HashSet<String>) -> String {
         let mut prio = 0.;
         let mut pe_diff = None;
