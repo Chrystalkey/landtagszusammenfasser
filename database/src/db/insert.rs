@@ -64,20 +64,26 @@ pub async fn insert_station(
 ) -> Result<i32> {
     // master insert
     let sapi = stat.api_id.unwrap_or(uuid::Uuid::now_v7());
+    let obj= "station";
     if let Some(id) = sqlx::query!("SELECT id FROM station WHERE api_id = $1", sapi).fetch_optional(&mut **tx).await?{
         return Ok(id.id);
-    } 
-    let obj= "station";
+    }
+    let gr_id = if let Some(gremium) = stat.gremium{
+        let id = sqlx::query!("INSERT INTO gremium(name, parl) VALUES ($1, (SELECT id FROM parlament WHERE value=$2)) ON CONFLICT DO NOTHING RETURNING id",
+        gremium.name, gremium.parlament.to_string()).map(|r|r.id).fetch_one(&mut **tx).await?;
+        Some(id)
+    }else {
+        None
+    };
     let stat_id = sqlx::query!(
         "INSERT INTO station 
         (api_id, gr_id, link, p_id, titel, trojanergefahr, typ, start_zeitpunkt, vg_id, letztes_update)
         VALUES
-        ($1,
-        (SELECT id FROM gremium        WHERE name = $2), $3, 
-        (SELECT id FROM parlament      WHERE value = $4), $5, $6, 
-        (SELECT id FROM stationstyp    WHERE value = $7), $8, $9, $10)
+        ($1, $2, $3, 
+        (SELECT id FROM parlament   WHERE value = $4), $5, $6, 
+        (SELECT id FROM stationstyp WHERE value = $7), $8, $9, $10)
         RETURNING station.id", 
-        sapi, stat.gremium.map(|x|x.name), stat.link,
+        sapi, gr_id, stat.link,
         stat.parlament.to_string(), stat.titel, stat.trojanergefahr.map(|x|x as i32), srv.guard_ts(stat.typ, sapi, obj)?,
         stat.start_zeitpunkt, vg_id, stat.letztes_update
     ).map(|r|r.id)

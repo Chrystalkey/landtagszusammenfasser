@@ -2,7 +2,8 @@
 CREATE TABLE gremium(
     id SERIAL PRIMARY KEY,
     parl INTEGER NOT NULL REFERENCES parlament(id),
-    name VARCHAR NOT NULL
+    name VARCHAR NOT NULL,
+    CONSTRAINT unique_combo UNIQUE (parl, name)
 );
 
 CREATE TABLE dokument (

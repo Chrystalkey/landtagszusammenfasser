@@ -90,22 +90,28 @@ mod scenariotest{
             let db_vorgangs = crate::db::retrieve::vorgang_by_parameter(
                 paramock, hparamock, &mut tx).await.unwrap();
             tx.rollback().await.unwrap();
-            let mut set = HashSet::with_capacity(db_vorgangs.len());
-            for thing in self.result.iter() {
-                tracing::info!("Adding `{}` to result set", thing.api_id);
-                set.insert(serde_json::to_string(thing).unwrap());
-            }
-            for thing in db_vorgangs.iter() {
-                let serialized = serde_json::to_string(thing).unwrap();
-                let result = set.remove(&serialized);
-                if !result{
-                    assert!(result, 
-                        "Database value with api_id `{}` was not present in the result set, which contained: {:?}.\n\nDetails:\n{}", 
-                    thing.api_id, 
-                    self.result.iter().map(|e|e.api_id).collect::<Vec<uuid::Uuid>>(), display_set_strdiff(&serialized, set));
+            for expected in self.result.iter() {
+                let mut found = false;
+                for db_out in db_vorgangs.iter() {
+                    if db_out == expected{
+                        found = true;
+                        break;
+                    }
                 }
+                assert!(found, 
+                    "Expected to find Vorgang with api_id `{}`, but was not present in the output set, which contained: {:?}.\n\nDetails(Output Set):\n{:#?}", 
+                expected.api_id, 
+                self.result.iter().map(|e|e.api_id).collect::<Vec<uuid::Uuid>>(),
+                db_vorgangs.iter().map(|v|
+                {println!("{}", serde_json::to_string_pretty(v).unwrap());""})
+                .collect::<Vec<_>>()
+                );
             }
-            assert!(set.is_empty(), "Values were expected, but not at all present in the result set: {:?}", set);
+            
+            assert!(self.result.len()==db_vorgangs.len(), 
+            "Mismatch between the length of the expected set and the output set: {} (e) vs {} (o)\nOutput Set: {:?}", 
+            self.result.len(), db_vorgangs.len(), db_vorgangs);
+
         }
         async fn run(self) {
             self.push().await;
@@ -175,9 +181,9 @@ mod scenariotest{
                 }
                 ).catch_unwind().await;
 
-                // let query = format!("DROP DATABASE testing_{}", name);
-                // sqlx::query(&query)
-                // .execute(&master_server.sqlx_db).await.unwrap();
+                let query = format!("DROP DATABASE testing_{}", name);
+                sqlx::query(&query)
+                .execute(&master_server.sqlx_db).await.unwrap();
                 
                 if result.is_ok() == shouldfail {
                     assert!(false, "The Scenario did not behave as expected: {}", 
