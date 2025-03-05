@@ -92,7 +92,7 @@ pub async fn insert_station(
         VALUES
         ($1, $2, $3, 
         (SELECT id FROM parlament   WHERE value = $4), $5, $6, 
-        (SELECT id FROM stationstyp WHERE value = $7), $8, $9, $10)
+        (SELECT id FROM stationstyp WHERE value = $7), $8, $9, COALESCE($10, NOW()))
         RETURNING station.id", 
         sapi, gr_id, stat.link,
         stat.parlament.to_string(), stat.titel, stat.trojanergefahr.map(|x|x as i32), srv.guard_ts(stat.typ, sapi, obj)?,

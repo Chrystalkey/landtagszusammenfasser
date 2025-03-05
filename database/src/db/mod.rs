@@ -17,8 +17,9 @@ mod scenariotest{
     #[allow(unused)]
     use tracing::{info, error, warn, debug};
 
-    const DB_URL: &str = "postgres://mergeuser:mergepass@localhost:59512/mergecenter";
-
+    fn xor(one: bool, two: bool) -> bool{
+        return (one &&two) || (!one && !two);
+    }
     #[allow(unused)]
     struct TestScenario<'obj>{
         name: &'obj str,
@@ -35,7 +36,7 @@ mod scenariotest{
         vorgang: models::Vorgang,
         result: Vec<models::Vorgang>,
         #[serde(default = "default_bool")]
-        shouldfail: bool
+        shouldfail: bool,
     }
     fn default_bool()->bool{ false }
     impl<'obj> TestScenario<'obj>{
@@ -43,10 +44,10 @@ mod scenariotest{
             let name = path.file_stem().unwrap().to_str().unwrap();
             info!("Creating Merge Test Scenario with name: {}", name);
             let span = tracing::span!(tracing::Level::INFO, "Mergetest", name = name);
-            let query = format!("CREATE DATABASE testing_{} WITH OWNER mergeuser;", name);
+            let query = format!("CREATE DATABASE testing_{} WITH OWNER 'ltzf-user';", name);
             sqlx::query(&query).execute(&server.sqlx_db).await.unwrap();
-
-            let test_db_url = format!("postgres://mergeuser:mergepass@localhost:59512/testing_{}", name);
+            let test_db_url = std::env::var("DATABASE_URL").unwrap()
+                .replace("5432/ltzf", &format!("5432/testing_{}", name));
             let pts: PTS = serde_json::from_reader(std::fs::File::open(path).unwrap()).unwrap();
             let server = LTZFServer {
                 config: crate::Configuration{
@@ -81,7 +82,7 @@ mod scenariotest{
                 vgtyp: None,
                 wp: None,
                 initiator_contains_any: None, 
-                limit: Some((self.result.len()*2) as i32),
+                limit: None,
                 offset: None};
             let hparamock = VorgangGetHeaderParams{
                 if_modified_since: None,
@@ -89,6 +90,7 @@ mod scenariotest{
             let mut tx = self.server.sqlx_db.begin().await.unwrap();
             let db_vorgangs = crate::db::retrieve::vorgang_by_parameter(
                 paramock, hparamock, &mut tx).await.unwrap();
+                
             tx.rollback().await.unwrap();
             for expected in self.result.iter() {
                 let mut found = false;
@@ -96,7 +98,7 @@ mod scenariotest{
                     if db_out == expected {
                         found = true;
                         break;
-                    }else if db_out.api_id == expected.api_id || self.shouldfail {
+                    }else if xor(db_out.api_id == expected.api_id, self.shouldfail) {
                         std::fs::write(format!("tests/{}_dumpa.json", self.name), 
                         dump_objects(&expected, &db_out)).unwrap();
                         assert!(false, "Differing object have the same api id: `{}`. Difference:\n{}",
@@ -105,7 +107,7 @@ mod scenariotest{
                     }
                     
                 }
-                if !found || self.shouldfail {
+                if xor(!found, self.shouldfail) {
                     std::fs::write(format!("tests/{}_dump.json", self.name), 
                     serde_json::to_string_pretty(expected).unwrap()).unwrap();
                 }
@@ -188,6 +190,7 @@ mod scenariotest{
     async fn test_merge_scenarios() {
         // set up database connection and clear it
         info!("Setting up Test Database Connection");
+        let test_db_url = std::env::var("DATABASE_URL").unwrap();
         let master_server = LTZFServer{
             config: crate::Configuration{
                 ..Default::default()
@@ -195,7 +198,7 @@ mod scenariotest{
             mailer: None,
             sqlx_db: sqlx::postgres::PgPoolOptions::new()
             .max_connections(5)
-            .connect(DB_URL).await.unwrap()
+            .connect(&test_db_url).await.unwrap()
         };
 
         for path in std::fs::read_dir("tests/testfiles").unwrap() {

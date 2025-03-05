@@ -7,7 +7,7 @@ services:
     image: oapi-preimage
   database:
     image: postgres:latest
-    container_name: pg-server
+    container_name: pg-server-testing
     restart: unless-stopped
     ports:
       - 59512:5432
