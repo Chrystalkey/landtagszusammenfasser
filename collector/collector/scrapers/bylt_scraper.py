@@ -253,7 +253,7 @@ class BYLTScraper(Scraper):
                         existing_station.dokumente.append(dok.package())
                         
                         # Update trojaner flag if necessary
-                        existing_station.trojanergefahr = dok.trojanergefahr
+                        existing_station.trojanergefahr = max(dok.trojanergefahr, 1)
                         
                         # Merge betroffene_texte lists
                         if dok.texte:

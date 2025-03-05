@@ -131,8 +131,24 @@ pub async fn station_merge_candidates(model: &models::Station, vorgang: i32, exe
         }
     })
 }
+/// bei gleichem
+/// - hash oder api_id oder drucksnr
 pub async fn dokument_merge_candidates(model: &models::Dokument, executor: impl sqlx::PgExecutor<'_>,srv: &LTZFServer) -> Result<MergeState<i32>> {
-    todo!()
+    let dids = sqlx::query!(
+        "SELECT d.id FROM dokument d WHERE 
+        d.hash = $1 OR
+        d.api_id = $2 OR
+        d.drucksnr = $3",
+        model.hash, model.api_id, model.drucksnr
+    ).map(|r|r.id)
+    .fetch_all(executor).await?;
+    if dids.is_empty(){
+        return Ok(MergeState::NoMatch);
+    }else if dids.len() == 1{
+        return Ok(MergeState::OneMatch(dids[0]));
+    }else {
+        return Ok(MergeState::AmbiguousMatch(dids));
+    }
 }
 
 /// basic data items are to be overridden by newer information. 
@@ -146,16 +162,16 @@ pub async fn execute_merge_dokument (
     let db_id = candidate;
     // master update
     sqlx::query!("UPDATE dokument SET
-    drucksnr = $2, titel =$3,
-    kurztitel = COALESCE($4, kurztitel), vorwort=COALESCE($5, vorwort),
-    volltext=COALESCE($6, volltext), zusammenfassung=COALESCE($7, zusammenfassung),
-    last_mod=$8, link=$9, hash=$10
-    WHERE dokument.id = $1
-    ", db_id,
-    model.drucksnr, model.titel,
-    model.kurztitel, model.vorwort,
-    model.volltext, model.zusammenfassung,
-    model.letzte_modifikation, model.link, model.hash
+        drucksnr = $2, titel =$3,
+        kurztitel = COALESCE($4, kurztitel), vorwort=COALESCE($5, vorwort),
+        volltext=COALESCE($6, volltext), zusammenfassung=COALESCE($7, zusammenfassung),
+        last_mod=$8, link=$9, hash=$10
+        WHERE dokument.id = $1
+        ", db_id,
+        model.drucksnr, model.titel,
+        model.kurztitel, model.vorwort,
+        model.volltext, model.zusammenfassung,
+        model.letzte_modifikation, model.link, model.hash
     ).execute(&mut **tx).await?;
     // schlagworte
     sqlx::query!("
@@ -183,8 +199,10 @@ pub async fn execute_merge_dokument (
     sqlx::query!("INSERT INTO rel_dok_autorperson(dok_id, autor)
     SELECT $1, blub FROM UNNEST($2::text[]) as blub ON CONFLICT DO NOTHING", db_id,
     model.autorpersonen.as_ref().map(|x|&x[..])).execute(&mut **tx).await?;
+    tracing::info!("Merging Dokument into Database successful");
     return Ok(());
 }
+
 pub async fn execute_merge_station (
     model: &models::Station,
     candidate: i32,
@@ -312,6 +330,7 @@ pub async fn execute_merge_station (
             }
         };
     }
+    tracing::info!("Merging Station into Database successful");
     Ok(())
 }
 
@@ -326,28 +345,29 @@ pub async fn execute_merge_vorgang (
     let vapi = model.api_id;
     /// master insert
     sqlx::query!("UPDATE vorgang SET
-    titel = $1, kurztitel = $2, 
-    verfaend = $3, wahlperiode = $4,
-    typ = (SELECT id FROM vorgangstyp WHERE value = $5)",
-    model.titel, model.kurztitel, model.verfassungsaendernd, 
-    model.wahlperiode as i32, srv.guard_ts(model.typ, vapi, obj)?)
-    .execute(&mut **tx).await?;
+        titel = $1, kurztitel = $2, 
+        verfaend = $3, wahlperiode = $4,
+        typ = (SELECT id FROM vorgangstyp WHERE value = $5)
+        WHERE vorgang.id = $6",
+        model.titel, model.kurztitel, model.verfassungsaendernd, 
+        model.wahlperiode as i32, srv.guard_ts(model.typ, vapi, obj)?, db_id)
+        .execute(&mut **tx).await?;
     /// initiatoren / initpersonen
     sqlx::query!("INSERT INTO rel_vorgang_init (vg_id, initiator)
-    SELECT $1, blub FROM UNNEST($2::text[]) as blub
-    ON CONFLICT DO NOTHING", db_id, &model.initiatoren[..])
-    .execute(&mut **tx).await?;
+        SELECT $1, blub FROM UNNEST($2::text[]) as blub
+        ON CONFLICT DO NOTHING", db_id, &model.initiatoren[..])
+        .execute(&mut **tx).await?;
     let initp = model.initiator_personen.clone().unwrap_or(vec![]);
-    sqlx::query!("INSERT INTO rel_vorgang_init_person (vg_id, initiator)
-    SELECT $1, blub FROM UNNEST($2::text[]) as blub
-    ON CONFLICT DO NOTHING", db_id, &initp[..])
-    .execute(&mut **tx).await?;
+        sqlx::query!("INSERT INTO rel_vorgang_init_person (vg_id, initiator)
+        SELECT $1, blub FROM UNNEST($2::text[]) as blub
+        ON CONFLICT DO NOTHING", db_id, &initp[..])
+        .execute(&mut **tx).await?;
     /// links
     let links = model.links.clone().unwrap_or(vec![]);
     sqlx::query!("INSERT INTO rel_vorgang_links (vg_id, link)
-    SELECT $1, blub FROM UNNEST($2::text[]) as blub
-    ON CONFLICT DO NOTHING", db_id, &links[..])
-    .execute(&mut **tx).await?;
+        SELECT $1, blub FROM UNNEST($2::text[]) as blub
+        ON CONFLICT DO NOTHING", db_id, &links[..])
+        .execute(&mut **tx).await?;
     /// identifikatoren
     let ident_list = model.ids.as_ref().map(|x|x.iter()
     .map(|el|el.id.clone()).collect::<Vec<_>>());
@@ -356,12 +376,13 @@ pub async fn execute_merge_vorgang (
     .map(|el| srv.guard_ts(el.typ, model.api_id, obj).unwrap()).collect::<Vec<_>>());
 
     sqlx::query!("INSERT INTO rel_vg_ident (vg_id, typ, identifikator)
-    SELECT $1, vit.id, ident FROM 
-    UNNEST($2::text[], $3::text[]) blub(typ_value, ident)
-    INNER JOIN vg_ident_typ vit ON vit.value = typ_value
-    ON CONFLICT DO NOTHING
-    ", db_id, identt_list.as_ref().map(|x| &x[..]), ident_list.as_ref().map(|x| &x[..]))
-    .execute(&mut **tx).await?;
+        SELECT $1, vit.id, ident FROM 
+        UNNEST($2::text[], $3::text[]) blub(typ_value, ident)
+        INNER JOIN vg_ident_typ vit ON vit.value = typ_value
+        ON CONFLICT DO NOTHING
+        ", db_id, identt_list.as_ref().map(|x| &x[..]), ident_list.as_ref().map(|x| &x[..]))
+        .execute(&mut **tx).await?;
+    tracing::info!("Merging of Vg Successful: Merged `{}`(ext) with  `{}`(db)", model.api_id, vapi);
     Ok(())
 }
 

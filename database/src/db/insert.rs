@@ -103,7 +103,7 @@ pub async fn insert_station(
     // betroffene gesetzestexte
     sqlx::query!(
         "INSERT INTO rel_station_gesetz(stat_id, gesetz)
-        SELECT $1, blub FROM UNNEST($2::text[]) as blub",
+        SELECT $1, blub FROM UNNEST($2::text[]) as blub ON CONFLICT DO NOTHING",
         stat_id, stat.betroffene_texte.as_ref().map(|x| &x[..])
     )
     .execute(&mut **tx).await?;

@@ -162,7 +162,9 @@ class Scraper(ABC):
         temp_res = []
         if tasks:
             try:
-                temp_res = await asyncio.gather(*tasks, return_exceptions=True)
+                for task in tasks:
+                    await task
+                # temp_res = await asyncio.gather(*tasks, return_exceptions=True)
             except Exception as e:
                 logger.error(f"Error during item extraction: {e}", exc_info=True)
 

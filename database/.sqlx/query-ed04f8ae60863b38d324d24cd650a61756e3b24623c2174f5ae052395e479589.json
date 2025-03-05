@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT d.id FROM dokument d WHERE \n        d.hash = $1 OR\n        d.api_id = $2 OR\n        d.drucksnr = $3",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "ed04f8ae60863b38d324d24cd650a61756e3b24623c2174f5ae052395e479589"
+}

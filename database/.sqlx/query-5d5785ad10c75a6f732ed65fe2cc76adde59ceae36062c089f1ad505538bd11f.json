@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO rel_vg_ident (vg_id, typ, identifikator)\n        SELECT $1, vit.id, ident FROM \n        UNNEST($2::text[], $3::text[]) blub(typ_value, ident)\n        INNER JOIN vg_ident_typ vit ON vit.value = typ_value\n        ON CONFLICT DO NOTHING\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "TextArray",
+        "TextArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "5d5785ad10c75a6f732ed65fe2cc76adde59ceae36062c089f1ad505538bd11f"
+}

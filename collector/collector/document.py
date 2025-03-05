@@ -56,6 +56,7 @@ class Document:
         self.trojanergefahr: int = 0 # only relevant for drucksachen
         self.texte: List[str] = [] # only relevant for drucksachen
         self.meinung: Optional[int] = None # only relevant for stellungnahmen
+        self.drucksnr : Optional[str] = None
 
         self.config = config
         self.fileid = str(uuid.uuid4())

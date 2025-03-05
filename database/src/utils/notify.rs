@@ -26,6 +26,7 @@ pub fn notify_new_enum_entry<T: std::fmt::Debug>(
         ", object, identifier, new_entry
     );
     send_email(subject, body, server)?;
+    tracing::error!("Notify: New Enum Entry! Sending mails is not yet supported.");
 
     Ok(())
 }
@@ -41,6 +42,7 @@ pub fn notify_ambiguous_match<T: std::fmt::Debug>(
         Folgende Objekte in der Datenbank sind ähnlich: {:#?}", at_loc, object, api_ids
     );
     send_email(subject, body, server)?;
+    tracing::error!("Notify: Ambiguous Match! Sending mails is not yet supported.");
     Ok(())
 }
 
@@ -52,8 +54,8 @@ pub fn notify_unknown_variant<T>(
     let topic = format!("Für {} `{}` wurde `sonstig` angegeben als Wert für `{}`",
     object, api_id, stringify!(T));
     send_email(topic, String::new(), server)?;
-
-    todo!("Notify the admin when a 'sonstig' enum variant is unwrapped")
+    tracing::error!("Notify: Unknown Variant! Sending mails is not yet supported.");
+    Ok(())
 }
 
 pub fn send_email(subject: String, body: String, state: &LTZFServer) -> Result<()> {
