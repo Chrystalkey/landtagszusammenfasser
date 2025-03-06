@@ -31,6 +31,9 @@ pub enum DataValidationError {
     InvalidEnumValue {
         msg: String
     },
+
+    #[snafu(display("Incomplete Data supplied: Expected to find `{input}` in DB but didn't"))]
+    IncompleteDataSupplied{input: String},
     
     #[snafu(display("Duplicate API ID: {id}"))]
     DuplicateApiId { id: Uuid },
@@ -50,34 +53,17 @@ error_from!(uuid::Error, Validation, DataValidationError, UuidParse);
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub))]
 pub enum DatabaseError {
-    #[snafu(display("Database operation error: {source}"))]
-    Operation { source: diesel::result::Error },
-    
-    #[snafu(display("Connection pool error: {source}"))]
-    Pool { source: deadpool_diesel::PoolError },
-    
-    #[snafu(display("Deadpool error: {source}"))]
-    DeadpoolError { source: deadpool_diesel::Error },
-    
-    #[snafu(display("Database interaction error: {source}"))]
-    Interaction { source: deadpool_diesel::InteractError },
-    
-    #[snafu(display("Migration error: {source}"))]
-    Migration { source: diesel_migrations::MigrationError },
-    
-    #[snafu(display("Pool build error: {source}"))]
-    Build { source: deadpool::managed::BuildError },
+    #[snafu(display("SQLX Database Operation Failed: {source}"))]
+    Sqlx{source: sqlx::Error},
+    #[snafu(display("Database Migration Failed: {source}"))]
+    Migration{source: sqlx::migrate::MigrateError},
 
     #[snafu(display("{source}"))]
     Unknown { source: Box<dyn std::error::Error + Sync + Send> },
 }
 
-error_from!(diesel::result::Error, Database, DatabaseError, Operation);
-error_from!(deadpool_diesel::PoolError, Database, DatabaseError, Pool);
-error_from!(deadpool_diesel::Error, Database, DatabaseError, DeadpoolError);
-error_from!(deadpool_diesel::InteractError, Database, DatabaseError, Interaction);
-error_from!(diesel_migrations::MigrationError, Database, DatabaseError, Migration);
-error_from!(deadpool::managed::BuildError, Database, DatabaseError, Build);
+error_from!(sqlx::Error, Database, DatabaseError, Sqlx);
+error_from!(sqlx::migrate::MigrateError, Database, DatabaseError, Migration);
 error_from!(Box<dyn std::error::Error + Sync + Send>, Database, DatabaseError, Unknown);
 
 #[derive(Debug, Snafu)]

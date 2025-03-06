@@ -1,0 +1,50 @@
+services:
+  oapi-preimage:
+    build:
+      context: .
+      dockerfile: Dockerfile.oapi
+      network: host
+    image: oapi-preimage
+  database:
+    image: postgres:latest
+    container_name: pg-server-testing
+    restart: unless-stopped
+    ports:
+      - 59512:5432
+    networks:
+      - ltzf-network
+    environment:
+      POSTGRES_USER: mergeuser
+      POSTGRES_PASSWORD: mergepass
+      POSTGRES_DB: mergecenter
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - 6379:6379
+    networks:
+      - ltzf-network
+    environment:
+      REDIS_ARGS: "--save 60 1 --loglevel warning"
+
+  ltzf-db:
+    build:
+      context: database
+      network: host
+    image: ltzf-db:test
+    container_name: ltzf-db
+    ports:
+      - 8080:80
+    depends_on:
+      - database
+      - oapi-preimage
+    networks:
+      - ltzf-network
+    environment:
+      DATABASE_URL: "postgres://ltzf-user:ltzf-pass@database:5432/ltzf" # required
+      RUST_LOG: "trace"                                                 # optional
+      LTZF_KEYADDER_KEY: "tegernsee-apfelsaft-co2grenzwert"             # required
+
+networks:
+  ltzf-network:

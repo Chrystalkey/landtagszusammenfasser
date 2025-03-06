@@ -1,0 +1,2 @@
+- für vorgang, dokument: Kurztitel wegen unverständlichkeit hinzufügen
+- initiative: admin_mail oder volltextabgleich(levenstein) -> gleich

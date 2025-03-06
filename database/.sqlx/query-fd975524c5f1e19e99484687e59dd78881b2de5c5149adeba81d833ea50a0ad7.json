@@ -1,0 +1,32 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH pre_table AS (\n        SELECT vorgang.id, MAX(station.start_zeitpunkt) as lastmod FROM vorgang\n            INNER JOIN vorgangstyp vt ON vt.id = vorgang.typ\n            LEFT JOIN station ON station.vg_id = vorgang.id\n            WHERE TRUE\n            AND vorgang.wahlperiode = COALESCE($1, vorgang.wahlperiode)\n            AND vt.value = COALESCE($2, vt.value)\n        GROUP BY vorgang.id\n        ORDER BY lastmod\n        )\n        SELECT * FROM pre_table WHERE\n        lastmod > CAST(COALESCE($3, '1940-01-01T20:20:20Z') as TIMESTAMPTZ)\n        OFFSET COALESCE($4, 0)\n        LIMIT COALESCE($5, 64)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "lastmod",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Varchar",
+        "Text",
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      null
+    ]
+  },
+  "hash": "fd975524c5f1e19e99484687e59dd78881b2de5c5149adeba81d833ea50a0ad7"
+}

@@ -1,301 +1,220 @@
-use std::collections::HashMap;
-
 use openapi::models;
-use crate::Result;
-use diesel::prelude::*;
-use super::schema;
+use uuid::Uuid;
+use crate::{utils::notify::notify_new_enum_entry, LTZFServer, Result};
 
 /// Inserts a new GSVH into the database.
-pub fn insert_gsvh(
-    api_gsvh: &models::Gesetzesvorhaben,
-    connection: &mut diesel::PgConnection
+pub async fn insert_vorgang(
+    vg: &models::Vorgang,
+    tx: &mut sqlx::PgTransaction<'_>,
+    server: &LTZFServer,
 ) -> Result<i32> {
-    tracing::info!("Inserting complete GSVH into the database");
-    use schema::gesetzesvorhaben::dsl;
-    use schema::gesetzestyp::dsl as typ_dsl;
+    tracing::info!("Inserting complete Vorgang into the database");
+    let obj = "vorgang";
+    // master insert
+    let vg_id = sqlx::query!("
+    INSERT INTO vorgang(api_id, titel, kurztitel, verfaend, wahlperiode, typ)
+    VALUES
+    ($1, $2, $3, $4, $5, (SELECT id FROM vorgangstyp WHERE value=$6))
+    RETURNING vorgang.id;", 
+    vg.api_id, vg.titel, vg.kurztitel, vg.verfassungsaendernd, vg.wahlperiode as i32, 
+    server.guard_ts(vg.typ, vg.api_id,obj)?)
+    .map(|r|r.id).fetch_one(&mut **tx).await?;
+
+    // insert links
+    sqlx::query!("INSERT INTO rel_vorgang_links(link, vg_id) 
+    SELECT val, $2 FROM UNNEST($1::text[]) as val", 
+    vg.links.as_ref().map(|x| &x[..]), vg_id)
+    .execute(&mut **tx).await?;
+
+    // insert initiatoren
+    sqlx::query!("INSERT INTO rel_vorgang_init(initiator, vg_id) SELECT val, $2 FROM UNNEST($1::text[])as val;", 
+    &vg.initiatoren[..], vg_id)
+    .execute(&mut **tx).await?;
+    sqlx::query!("INSERT INTO rel_vorgang_init_person(initiator, vg_id) SELECT val, $2 FROM UNNEST($1::text[])as val;", 
+    vg.initiator_personen.as_ref().map(|x|&x[..]), vg_id)
+    .execute(&mut **tx).await?;
+
+    // insert ids
+    let ident_list = vg.ids.as_ref().map(|x|x.iter()
+    .map(|el|el.id.clone()).collect::<Vec<_>>());
+
+    let identt_list = vg.ids.as_ref().map(|x|x.iter()
+    .map(|el| server.guard_ts(el.typ, vg.api_id, obj).unwrap()).collect::<Vec<_>>());
+
+    sqlx::query!("INSERT INTO rel_vg_ident (vg_id, typ, identifikator) 
+    SELECT $1, t.id, ident.ident FROM 
+    UNNEST($2::text[], $3::text[]) as ident(ident, typ)
+    INNER JOIN vg_ident_typ t ON t.value = ident.typ",
+    vg_id, ident_list.as_ref().map(|x| &x[..]), identt_list.as_ref().map(|x| &x[..]))
+    .execute(&mut **tx).await?;
     
-    let gsvh_id = 
-    diesel::insert_into(schema::gesetzesvorhaben::table)
-    .values(
-        (
-            dsl::api_id.eq(api_gsvh.api_id),
-            dsl::titel.eq(&api_gsvh.titel),
-            dsl::verfaend.eq(api_gsvh.verfassungsaendernd),
-            dsl::typ.eq(
-                typ_dsl::gesetzestyp
-                .select(typ_dsl::id)
-                .filter(typ_dsl::api_key.eq(&api_gsvh.typ.to_string()))
-                .first::<i32>(connection)?
-            ),
-        )
-    )
-    .returning(dsl::id)
-    .get_result::<i32>(connection)?;
-
-    // insert links, initiatoren, ids
-    if let Some(links) = &api_gsvh.links {
-        use schema::rel_gsvh_links::dsl as dsl;
-        diesel::insert_into(schema::rel_gsvh_links::table)
-        .values(
-            links.iter()
-            .cloned()
-            .map(|s|(
-                dsl::link.eq(s),
-                dsl::gsvh_id.eq(gsvh_id)
-            )
-            )
-            .collect::<Vec<_>>()
-        )
-        .execute(connection)?;
+    // insert stations
+    for stat in &vg.stationen {
+        insert_station(stat.clone(), vg_id, tx, server).await?;
     }
-
-    if !api_gsvh.initiatoren.is_empty() {
-        use schema::rel_gsvh_init::dsl as dsl;
-        diesel::insert_into(schema::rel_gsvh_init::table)
-        .values(
-            api_gsvh.initiatoren.iter()
-            .map(|s|
-                (dsl::initiator.eq(s),
-                dsl::gsvh_id.eq(gsvh_id)
-            ))
-            .collect::<Vec<_>>()
-        )
-        .execute(connection)?;
-    }
-
-    if let Some(init_personen) = api_gsvh.initiator_personen.as_ref() {
-        diesel::insert_into(schema::rel_gsvh_init_person::table)
-        .values(
-            init_personen.iter()
-            .map(|s|
-                (
-                    schema::rel_gsvh_init_person::gsvh_id.eq(gsvh_id),
-                    schema::rel_gsvh_init_person::initiator.eq(s.clone())
-                )
-            ).collect::<Vec<_>>()
-        )
-        .execute(connection)?;
-    }
-
-    if let Some(ids) = api_gsvh.ids.as_ref() {
-        use schema::rel_gsvh_id::dsl as dsl;
-        let mut value_vec = vec![];
-
-        for id_entry in ids.iter(){
-            let value= (
-                dsl::gsvh_id.eq(gsvh_id),
-                dsl::identifikator.eq(&id_entry.id),
-                dsl::typ.eq(
-                    schema::identifikatortyp::table
-                    .select(schema::identifikatortyp::id)
-                    .filter(schema::identifikatortyp::api_key
-                        .eq(&id_entry.typ.to_string())
-                    )
-                    .first::<i32>(connection)?
-                )
-            );
-            value_vec.push(value);
-        }
-        diesel::insert_into(schema::rel_gsvh_id::table)
-        .values(&value_vec)
-        .execute(connection)?;
-    }
-    
-    if !api_gsvh.stationen.is_empty() {
-        for stat in api_gsvh.stationen.clone() {
-            insert_station(stat, gsvh_id, connection)?;
-        }
-    }
-    tracing::info!("Insertion Successful with ID: {}", gsvh_id);
-    Ok(gsvh_id)
+    tracing::info!("Insertion Successful with ID: {}", vg_id);
+    Ok(vg_id)
 }
 
-pub fn insert_station(
+pub async fn insert_station(
     stat: models::Station,
-    gsvh_id: i32,
-    connection: &mut diesel::PgConnection,
+    vg_id: i32,
+    tx: &mut sqlx::PgTransaction<'_>,
+    srv: &LTZFServer
 ) -> Result<i32> {
-    use schema::station::dsl;
-    let stat_id = diesel::insert_into(schema::station::table)
-    .values(
-        (dsl::gsvh_id.eq(gsvh_id),
-        dsl::gremium.eq(stat.gremium),
-        dsl::trojaner.eq(stat.trojaner.unwrap_or(false)),
-        dsl::datum.eq(chrono::NaiveDateTime::from(stat.datum).and_utc()),
-        dsl::parl_id.eq(
-            schema::parlament::table.select(schema::parlament::id)
-            .filter(schema::parlament::api_key.eq(&stat.parlament.to_string()))
-            .first::<i32>(connection)?
-        ),
-        dsl::typ.eq(
-            schema::stationstyp::table.select(schema::stationstyp::id)
-            .filter(schema::stationstyp::api_key.eq(&stat.typ.to_string()))
-            .first::<i32>(connection)?
-        ),
-        dsl::link.eq(stat.link),
-     )
-    )
-    .returning(dsl::id)
-    .get_result::<i32>(connection)?;
-    if !stat.betroffene_texte.is_empty(){
-        diesel::insert_into(schema::rel_station_gesetz::table)
-        .values(
-            stat.betroffene_texte.iter().map(|gesetz|
-                (schema::rel_station_gesetz::stat_id.eq(stat_id),
-                schema::rel_station_gesetz::gesetz.eq(gesetz.clone())
-                )
-            ).collect::<Vec<_>>()
-        ).execute(connection)?;
+    // master insert
+    let sapi = stat.api_id.unwrap_or(uuid::Uuid::now_v7());
+    let obj= "station";
+    if let Some(id) = sqlx::query!("SELECT id FROM station WHERE api_id = $1", sapi).fetch_optional(&mut **tx).await?{
+        return Ok(id.id);
     }
-    if !stat.dokumente.is_empty() {
-        let mut dok_ids = vec![];
-        for dok in stat.dokumente.clone(){
-            dok_ids.push(insert_dokument(dok, connection)?);
+    let gr_id = if let Some(gremium) = stat.gremium{
+        let id_ex = sqlx::query!(
+            "SELECT gremium.id FROM gremium
+            INNER JOIN parlament ON parlament.id=gremium.parl
+            WHERE name = $1 AND value=$2", gremium.name, gremium.parlament.to_string())
+        .fetch_optional(&mut **tx).await?;
+        if id_ex.is_none(){
+            let id = sqlx::query!("INSERT INTO gremium(name, parl) 
+            VALUES ($1, (SELECT id FROM parlament WHERE value=$2)) RETURNING id",
+            gremium.name, gremium.parlament.to_string()).map(|r|r.id).fetch_one(&mut **tx).await?;
+            notify_new_enum_entry(sapi, "Station", &gremium, srv)?;
+            Some(id)
+        }else{
+            id_ex.map(|x|x.id)
         }
-        
-        diesel::insert_into(schema::rel_station_dokument::table)
-        .values(
-            dok_ids.iter()
-            .map(|dok_id|
-                (
-                    schema::rel_station_dokument::stat_id.eq(stat_id),
-                    schema::rel_station_dokument::dok_id.eq(*dok_id)
-                )
-            )
-            .collect::<Vec<_>>()
-        )
-        .execute(connection)?;
-    }
-    if let Some(stln) = stat.stellungnahmen {
-        use schema::stellungnahme::dsl;
-        for stln in stln {
-            diesel::insert_into(schema::stellungnahme::table)
-            .values( 
-                (
-                    dsl::meinung.eq(stln.meinung),
-                    dsl::lobbyreg_link.eq(stln.lobbyregister_link),
-                    dsl::stat_id.eq(stat_id),
-                    dsl::dok_id.eq(
-                        insert_dokument(stln.dokument, connection)?
-                    )
-                )
-            )
-            .execute(connection)?;
-        }
-    }
-    if let Some(sw) = stat.schlagworte {
-        diesel::insert_into(schema::schlagwort::table)
-        .values(
-            sw.iter()
-            .map(|s|
-                schema::schlagwort::api_key.eq(s))
-            .collect::<Vec<_>>()
-        )
-        .on_conflict_do_nothing()
-        .execute(connection)?;
-        let idvec : HashMap<String, i32> = 
-        schema::schlagwort::table
-        .filter(schema::schlagwort::api_key.eq_any(&sw))
-        .select((schema::schlagwort::api_key, schema::schlagwort::id))
-        .get_results::<(String, i32)>(connection)?
-        .drain(..).collect();
+    }else {
+        None
+    };
+    let stat_id = sqlx::query!(
+        "INSERT INTO station 
+        (api_id, gr_id, link, p_id, titel, trojanergefahr, typ, start_zeitpunkt, vg_id, letztes_update)
+        VALUES
+        ($1, $2, $3, 
+        (SELECT id FROM parlament   WHERE value = $4), $5, $6, 
+        (SELECT id FROM stationstyp WHERE value = $7), $8, $9, COALESCE($10, NOW()))
+        RETURNING station.id", 
+        sapi, gr_id, stat.link,
+        stat.parlament.to_string(), stat.titel, stat.trojanergefahr.map(|x|x as i32), srv.guard_ts(stat.typ, sapi, obj)?,
+        stat.start_zeitpunkt, vg_id, stat.letztes_update
+    ).map(|r|r.id)
+    .fetch_one(&mut **tx).await?;
 
-        diesel::insert_into(schema::rel_station_schlagwort::table)
-        .values(
-            sw.iter()
-            .map(|s| {
-                (
-                    schema::rel_station_schlagwort::stat_id.eq(stat_id),
-                    schema::rel_station_schlagwort::sw_id.eq(idvec.get(s).unwrap())
-                )}
-            )
-            .collect::<Vec<_>>()
-        ).execute(connection)?;
+    // betroffene gesetzestexte
+    sqlx::query!(
+        "INSERT INTO rel_station_gesetz(stat_id, gesetz)
+        SELECT $1, blub FROM UNNEST($2::text[]) as blub ON CONFLICT DO NOTHING",
+        stat_id, stat.betroffene_texte.as_ref().map(|x| &x[..])
+    )
+    .execute(&mut **tx).await?;
+
+    // assoziierte dokumente
+    let mut did = Vec::with_capacity(stat.dokumente.len());
+    for dokument in stat.dokumente{
+        did.push(
+            match dokument{
+                models::DokRef::String(s) => {
+                    let uuid = Uuid::parse_str(&*s)?;
+                    if let Some(id) = sqlx::query!("SELECT id FROM dokument WHERE api_id = $1", uuid)
+                    .map(|r|r.id).fetch_optional(&mut **tx).await?{
+                        id
+                    }else{
+                        return Err(crate::error::LTZFError::Validation { source: crate::error::DataValidationError::IncompleteDataSupplied { input: *s } })
+                    }
+                },
+                models::DokRef::Dokument(d) => {insert_dokument(*d, tx, srv).await?}
+            }
+        );
     }
+    sqlx::query!("INSERT INTO rel_station_dokument(stat_id, dok_id) 
+    SELECT $1, blub FROM UNNEST($2::int4[]) as blub", stat_id, &did[..])
+    .execute(&mut **tx).await?;
+
+    // stellungnahmen
+    if let Some(stln) = stat.stellungnahmen {
+        let mut mng = Vec::with_capacity(stln.len());
+        let mut doks = Vec::with_capacity(stln.len());
+        let mut lobby = Vec::with_capacity(stln.len());
+        for stln in stln {
+            mng.push(stln.meinung as i32);
+            lobby.push(stln.lobbyregister_link);
+            doks.push(insert_dokument(stln.dokument, tx, srv).await?);
+        }
+        sqlx::query!("INSERT INTO stellungnahme (stat_id, meinung, lobbyreg_link, dok_id)
+        SELECT $1, mn, lobby, did FROM UNNEST($2::int4[], $3::text[], $4::int4[]) as blub(mn, lobby, did)",
+        stat_id, &mng[..], &lobby as &[Option<String>], &doks[..]
+        ).execute(&mut **tx).await?;
+    }
+    // schlagworte
+    sqlx::query!("
+        WITH 
+        existing_ids AS (SELECT DISTINCT id FROM schlagwort WHERE value = ANY($1::text[])),
+        inserted AS(
+            INSERT INTO schlagwort(value) 
+            SELECT DISTINCT(key) FROM UNNEST($1::text[]) as key
+            ON CONFLICT DO NOTHING
+            RETURNING id
+        ),
+        allofthem AS(
+            SELECT id FROM inserted UNION SELECT id FROM existing_ids
+        )
+
+        INSERT INTO rel_station_schlagwort(stat_id, sw_id)
+        SELECT $2, allofthem.id FROM allofthem",
+        stat.schlagworte.as_ref().map(|x|&x[..]), stat_id
+    )
+    .execute(&mut **tx).await?;
 
     return Ok(stat_id);
 }
-fn sanitize_string(s: &str) -> String{
-    s.to_string()
-}
-pub fn insert_dokument(
-    dok: models::Dokument,
-    connection: &mut diesel::PgConnection) 
-    -> Result<i32> {
-    use schema::dokument::dsl;
-    let did: i32 = diesel::insert_into(schema::dokument::table)
-    .values(
-        (
-            dsl::titel.eq(sanitize_string(&dok.titel)),
-            dsl::link.eq(dok.link),
-            dsl::hash.eq(dok.hash),
-            dsl::datum.eq(dok.last_mod.naive_utc()),
-            dsl::zusammenfassung.eq(&dok.zusammenfassung.map(|s| sanitize_string(&s))),
-            dsl::typ.eq(
-                schema::dokumententyp::table.select(schema::dokumententyp::id)
-                .filter(schema::dokumententyp::api_key.eq(&dok.typ.to_string()))
-                .first::<i32>(connection)?
-            )
-        )
-    )
-    .returning(dsl::id)
-    .get_result::<i32>(connection)?;
-    if let Some(sw) = dok.schlagworte{
-        diesel::insert_into(schema::schlagwort::table)
-        .values(
-            sw.iter()
-            .map(|s|
-                schema::schlagwort::api_key.eq(s))
-            .collect::<Vec<_>>()
-        )
-        .on_conflict_do_nothing()
-        .execute(connection)?;
-        let idvec : HashMap<String, i32> = 
-        schema::schlagwort::table
-        .filter(schema::schlagwort::api_key.eq_any(&sw))
-        .select((schema::schlagwort::api_key, schema::schlagwort::id))
-        .get_results::<(String, i32)>(connection)?
-        .drain(..).collect();
 
-        diesel::insert_into(schema::rel_dok_schlagwort::table)
-        .values(
-            sw.iter()
-            .map(|s| {
-                (
-                    schema::rel_dok_schlagwort::dok_id.eq(did),
-                    schema::rel_dok_schlagwort::sw_id.eq(idvec.get(s).unwrap())
-                )}
-            )
-            .collect::<Vec<_>>()
-        ).execute(connection)?;
-    }
-    if let Some(auth) = dok.autoren{
-        diesel::insert_into(schema::rel_dok_autor::table)
-        .values(
-            auth.iter()
-            .map(|s|
-                (
-                    schema::rel_dok_autor::dok_id.eq(did),
-                    schema::rel_dok_autor::autor.eq(s)
-                )
-            )
-            .collect::<Vec<_>>()
+pub async fn insert_dokument(
+    dok: models::Dokument,
+    tx: &mut sqlx::PgTransaction<'_>,
+    srv: &LTZFServer) 
+    -> Result<i32> {
+    let dapi = dok.api_id.unwrap_or(uuid::Uuid::now_v7());
+    if let Some(id) = sqlx::query!("SELECT id FROM dokument WHERE api_id = $1", dapi).fetch_optional(&mut **tx).await?{
+        return Ok(id.id);
+    } 
+    let obj= "Dokument";
+    let did = sqlx::query!(
+        "INSERT INTO dokument(api_id, drucksnr, typ, titel, kurztitel, vorwort, volltext, zusammenfassung, last_mod, link, hash)
+        VALUES(
+            $1,$2, (SELECT id FROM dokumententyp WHERE value = $3), 
+            $4,$5,$6,$7,$8,$9,$10,$11
+        )RETURNING id", 
+        dapi, dok.drucksnr,  srv.guard_ts(dok.typ, dapi, obj)?, dok.titel, dok.kurztitel, dok.vorwort, 
+        dok.volltext,dok.zusammenfassung, dok.letzte_modifikation, dok.link, dok.hash
+    ).map(|r|r.id).fetch_one(&mut **tx).await?;
+
+    // Schlagworte
+    sqlx::query!("
+        WITH existing_ids AS (SELECT DISTINCT id FROM schlagwort WHERE value = ANY($1::text[])),
+        inserted AS(
+            INSERT INTO schlagwort(value) 
+            SELECT DISTINCT(key) FROM UNNEST($1::text[]) as key
+            ON CONFLICT DO NOTHING
+            RETURNING id
+        ),
+        allofthem AS(
+            SELECT id FROM inserted UNION SELECT id FROM existing_ids
         )
-        .execute(connection)?;
-    }
-    if let Some(autoren_personen) = dok.autorpersonen{
-        diesel::insert_into(schema::rel_dok_autorperson::table)
-        .values(
-            autoren_personen.iter()
-            .map(|s|
-                (
-                    schema::rel_dok_autorperson::dok_id.eq(did),
-                    schema::rel_dok_autorperson::autor.eq(s)
-                )
-            )
-            .collect::<Vec<_>>()
-        )
-        .execute(connection)?;
-    }
+
+        INSERT INTO rel_dok_schlagwort(dok_id, sw_id)
+        SELECT $2, allofthem.id FROM allofthem",
+        dok.schlagworte.as_ref().map(|x|&x[..]), did
+    )
+    .execute(&mut **tx).await?;
+
+    // authoren
+    sqlx::query!("INSERT INTO rel_dok_autor(dok_id, autor) 
+    SELECT $1, blub FROM UNNEST($2::text[]) as blub", did, 
+    dok.autoren.as_ref().map(|x|&x[..]))
+    .execute(&mut **tx).await?;
+    sqlx::query!("INSERT INTO rel_dok_autorperson(dok_id, autor) 
+    SELECT $1, blub FROM UNNEST($2::text[]) as blub", 
+    did, dok.autorpersonen.as_ref().map(|x|&x[..]))
+    .execute(&mut **tx).await?;
     return Ok(did);
 }

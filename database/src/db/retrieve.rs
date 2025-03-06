@@ -1,387 +1,201 @@
 use std::str::FromStr;
 
-use crate::db::schema;
 use crate::error::*;
-use deadpool_diesel::postgres::Connection;
-use diesel::prelude::*;
 use openapi::models;
+use crate::utils::as_option;
 
-mod db_models {
-    use chrono::NaiveDate;
-    use diesel::prelude::*;
-    use uuid::Uuid;
+pub async fn vorgang_by_id(id: i32, executor: &mut sqlx::PgTransaction<'_>) -> Result<models::Vorgang> {
+    let pre_vg = sqlx::query!(
+        "SELECT v.*, vt.value FROM vorgang v
+        INNER JOIN vorgangstyp vt ON vt.id = v.typ
+        WHERE v.id = $1", id)
+    .fetch_one(&mut **executor).await?;
 
-    #[derive(Queryable)]
-    pub struct Gesetzesvorhaben {
-        pub id: i32,
-        pub api_id: Uuid,
-        pub verfassungsaendernd: bool,
-        pub titel: String,
-        pub typ: String,
-    }
-    pub struct Station {
-        pub parlament: i32,
-        pub stationstyp: i32,
-        pub gremium: String,
-        pub datum: NaiveDate,
-        pub trojaner: bool,
-        pub link: Option<String>,
-    }
-}
+    let links = sqlx::query!("SELECT link FROM rel_vorgang_links WHERE vg_id = $1", id)
+    .map(|row| row.link).fetch_all(&mut **executor).await?;
 
-pub async fn gsvh_by_id(id: i32, connection: &Connection) -> Result<models::Gesetzesvorhaben> {
-    use schema::gesetzesvorhaben::dsl;
-    let res: db_models::Gesetzesvorhaben = connection
-        .interact(move |conn| {
-            schema::gesetzesvorhaben::table
-                .filter(dsl::id.eq(id))
-                .inner_join(schema::gesetzestyp::table)
-                .select((
-                    dsl::id,
-                    dsl::api_id,
-                    dsl::verfaend,
-                    dsl::titel,
-                    schema::gesetzestyp::dsl::api_key,
-                ))
-                .get_result(conn)
-        })
-        .await??;
+    let init_inst = sqlx::query!("SELECT initiator FROM rel_vorgang_init WHERE vg_id = $1", id)
+    .map(|row| row.initiator).fetch_all(&mut **executor).await?;
+    
+    let init_prsn = sqlx::query!("SELECT initiator FROM rel_vorgang_init_person WHERE vg_id = $1", id)
+    .map(|row| row.initiator).fetch_all(&mut **executor).await?;
 
-    let links = connection
-        .interact(move |conn| {
-            schema::rel_gsvh_links::table
-                .select(schema::rel_gsvh_links::link)
-                .filter(schema::rel_gsvh_links::gsvh_id.eq(res.id))
-                .get_results::<String>(conn)
-        })
-        .await??;
-    let initiatoren = connection
-        .interact(move |conn| {
-            schema::rel_gsvh_init::table
-                .select(schema::rel_gsvh_init::initiator)
-                .filter(schema::rel_gsvh_init::gsvh_id.eq(res.id))
-                .get_results::<String>(conn)
-        })
-        .await??;
-    let init_personen = as_option(connection
-        .interact(move |conn| {
-            schema::rel_gsvh_init_person::table
-                .select(schema::rel_gsvh_init_person::initiator)
-                .filter(schema::rel_gsvh_init_person::gsvh_id.eq(res.id))
-                .get_results::<String>(conn)
-        })
-        .await??);
+    let ids = sqlx::query!("
+    SELECT value as typ, identifikator as ident 
+    FROM rel_vg_ident r
+    INNER JOIN vg_ident_typ t ON t.id = r.typ
+    WHERE r.vg_id = $1
+    ORDER BY ident ASC", id)
+        .map(|row| models::VgIdent{
+        typ: models::VgIdentTyp::from_str(row.typ.as_str())
+        .expect(format!("Could not convert database value `{}`into VgIdentTyp Variant", row.typ).as_str()),
+        id: row.ident})
+    .fetch_all(&mut **executor).await?;
 
-    let ids = connection
-        .interact(move |conn| {
-            schema::rel_gsvh_id::table
-                .filter(schema::rel_gsvh_id::gsvh_id.eq(id))
-                .inner_join(schema::identifikatortyp::table)
-                .select((
-                    schema::identifikatortyp::api_key,
-                    schema::rel_gsvh_id::identifikator,
-                ))
-                .get_results::<(String, String)>(conn)
-        })
-        .await??
-        .drain(..)
-        .map(|(typ, id)| models::Identifikator {
-            id,
-            typ: models::Identifikatortyp::from_str(&typ).unwrap(),
-        })
-        .collect();
-
-    let stat_ids: Vec<i32> = connection
-        .interact(move |conn| {
-            schema::station::table
-                .filter(schema::station::gsvh_id.eq(id))
-                .select(schema::station::id)
-                .get_results::<i32>(conn)
-        })
-        .await??;
+    let station_ids = sqlx::query!("SELECT id FROM station WHERE vg_id = $1", id)
+    .map(|row| row.id).fetch_all(&mut **executor).await?;
 
     let mut stationen = vec![];
-    for sid in stat_ids {
-        stationen.push(station_by_id(sid, connection).await?);
+    for sid in station_ids {
+        stationen.push(station_by_id(sid, executor).await?);
     }
 
-    Ok(models::Gesetzesvorhaben {
-        api_id: res.api_id,
-        titel: res.titel,
-        verfassungsaendernd: res.verfassungsaendernd,
-        typ: models::Gesetzestyp::from_str(res.typ.as_str())
+    Ok(models::Vorgang {
+        api_id: pre_vg.api_id,
+        titel: pre_vg.titel,
+        kurztitel: pre_vg.kurztitel,
+        wahlperiode: pre_vg.wahlperiode as u32,
+        verfassungsaendernd: pre_vg.verfaend,
+        typ: models::Vorgangstyp::from_str(pre_vg.value.as_str())
             .map_err(|e| DataValidationError::InvalidEnumValue { msg: e })?,
-        initiatoren,
-        initiator_personen: init_personen,
+        initiatoren: init_inst,
+        initiator_personen: as_option(init_prsn),
         ids: Some(ids),
         links: Some(links),
         stationen: stationen,
     })
 }
 
-pub async fn station_by_id(id: i32, connection: &Connection) -> Result<models::Station> {
-    let mut doks = vec![];
-    let dids = connection
-        .interact(move |conn| {
-            schema::rel_station_dokument::table
-                .filter(schema::rel_station_dokument::stat_id.eq(id))
-                .select(schema::rel_station_dokument::dok_id)
-                .get_results::<i32>(conn)
-        })
-        .await??;
-    for did in dids {
-        doks.push(dokument_by_id(did, connection).await?);
-    }
-    let mut stellungnahmen = vec![];
-    let stlid = connection
-        .interact(move |conn| {
-            schema::stellungnahme::table
-                .filter(schema::stellungnahme::stat_id.eq(id))
-                .select(schema::stellungnahme::id)
-                .get_results::<i32>(conn)
-        })
-        .await??;
+pub async fn ausschusssitzung_by_id(id: i32,  executor: &mut sqlx::PgTransaction<'_>) -> Result<models::Ausschusssitzung> {
+    todo!()
+}
 
+pub async fn station_by_id(id: i32,  executor:&mut sqlx::PgTransaction<'_>) -> Result<models::Station> {
+    let dokids = sqlx::query!("SELECT stat_id FROM rel_station_dokument WHERE dok_id = $1", id)
+    .map(|r|r.stat_id).fetch_all(&mut **executor).await?;
+    let mut doks = Vec::with_capacity(dokids.len());
+    for did in dokids {
+        doks.push(dokument_by_id(did, executor).await?.into());
+    }
+    let stlid = sqlx::query!("SELECT id FROM stellungnahme WHERE stat_id = $1", id)
+    .map(|r|r.id).fetch_all(&mut **executor).await?;
+    let mut stellungnahmen = Vec::with_capacity(stlid.len());
     for sid in stlid {
-        stellungnahmen.push(stellungnahme_by_id(sid, connection).await?);
+        stellungnahmen.push(stellungnahme_by_id(sid, executor).await?);
     }
+    let sw = sqlx::query!(
+        "SELECT DISTINCT(value) FROM rel_station_schlagwort r
+        LEFT JOIN schlagwort sw ON sw.id = r.sw_id
+        WHERE r.stat_id = $1
+        ORDER BY value DESC", id)
+    .map(|sw| sw.value).fetch_all(&mut **executor).await?;
+    
+    let bet_ges = sqlx::query!("SELECT gesetz FROM rel_station_gesetz WHERE stat_id = $1", id)
+    .map(|r|r.gesetz).fetch_all(&mut **executor).await?;
+    let temp_stat = sqlx::query!(
+        "SELECT s.*, p.value as parlv, st.value as stattyp
+        FROM station s
+        INNER JOIN parlament p ON p.id = s.p_id
+        INNER JOIN stationstyp st ON st.id = s.typ
+        WHERE s.id=$1", id)
+        .fetch_one(&mut **executor).await?;
+    
+    let gremium = sqlx::query!("
+    SELECT p.value, g.name FROM gremium g INNER JOIN parlament p on p.id = g.parl
+        WHERE g.id = $1", temp_stat.gr_id)
+        .map(|x|models::Gremium{name: x.name, parlament: models::Parlament::from_str(&x.value).unwrap()})
+        .fetch_optional(&mut **executor).await?;
 
-    let schlagworte = connection
-        .interact(move |conn| {
-            schema::rel_station_schlagwort::table
-                .filter(schema::rel_station_schlagwort::stat_id.eq(id))
-                .inner_join(schema::schlagwort::table)
-                .select(schema::schlagwort::api_key)
-                .distinct()
-                .get_results::<String>(conn)
-        })
-        .await??;
-
-    let rval: (
-        i32,
-        i32,
-        String,
-        crate::DateTime,
-        bool,
-        Option<String>,
-    ) = connection
-        .interact(move |conn| {
-            schema::station::table
-                .filter(schema::station::id.eq(id))
-                .select((
-                    schema::station::parl_id,
-                    schema::station::typ,
-                    schema::station::gremium,
-                    schema::station::datum,
-                    schema::station::trojaner,
-                    schema::station::link,
-                ))
-                .first(conn)
-        })
-        .await??;
-    let scaffold = db_models::Station {
-        parlament: rval.0,
-        stationstyp: rval.1,
-        gremium: rval.2,
-        datum: rval.3.date_naive(),
-        trojaner: rval.4,
-        link: rval.5,
-    };
-    let (parl, styp) = connection
-        .interact(move |conn| {
-            (
-                schema::parlament::table
-                    .filter(schema::parlament::id.eq(scaffold.parlament))
-                    .select(schema::parlament::api_key)
-                    .get_result::<String>(conn),
-                schema::stationstyp::table
-                    .filter(schema::stationstyp::id.eq(scaffold.stationstyp))
-                    .select(schema::stationstyp::api_key)
-                    .get_result::<String>(conn),
-            )
-        })
-        .await?;
-    let betroffene_texte = connection
-        .interact(move |conn| {
-            schema::rel_station_gesetz::table
-                .filter(schema::rel_station_gesetz::stat_id.eq(id))
-                .select(schema::rel_station_gesetz::gesetz)
-                .get_results::<String>(conn)
-        })
-        .await??;
     return Ok(models::Station {
-        parlament: models::Parlament::from_str(parl?.as_str())
+        parlament: models::Parlament::from_str(temp_stat.parlv.as_str())
             .map_err(|e| DataValidationError::InvalidEnumValue { msg: e })?,
-        typ: models::Stationstyp::from_str(styp?.as_str())
+        typ: models::Stationstyp::from_str(temp_stat.stattyp.as_str())
             .map_err(|e| DataValidationError::InvalidEnumValue { msg: e })?,
         dokumente: doks,
-        schlagworte: Some(schlagworte),
-        stellungnahmen: Some(stellungnahmen),
-        gremium: scaffold.gremium,
-        datum: scaffold.datum,
-        betroffene_texte,
-        trojaner: Some(scaffold.trojaner),
-        link: scaffold.link,
+        schlagworte: as_option(sw),
+        stellungnahmen: as_option(stellungnahmen),
+        start_zeitpunkt : temp_stat.start_zeitpunkt,
+        letztes_update : Some(temp_stat.letztes_update),
+        betroffene_texte: as_option(bet_ges),
+        trojanergefahr: temp_stat.trojanergefahr.map(|x| x as u8),
+        titel: temp_stat.titel,
+        gremium,
+        api_id: Some(temp_stat.api_id),
+        link: temp_stat.link,
     });
 }
 
 pub async fn stellungnahme_by_id(
     id: i32,
-    connection: &Connection,
+    executor:&mut sqlx::PgTransaction<'_>,
 ) -> Result<models::Stellungnahme> {
-    let rval: (i32, Option<i32>, Option<String>) = connection
-        .interact(move |conn| {
-            schema::stellungnahme::table
-                .filter(schema::stellungnahme::id.eq(id))
-                .select((
-                    schema::stellungnahme::dok_id,
-                    schema::stellungnahme::meinung,
-                    schema::stellungnahme::lobbyreg_link,
-                ))
-                .first(conn)
-        })
-        .await??;
+    let temp = sqlx::query!("SELECT * FROM stellungnahme where id = $1", id).fetch_one(&mut **executor).await?;
 
     return Ok(models::Stellungnahme {
-        dokument: dokument_by_id(rval.0, connection).await?,
-        meinung: rval.1,
-        lobbyregister_link: rval.2,
+        dokument: dokument_by_id(temp.dok_id, executor).await?,
+        meinung: temp.meinung as u8,
+        lobbyregister_link: temp.lobbyreg_link,
     });
 }
 
-pub async fn dokument_by_id(id: i32, connection: &Connection) -> Result<models::Dokument> {
-    let ret: (
-        String,
-        crate::DateTime,
-        String,
-        String,
-        Option<String>,
-        String,
-    ) = connection
-        .interact(move |conn| {
-            use schema::dokument::dsl;
-            schema::dokument::table
-                .filter(schema::dokument::id.eq(id))
-                .inner_join(schema::dokumententyp::table)
-                .select((
-                    dsl::titel,
-                    dsl::datum,
-                    dsl::link,
-                    dsl::hash,
-                    dsl::zusammenfassung,
-                    schema::dokumententyp::dsl::api_key,
-                ))
-                .first(conn)
-        })
-        .await??;
-    let schlagworte: Option<Vec<String>> = as_option(connection
-        .interact(move |conn| {
-            schema::rel_dok_schlagwort::table
-                .filter(schema::rel_dok_schlagwort::dok_id.eq(id))
-                .inner_join(schema::schlagwort::table)
-                .select(schema::schlagwort::api_key)
-                .distinct()
-                .get_results(conn)
-        })
-        .await??);
-    let autoren: Option<Vec<String>> = as_option(connection
-        .interact(move |conn| {
-            schema::rel_dok_autor::table
-                .filter(schema::rel_dok_autor::dok_id.eq(id))
-                .select(schema::rel_dok_autor::autor)
-                .get_results(conn)
-        })
-        .await??);
-    let autorpersonen: Option<Vec<String>> = as_option(connection
-        .interact(move |conn| {
-            schema::rel_dok_autorperson::table
-                .filter(schema::rel_dok_autorperson::dok_id.eq(id))
-                .select(schema::rel_dok_autorperson::autor)
-                .get_results(conn)
-        })
-        .await??);
+pub async fn dokument_by_id(id: i32,  executor:&mut sqlx::PgTransaction<'_>) -> Result<models::Dokument> {
+    let rec = sqlx::query!(
+        "SELECT d.*, value as typ_value FROM dokument d
+        INNER JOIN dokumententyp dt ON dt.id = d.typ
+        WHERE d.id = $1", id)
+        .fetch_one(&mut **executor).await?;
+    let schlagworte = sqlx::query!(
+        "SELECT DISTINCT value 
+        FROM rel_dok_schlagwort r
+        LEFT JOIN schlagwort sw ON sw.id = r.sw_id
+        WHERE dok_id = $1", id)
+        .map(|r|r.value).fetch_all(&mut **executor).await?;
+    let autoren = sqlx::query!("SELECT autor FROM rel_dok_autor WHERE dok_id = $1", id)
+        .map(|r|r.autor).fetch_all(&mut **executor).await?;
+    let autorpersonen = sqlx::query!("SELECT autor FROM rel_dok_autorperson WHERE dok_id = $1", id)
+        .map(|r|r.autor).fetch_all(&mut **executor).await?;
 
     return Ok(models::Dokument {
-        titel: ret.0,
-        last_mod: ret.1,
-        link: ret.2,
-        hash: ret.3,
-        zusammenfassung: ret.4,
-        schlagworte,
-        autoren,
-        autorpersonen,
-        typ: models::Dokumententyp::from_str(ret.5.as_str())
+        api_id: Some(rec.api_id),
+        titel: rec.titel,
+        kurztitel: rec.kurztitel,
+        vorwort: rec.vorwort,
+        volltext: rec.volltext,
+        letzte_modifikation: rec.last_mod.into(),
+        link: rec.link,
+        hash: rec.hash,
+        zusammenfassung: rec.zusammenfassung,
+        schlagworte: as_option(schlagworte),
+        autoren: as_option(autoren),
+        autorpersonen: as_option(autorpersonen),
+        typ: models::Doktyp::from_str(rec.typ_value.as_str())
             .map_err(|e| DataValidationError::InvalidEnumValue { msg: e })?,
+        drucksnr: rec.drucksnr
     });
 }
 
-#[derive(QueryableByName, Debug, PartialEq, Eq, Hash, Clone)]
-#[diesel(table_name=schema::gesetzesvorhaben)]
-struct GSVHID {
-    id: i32,
-}
+pub async fn vorgang_by_parameter(
+    params: models::VorgangGetQueryParams,
+    hparam: models::VorgangGetHeaderParams,
+    executor: &mut sqlx::PgTransaction<'_>
+) -> Result<Vec<models::Vorgang>> {
 
-pub async fn gsvh_by_parameter(
-    params: models::GsvhGetQueryParams,
-    connection: &mut Connection,
-) -> Result<Vec<models::Gesetzesvorhaben>> {
-    let pretable_join = "SELECT gesetzesvorhaben.id, MAX(station.datum) as moddate FROM gesetzesvorhaben, station, gesetzestyp, rel_gsvh_init
-    WHERE gesetzesvorhaben.id = station.gsvh_id 
-    AND gesetzesvorhaben.id = rel_gsvh_init.gsvh_id
-    AND gesetzesvorhaben.typ = gesetzestyp.id";
-    let mut param_counter = 0;
-    let query = format!(
-        "WITH gsvh_moddate as ({}
-        {}
-        {}
-        GROUP BY gesetzesvorhaben.id
-    )
-    SELECT gsvh_moddate.id FROM gsvh_moddate
-    {}
-    ORDER BY moddate DESC
-    {}
-    {}", pretable_join,
-        if params.ggtyp.is_some() {param_counter += 1;format!("AND gesetzestyp.api_key = ${}", param_counter)} else {String::new()},
-        if params.initiator_contains_any.is_some() {param_counter += 1;format!("AND ${} = ANY(rel_gsvh_init.initiator)", param_counter)} else {String::new()},
-        if params.if_modified_since.is_some() {param_counter += 1;format!("AND moddate >= ${}", param_counter)} else {String::new()},
-        if params.limit.is_some() {param_counter += 1;format!("LIMIT ${}", param_counter)} else {String::new()},
-        if params.offset.is_some() {param_counter += 1;format!("OFFSET ${}", param_counter)} else {String::new()}
-    );
-    tracing::trace!("Executing Query:\n`{}`", query);
-    let mut diesel_query = diesel::sql_query(query)
-    .into_boxed();
+    let vg_list = sqlx::query!(
+        "WITH pre_table AS (
+        SELECT vorgang.id, MAX(station.start_zeitpunkt) as lastmod FROM vorgang
+            INNER JOIN vorgangstyp vt ON vt.id = vorgang.typ
+            LEFT JOIN station ON station.vg_id = vorgang.id
+            WHERE TRUE
+            AND vorgang.wahlperiode = COALESCE($1, vorgang.wahlperiode)
+            AND vt.value = COALESCE($2, vt.value)
+        GROUP BY vorgang.id
+        ORDER BY lastmod
+        )
+        SELECT * FROM pre_table WHERE
+        lastmod > CAST(COALESCE($3, '1940-01-01T20:20:20Z') as TIMESTAMPTZ)
+        OFFSET COALESCE($4, 0)
+        LIMIT COALESCE($5, 64)",
+    params.wp,
+    params.vgtyp.map(|x|x.to_string()),
+    hparam.if_modified_since.map(|x|x.to_rfc3339()),
+    params.offset,
+    params.limit)
+    .map(|r|r.id)
+    .fetch_all(&mut **executor).await?;
 
-    if let Some(ggtyp) = params.ggtyp{
-        diesel_query = diesel_query.bind::<diesel::sql_types::Text, _>(ggtyp.to_string())
-    }
-    if let Some(any_init) = params.initiator_contains_any{
-        diesel_query = diesel_query.bind::<diesel::sql_types::Array<diesel::sql_types::Text>, _>(any_init);
-    }
-    if let Some(moddate) = params.if_modified_since{
-        diesel_query = diesel_query.bind::<diesel::sql_types::Timestamp, _>(moddate.naive_utc());
-    }
-    if let Some(limit) = params.limit{
-        diesel_query = diesel_query.bind::<diesel::sql_types::Integer, _>(limit);
-    }
-    if let Some(offset) = params.offset{
-        diesel_query = diesel_query.bind::<diesel::sql_types::Integer, _>(offset);
-    }
-
-    let ids: Vec<GSVHID> = connection.interact(
-        |conn| diesel_query.load::<GSVHID>(conn)
-    ).await??;
-
-    let mut vector = vec![];
-    for id in ids{
-        vector.push(super::retrieve::gsvh_by_id(id.id, connection).await?);
+    let mut vector = Vec::with_capacity(vg_list.len());
+    for id in vg_list{
+        vector.push(super::retrieve::vorgang_by_id(id, executor).await?);
     }
     Ok(vector)
-}
-
-fn as_option<T>(v: Vec<T>) -> Option<Vec<T>> {
-    if v.is_empty() {
-        None
-    } else {
-        Some(v)
-    }
 }

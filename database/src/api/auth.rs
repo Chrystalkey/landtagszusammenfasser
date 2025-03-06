@@ -1,6 +1,4 @@
 use crate::{error::LTZFError, LTZFServer, Result};
-use diesel::prelude::*;
-use crate::db::schema;
 use axum::async_trait;
 use openapi::apis::ApiKeyAuthHeader;
 use sha256::digest;
@@ -48,20 +46,18 @@ async fn internal_extract_claims(server: &LTZFServer, headers: & axum::http::hea
     let key = key.unwrap().to_str()?;
     let hash = digest(key);
     tracing::trace!("Authenticating Key Hash {}", hash);
+    let table_rec = sqlx::query!(
+        "SELECT k.id, deleted, expires_at, value as scope 
+        FROM api_keys k
+        INNER JOIN api_scope s ON s.id = k.scope
+        WHERE key_hash = $1", hash)
+    .map(|r|
+        (r.id, r.deleted, r.expires_at, r.scope)
+    )
+    .fetch_optional(&server.sqlx_db).await?;
 
-    let connection = server.database.get().await?;
-
-    let table_res = schema::api_keys::table
-    .inner_join(schema::api_scope::table)
-    .select((schema::api_keys::id, schema::api_keys::deleted, schema::api_keys::expires_at, schema::api_scope::api_key))
-    .filter(schema::api_keys::key_hash.eq(hash.clone()));
-    let table_res = connection.interact(|conn|{
-        table_res.get_result::<(i32, bool, crate::DateTime, String)>(conn)
-        .optional()
-    }).await??;
-
-    tracing::trace!("DB Result: {:?}", table_res);
-    match table_res{
+    tracing::trace!("DB Result: {:?}", table_rec);
+    match table_rec{
         Some((_, true, _, _)) => {
             return Err(LTZFError::Validation { source:  crate::error::DataValidationError::Unauthorized { reason: format!("API Key was valid but is deleted. Hash: {}", hash) }});
         }
@@ -70,12 +66,8 @@ async fn internal_extract_claims(server: &LTZFServer, headers: & axum::http::hea
                 return Err(LTZFError::Validation { source: crate::error::DataValidationError::Unauthorized { reason: format!("API Key was valid but is expired. Hash: {}", hash) } });
             }
             let scope = (APIScope::try_from(scope.as_str()).unwrap(), id);
-            let stmt = diesel::update(schema::api_keys::table)
-            .filter(schema::api_keys::key_hash.eq(hash.clone()))
-            .set(schema::api_keys::last_used.eq(chrono::Utc::now()));
-            connection.interact(|conn|{
-                stmt.execute(conn)
-            }).await??;
+            sqlx::query!("UPDATE api_keys SET last_used = $1 WHERE key_hash = $2", chrono::Utc::now(), hash)
+            .execute(&server.sqlx_db).await?;
             tracing::trace!("Scope of key with hash`{}`: {:?}", hash, scope.0);
             return Ok(scope)
         },
@@ -99,21 +91,14 @@ impl ApiKeyAuthHeader for LTZFServer{
 pub async fn auth_get(server: &LTZFServer, scope: APIScope, expires_at: Option<crate::DateTime>, created_by: i32) -> Result<String>{
     let key = generate_api_key().await;
     let key_digest = digest(key.clone());
-    let connection = server.database.get().await?;
-    let scope_stmt = schema::api_scope::table.filter(schema::api_scope::api_key.eq(scope.to_string())).select(schema::api_scope::id);
-    connection.interact(move |conn|{
-        let scope_id = scope_stmt.first::<i32>(conn)?;
-        diesel::insert_into(schema::api_keys::table)
-        .values(
-            (
-            schema::api_keys::key_hash.eq(key_digest),
-            schema::api_keys::scope.eq(scope_id),
-            schema::api_keys::created_by.eq(created_by),
-            schema::api_keys::expires_at.eq(expires_at.unwrap_or(chrono::Utc::now() + chrono::Duration::days(365))),
-            )
-        )
-        .execute(conn)
-    }).await??;
+    
+    sqlx::query!("INSERT INTO api_keys(key_hash, created_by, expires_at, scope)
+    VALUES
+    ($1, $2, $3, (SELECT id FROM api_scope WHERE value = $4))", 
+    key_digest, created_by, expires_at.unwrap_or(chrono::Utc::now() + chrono::Duration::days(365)), scope.to_string()
+    )
+    .execute(&server.sqlx_db).await?;
+
     tracing::info!("Generated Fresh API Key with Scope: {:?}", scope);
     Ok(key)
 }
@@ -121,24 +106,13 @@ pub async fn auth_get(server: &LTZFServer, scope: APIScope, expires_at: Option<c
 pub async fn auth_delete(server: &LTZFServer, scope: APIScope, key: &str) -> Result<openapi::apis::default::AuthDeleteResponse>{
     if scope != APIScope::KeyAdder {
         tracing::warn!("Unauthorized: API Key does not have the required permission scope");
-        return Ok(openapi::apis::default::AuthDeleteResponse::Status401_APIKeyIsMissingOrInvalid { www_authenticate: None });
+        return Ok(openapi::apis::default::AuthDeleteResponse::Status401_APIKeyIsMissingOrInvalid);
     }
     let hash = digest(key);
-    let connection = server.database.get().await?;
-    let mut found = true;
-    let _ = connection.interact(move|conn|{
-        diesel::update(schema::api_keys::table.filter(schema::api_keys::key_hash.eq(hash)))
-        .set(schema::api_keys::deleted.eq(true))
-        .returning(schema::api_keys::id)
-        .get_result::<i32>(conn)
-    }).await?
-    .map_err(|e: diesel::result::Error| {
-        if e == diesel::result::Error::NotFound {
-            found = false;
-        }
-        return e;
-    })?;
-    if found {
+    let ret = sqlx::query!("UPDATE api_keys SET deleted=TRUE WHERE key_hash=$1 RETURNING id", hash)
+    .fetch_optional(&server.sqlx_db).await?;
+
+    if let Some(_) = ret {
         return Ok(openapi::apis::default::AuthDeleteResponse::Status204_APIKeyWasDeletedSuccessfully);
     }
     return Ok(openapi::apis::default::AuthDeleteResponse::Status404_APIKeyNotFound);

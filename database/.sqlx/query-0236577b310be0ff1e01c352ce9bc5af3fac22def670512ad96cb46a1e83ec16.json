@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO stellungnahme(stat_id, dok_id, meinung, lobbyreg_link)\n                VALUES($1, $2, $3, $4);",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4",
+        "Int4",
+        "Varchar"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "0236577b310be0ff1e01c352ce9bc5af3fac22def670512ad96cb46a1e83ec16"
+}

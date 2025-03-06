@@ -2,13 +2,16 @@ openapi: 3.0.0
 info:
   title: "Specification for the Landtagszusammenfasser Project"
   version: "0.1.0"
+  description: "Beschreibung der API des LTZF Projekts. Alle Listen, die vom Server kommen sind sortiert in\n\
+  1. datum der letzten modifikation, absteigend\n\
+  2. lexikographisch des titels falls nicht vorhanden"
 paths:
-  /api/v1/gesetzesvorhaben/{gsvh_id}:
+  /api/v1/vorgang/{vorgang_id}:
     get:
-      operationId: "gsvh_get_by_id"
-      description: "Returns a Gesetzesvorhaben by id"
+      operationId: "vorgang_get_by_id"
+      description: "Returns a vorgang by id"
       parameters:
-        - name: "gsvh_id"
+        - name: "vorgang_id"
           in: "path"
           required: true
           schema:
@@ -26,21 +29,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/gesetzesvorhaben"
+                $ref: "#/components/schemas/vorgang"
         "304":
           description: "No new changes"
         "404":
           description: "Content not found"
-        "500":
-          description: "Internal Server Error"
     put:
-      operationId: "gsvh_put"
-      description: API Access for the Admins without the merge just replacing gsvh
+      operationId: "vorgang_id_put"
+      description: API Access for the Admins without the merge just replacing vorgang
       parameters:
-        - name: "gsvh_id"
+        - name: "vorgang_id"
           in: "path"
           required: true
-          description: "The API ID of the GSVH that is to be affected"
+          description: "The API ID of the vorgang that is to be affected"
           schema:
             type: string
             format: uuid
@@ -49,7 +50,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/gesetzesvorhaben"
+              $ref: "#/components/schemas/vorgang"
       responses:
         201:
           description: "Created"
@@ -60,10 +61,10 @@ paths:
       security:
         - apiKey: [] 
     delete:
-      operationId: gsvh_delete
+      operationId: vorgang_delete
       parameters:
-        - name: "gsvh_id"
-          in: path
+        - name: "vorgang_id"
+          in: "path"
           required: true
           description: "API ID of the thing to be deleted"
           schema:
@@ -78,17 +79,13 @@ paths:
           description: "No Element with this ID"
       security:
         - apiKey: [] 
-  /api/v1/gesetzesvorhaben:
+  /api/v1/vorgang:
     get:
-      operationId: "gsvh_get"
-      description: "Returns a filtered List of Gesetzesvorhaben"
+      operationId: "vorgang_get"
+      description: "Returns a filtered List of vorgang"
       responses:
         "200":
-          description: "Successful operation"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/response"
+          $ref: "#/components/responses/VorgangGetResponse"
         "204":
           description: "No Content found for the specified parameters"
         "304":
@@ -97,26 +94,32 @@ paths:
           description: "Request Range not satisfiable. Dates before the existence of the BRP or in the future are excluded for example"
         "400":
           description: "Bad Request"
-        "500":
-          description: "Internal Server Error"
 
       parameters:
-        - name: "if-modified-since"
-          in: "query"
+        - name: "If-Modified-Since"
+          in: "header"
           required: false
           schema:
             type: "string"
             format: "date-time"
+        - name: "wp"
+          in: "query"
+          required: false
+          schema:
+            type: "integer"
+            minimum: 0
         - name: "limit"
           in: "query"
           required: false
           schema:
             type: "integer"
+            minimum: 1
         - name: "offset"
           in: "query"
           required: false
           schema:
             type: "integer"
+            minimum: 1
         - name: "initiator-contains-any"
           in: query
           required: false
@@ -125,21 +128,21 @@ paths:
             type: array
             items:
               type: string
-        - name: "ggtyp"
+        - name: "vgtyp"
           in: query
           required: false
-          description: "Gesetzgebungstyp"
+          description: Vorgangstyp"
           schema:
-            $ref: "#/components/schemas/gesetzestyp"
-    post:
-      operationId: "gsvh_post"
-      description: "Pushing a new Gesetzesvorhaben"
+            $ref: "#/components/schemas/vorgangstyp"
+    put:
+      operationId: "vorgang_put"
+      description: "Pushing a new vorgang"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/gesetzesvorhaben"
+              $ref: "#/components/schemas/vorgang"
       parameters:
         - name: "collector"
           in: query
@@ -155,22 +158,20 @@ paths:
         "401":
           $ref: "#/components/responses/UnauthorizedError"
         "409": 
-          description: "Conflict. The Ressource already exists"
-        "500":
-          description: "Internal Server Error"
+          description: "Conflict. This Vorgang-ID already exists"
       security:
         - apiKey: []
   /api/v1/auth:
     delete:
       operationId: "auth_delete"
       description: "Deletes an API Key from the Database"
-      requestBody:
-        required: true
-        content:
-          text/plain: 
-            schema:
-              type: "string"
-              description: "The API Key to be deleted"
+      parameters:
+        - name: "api-key-delete"
+          in: "header"
+          required: true
+          description: "The API Key that is to be deleted"
+          schema:
+            type: "string"
       responses:
         "204":
           description: "API Key was deleted successfully"
@@ -178,12 +179,10 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
         "404":
           description: "API Key not found"
-        "500":
-          description: "Internal Server Error"
       security:
         - apiKey: [] 
-    get:
-      operationId: "auth_get"
+    post:
+      operationId: "auth_post"
       description: "Adds a new API Key to the Database"
       requestBody:
         required: true
@@ -196,8 +195,154 @@ paths:
           $ref: "#/components/responses/ApiKeyCreated"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "500":
-          description: "Internal Server Error"
+      security:
+        - apiKey: [] 
+  /api/v1/ausschusssitzung:
+    get:
+      operationId: "as_get"
+      description: "Gibt eine Liste gefilterter Ausschusssitzungen zurück"
+      parameters:
+        - name: "If-Modified-Since"
+          in: "header"
+          required: false
+          schema:
+            type: "string"
+            format: "date-time"
+        - name: "wp"
+          in: query
+          schema:
+            type: "integer"
+            minimum: 0
+        - name: "limit"
+          in: "query"
+          required: false
+          schema:
+            type: "integer"
+            minimum: 1
+        - name: "offset"
+          in: "query"
+          required: false
+          schema:
+            type: "integer"
+            minimum: 1
+        - name: "vorgang_id"
+          in: query
+          required: false
+          description: "API ID eines Vorgangs. Liefert Ausschusssitzungen, deren TOPs diesen Vorgang referenzieren"
+          schema:
+            type: "string"
+            format: "uuid"
+
+      responses:
+        "200":
+          $ref: "#/components/responses/ASGetResponse"
+        "204":
+          description: "No Content found for the specified parameters"
+        "304":
+          description: "No new changes"
+        "416":
+          description: "Request Range not satisfiable. Dates before the existence of the BRP or in the future are excluded for example"
+        "400":
+          description: "Bad Request"
+
+    put:
+      operationId: "as_put"
+      description: "Neue Ausschussitzung Bekanntmachen"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ausschusssitzung"
+      parameters:
+        - name: "collector"
+          in: query
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
+      responses:
+        "201":
+          description: "Successfully Integrated the Object"
+        "400":
+          description: "Bad Request"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "409":
+          description: "Conflict. This Ausschusssitzungs-ID already exists"
+      security:
+        - apiKey: []
+  /api/v1/ausschusssitzung/{as_id}:
+    get:
+      operationId: "as_get_by_id"
+      description: "Gibt Ausschussitzung mit dieser ID zurück"
+      parameters:
+        - name: "as_id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
+        - name: "If-Modified-Since"
+          in: "header"
+          required: false
+          schema:
+            type: "string"
+            format: "date-time"
+      responses:
+        "200":
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ausschusssitzung"
+        "304":
+          description: "No new changes"
+        "404":
+          description: "Content not found"
+    put:
+      operationId: "as_id_put"
+      description: API Access for the Admins without the merge just replacing vorgang
+      parameters:
+        - name: "as_id"
+          in: "path"
+          required: true
+          description: "The API ID of the vorgang that is to be affected"
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ausschusssitzung"
+      responses:
+        201:
+          description: "Created"
+        204:
+          description: "Content Unchanged"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+      security:
+        - apiKey: [] 
+    delete:
+      operationId: as_delete
+      parameters:
+        - name: "as_id"
+          in: "path"
+          required: true
+          description: "API ID of the AS to be deleted"
+          schema:
+            type: "string"
+            format: "uuid"
+      responses:
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        204:
+          description: "Deleted Successfully"
+        404:
+          description: "No Element with this ID"
       security:
         - apiKey: [] 
 components:
@@ -210,10 +355,6 @@ components:
   responses:
     UnauthorizedError:
       description: API key is missing or invalid
-      headers:
-        WWW_Authenticate:
-          schema:
-            type: string
     ApiKeyCreated:
       description: "API Key was created successfully"
       content:
@@ -221,6 +362,28 @@ components:
           schema:
             type: string
             description: "The API Key that was created"
+    VorgangGetResponse:
+      description: "Antwort auf eine gefilterte Anfrage zu Vorgang"
+      content:
+        application/json:
+          schema:
+            type: "object"
+            properties:
+              payload: 
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/vorgang"
+    ASGetResponse:
+      description: "Antwort auf eine gefilterte Anfrage zu Ausschusssitzungen"
+      content:
+        application/json:
+          schema:
+            type: "object"
+            properties:
+              payload:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/ausschusssitzung"
   schemas:
     create_api_key:
       type: "object"
@@ -237,46 +400,46 @@ components:
           type: "string"
           format: "date-time"
           description: "The expiration date of the API Key"
-        
     parlament:
       type: "string"
       enum:
-        - "BT"
-        - "BR"
-        - "BV"
-        - "EK"
-        - "BB"
-        - "BY"
-        - "BE"
-        - "HB"
-        - "HH"
-        - "HE"
-        - "MV"
-        - "NI"
-        - "NW"
-        - "RP"
-        - "SL"
-        - "SN"
-        - "TH"
-        - "SH"
-        - "BW"
-        - "ST"
-    gesetzestyp:
+        - "BT" # Bundestag
+        - "BR" # Bundesrat
+        - "BV" # Bundesversammlung
+        - "EK" # Europakammer des Bundesrats
+        - "BB" # Brandenburg
+        - "BY" # Bayern
+        - "BE" # Berlin
+        - "HB" # Hansestadt Bremen
+        - "HH" # Hansestadt Hamburg
+        - "HE" # Hessen
+        - "MV" # Mecklenburg-Vorpommern
+        - "NI" # Niedersachsen
+        - "NW" # Nordrhein-Westfahlen
+        - "RP" # Rheinland-Pfalz
+        - "SL" # Saarland
+        - "SN" # Sachsen
+        - "TH" # Thüringen
+        - "SH" # Schleswig-Holstein
+        - "BW" # Baden Württemberg
+        - "ST" # Sachsen Anhalt
+    ### start der guarded enumerations
+    vorgangstyp:
       type: "string"
       enum:
-        - "bgg-einspruch"
-        - "bgg-zustimmung"
-        - "bay-parlament"
-        - "bay-volk"
-        - "sonstig"
-      description: "Der Gesetzgebungstrack auf dem wir uns befinden. Zum Beispiel: BundesGesetzGebung - Einspruchsgesetz. Legt fest, welche Stationen hier möglich sind"
+        - "gg-einspruch"    # Bundesgesetz Einspruch
+        - "gg-zustimmung"   # Bundesgesetz Zustimmungspflich
+        - "gg-land-parl"    # Landesgesetz, normal
+        - "gg-land-volk"    # Landesgesetz, Volksgesetzgebung
+        - "sonstig"        # other, email me
+      description: "Der Gesetzgebungstrack auf dem wir uns befinden. Zum Beispiel: gesetzgebung - Einspruchsgesetz. Legt fest, welche Stationen hier möglich sind zusammen mit den Parlamenten in den Stationen"
     stationstyp:
-      type: "string"
       description: "Stationen, die ein Gesetz in verschiedenen Ausformungen durchlaufen kann. Im Prinzip ist die Festlegung auf Prä / Postparlamentarisch arbiträr."
+      type: "string"
       enum:
         - "preparl-regent" # Referentenentwurf / Regierungsentwurf
         - "preparl-eckpup" # Eckpunktepapier / Parlamentsentwurf
-        - "preparl-kabbsl" # Kabinettsbeschluss / Regierungsbeschluss
+        - "preparl-regbsl" # Kabinettsbeschluss / Regierungsbeschluss
         - "preparl-vbegde" # Volksbegehren / Diskussionsentwurf
         - "parl-initiativ" # Gesetzesinitiative
         - "parl-ausschber" # Beratung im Ausschuss
@@ -284,46 +447,71 @@ components:
         - "parl-akzeptanz" # Schlussabstimmung & Akzeptanz des Parlaments
         - "parl-ablehnung" # Schlussabstimmung & Ablehnung des Parlaments
         - "parl-ggentwurf" # Gegenentwurf des Parlaments auf abgel. Volksbegehren
-        - "postparl-vents" # Volksentscheid nach Parlamentsbeschluss
+        - "postparl-vesja" # Volksentscheid nach Parlamentsbeschluss & Akzeptanz
+        - "postparl-vesne" # Volksentscheid nach Parlamentsbeschluss & Ablehnung
         - "postparl-gsblt" # Veröffentlichung im Gesetzesblatt
         - "postparl-kraft" # In Kraft getreten
-    identifikatortyp:
+        - "sonstig"        # other, email me
+    vg_ident_typ:
+      description: "Typ von Identifikatoren für einen gesamten Vorgang"
       type: "string"
-      enum:
-        - "initdrucks"
-        - "vorgnr"
-        - "sonstig"
-      description: "An identification for the whole process from start to finish"
-    dokumententyp:
+      enum: ["initdrucks", "vorgnr", "api-id", "sonstig"]
+    doktyp:
+      description: "Dokumententyp"
       type: "string"
-      enum:
-        - "entwurf"
-        - "drucksache"
-        - "protokoll"
-        - "topliste"
-        - "stellungnahme"
-        - "sonstig"
-      description: "The type of a document"
+      enum: ["entwurf", "drucksache", "protokoll", "topliste", "stellungnahme", "sonstig"]
+    gremium:
+      type: "object"
+      required:
+        - "parlament"
+        - "name"
+      properties:
+        parlament:
+          $ref: "#/components/schemas/parlament"
+        name:
+          description: "Name des betreffenden Gremiums. 'plenum', 'regierung', 'volk' sind reservierte namen"
+          example: "Ausschuss für Inneres und Gemüseauflauf"
+          type: "string"
+    ### ende der guarded enumerations
     dokument:
       type: "object"
       required:
         - "titel"
+        - "volltext"
         - "hash"
         - "typ"
-        - "last_mod"
+        - "letzte-modifikation"
         - "link"
       properties:
+        api_id:
+          type: "string"
+          format: "uuid"
+          description: "optional, here for future references. Is generated by the server."
+        drucksnr:
+          type: "string"
+        typ:
+          $ref: "#/components/schemas/doktyp"
         titel:
           type: "string"
-        last_mod:
+          description: "Offizieller Titel"
+        kurztitel:
+          type: "string"
+          description: "Griffigerer Titel für besseres Verständnis"
+        vorwort:
+          type: "string"
+          description: "Präambel, Vorwort oder Intentionsbeschreibung. Wird für Ähnlichkeitsanalysen genutzt"
+        volltext:
+          type: "string"
+          description: "Volltext des Dokuments"
+        zusammenfassung:
+          type: "string"
+        letzte_modifikation:
           type: "string"
           format: "date-time"
         link:
           type: "string"
           format: "uri"
         hash:
-          type: "string"
-        zusammenfassung:
           type: "string"
         schlagworte:
           type: "array"
@@ -340,51 +528,69 @@ components:
           items:
             type: "string"
             example: "Staatsregierung, Fraktion die Grünen, Fraktion CDU/CSU"
-            description: "The authors of the document if they are not persons, this is to be done at the collector level"
-        typ:
-          $ref: "#/components/schemas/dokumententyp"
+            description: "The authors of the document if they are not persons"
+    dok_ref:
+      oneOf:
+        - $ref: "#/components/schemas/dokument"
+        - type: "string"
+          description: "Schon vorher hochgeladenes Dokument"
     stellungnahme:
       type: "object"
+      description: "Wrapper um ein `dokument`, der noch ein bisschen mehr Kontext mitgibt."
       required:
         - "dokument"
+        - "meinung"
       properties:
         dokument:
           $ref: "#/components/schemas/dokument"
         meinung:
           type: "integer"
+          description: "Meinung des Stellungnehmenden im Intervall [1;10]. Unbekannte Meinung: 0"
+          minimum: 0
+          maximum: 10
         lobbyregister_link:
           type: "string"
           format: "uri"
     station:
       type: "object"
+      description: "Station ist in vielerlei hinsicht das Kernstück der API der Vorgänge. Jeder Vorgang besteht aus Stationen und die Stationen haben nur wenige verpflichtende Datenfelder.\
+                    Je nach `typ` sind andere Felder nicht-optional. Für weitere Details, siehe die docs"
       required:
+        - "typ"
         - "datum"
         - "dokumente"
-        - "gremium"
+        - "start_zeitpunkt"
         - "parlament"
-        - "typ"
-        - "betroffene_texte"
       properties:
-        datum:
+        titel:
           type: "string"
-          format: "date"
+          description: "Optionaler Titel, falls die restlichen Daten keinen hinreichenden Rückschluss zulassen"
+        api_id:
+          type: "string"
+          format: "uuid"
+          description: "optional, here for future references. Is generated by the server."
+        start_zeitpunkt:
+          type: "string"
+          format: "date-time"
+        letztes_update:
+          type: "string"
+          format: "date-time"
         gremium:
-          type: "string"
-          example: "Ausschuss für Inneres und Gemüseaufläufe"
-          description: "Name des Gremiums, das die Station durchgeführt hat oder mit ihr assoziiert ist. Kann ein Ausschuss sein, oder \"Plenum\" oder \"Volk\", etc."
+          $ref: "#/components/schemas/gremium"
         dokumente:
           type: "array"
           items:
-            $ref: "#/components/schemas/dokument"
+            $ref: "#/components/schemas/dok_ref"
         betroffene_texte:
           type: "array"
           items:
             type: "string"
             example: "§ 1 Abs. 1 Satz 1"
-            description: "The text that is affected by the station"
+            description: "Gesetze, die von dem geplanten Vorgang berührt werden."
         link:
           type: "string"
           format: "uri"
+          description: "Link zu einer Übersichtsseite zu dieser Station. _NICHT_ zu einem Dokument (PDF)"
         parlament:
           $ref: "#/components/schemas/parlament"
         schlagworte:
@@ -398,18 +604,20 @@ components:
             $ref: "#/components/schemas/stellungnahme"
         typ:
           $ref: "#/components/schemas/stationstyp"
-        trojaner:
-          type: "boolean"
-    
-    gesetzesvorhaben:
+        trojanergefahr:
+          description: "Zahl im Intervall [1;10], die die Gefahr einer Schummelei angeben"
+          type: "integer"
+          minimum: 1
+          maximum: 10
+    vorgang:
       type: "object"
       required:
         - "api_id"
         - "titel"
-        - "verfassungsaendernd"
-        - "trojaner"
-        - "initiatoren"
         - "typ"
+        - "wahlperiode"
+        - "verfassungsaendernd"
+        - "initiatoren"
         - "stationen"
       properties:
         api_id:
@@ -418,6 +626,12 @@ components:
           example: "123e4567-e89b-12d3-a456-426614174000"
         titel:
           type: "string"
+        kurztitel:
+          type: "string"
+        wahlperiode:
+          type: "integer"
+          description: "Nummer der Wahlperiode, in der der Vorgang stattfindet"
+          minimum: 0
         verfassungsaendernd:
           type: "boolean"
         initiatoren:
@@ -425,19 +639,19 @@ components:
           items:
             type: "string"
             example: "Staatsministerium für Justiz"
-            description: "The initiators of the Gesetzesvorhaben. This is meant for institutions or fractions."
+            description: "Initiatoren des Vorgangs, wenn keine Personen"
         initiator_personen:
           type: "array"
           items:
             type: "string"
             example: "Ach, Manfred (CSU)"
-            description: "The authors of the document if they are persons"
+            description: "Initiatoren des Vorgangs, wenn Personen"
         typ:
-          $ref: "#/components/schemas/gesetzestyp"
+          $ref: "#/components/schemas/vorgangstyp"
         ids:
           type: "array"
           items:
-            $ref: "#/components/schemas/identifikator"
+            $ref: "#/components/schemas/vg_ident"
         links:
           type: "array"
           items:
@@ -447,7 +661,7 @@ components:
           type: "array"
           items:
             $ref: "#/components/schemas/station"
-    identifikator:
+    vg_ident:
       type: "object"
       required:
         - "id"
@@ -457,12 +671,66 @@ components:
           type: "string"
           example: "123e4567-e"
         typ:
-          $ref: "#/components/schemas/identifikatortyp"
-    
-    response:
+          $ref: "#/components/schemas/vg_ident_typ"
+
+    top:
       type: "object"
+      description: "Ein Tagesordnungspunkt. Muss Nummer und Titel enthalten, für den Rest siehe unten."
+      required: 
+        - "nummer"
+        - "titel"
       properties:
-        payload: 
+        nummer:
+          type: "integer"
+          minimum: 0
+          description: "Nummer des TOPs in einer Sitzung"
+        titel:
+          type: "string"
+        vorgang_id:
+          description: "Die Nummer eines Vorgangs. Wird beim Upload ignoriert, aber beim Download mitgegeben zusammen mit den konkreten Drucksachen"
+          type: "string"
+          format: "uuid"
+        drucksachen:
+          type: "array"
+          description: "Die Drucksachen, die in diesem TOP besprochen werden sollen"
+          items:
+            $ref: "#/components/schemas/dok_ref"
+    experte:
+      type: "object"
+      required:
+        - "name"
+        - "fachgebiet"
+      properties:
+        name:
+          type: "string"
+        fachgebiet:
+          type: "string"
+    ausschusssitzung:
+      type: "object"
+      description: "Sitzung oder Anhörung. Eine Anhörung wird es, wenn Experten geladen werden"
+      required:
+        - "termin"
+        - "ausschuss"
+        - "tops"
+        - "public"
+      properties:
+        api_id:
+          type: "string"
+          format: "uuid"
+          description: "optional, here for future references. Is generated by the server."
+        public:
+          type: "boolean"
+        termin:
+          type: "string"
+          format: "date-time"
+        ausschuss:
+          $ref: "#/components/schemas/gremium"
+        tops:
           type: "array"
           items:
-            $ref: "#/components/schemas/gesetzesvorhaben"
+            $ref: "#/components/schemas/top"
+        experten:
+          type: "array"
+          description: "Optional: Liste von geladenen Experten. (Anhörung)"
+          items:
+            $ref: "#/components/schemas/experte"

@@ -1,0 +1,94 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT d.*, value as typ_value FROM dokument d\n        INNER JOIN dokumententyp dt ON dt.id = d.typ\n        WHERE d.id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "api_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "drucksnr",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "typ",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "titel",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "kurztitel",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "vorwort",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "volltext",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "zusammenfassung",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 9,
+        "name": "last_mod",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "link",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 11,
+        "name": "hash",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 12,
+        "name": "typ_value",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "fa97bdaa0c037fc66ce907e47b45617176e4f963d61b82c67ca69338650efa31"
+}

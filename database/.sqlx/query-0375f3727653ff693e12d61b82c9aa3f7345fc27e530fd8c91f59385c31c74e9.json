@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n    SELECT value as typ, identifikator as ident \n    FROM rel_vg_ident r\n    INNER JOIN vg_ident_typ t ON t.id = r.typ\n    WHERE r.vg_id = $1\n    ORDER BY ident ASC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "typ",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "ident",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "0375f3727653ff693e12d61b82c9aa3f7345fc27e530fd8c91f59385c31c74e9"
+}

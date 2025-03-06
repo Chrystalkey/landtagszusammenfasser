@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO rel_vorgang_init (vg_id, initiator)\n        SELECT $1, blub FROM UNNEST($2::text[]) as blub\n        ON CONFLICT DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "TextArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "825c575eb1165200650f25f3bdda93d8e3d8eb78adead9476f2b203fa816afd1"
+}

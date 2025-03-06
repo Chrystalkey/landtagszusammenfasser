@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE stellungnahme SET \n                meinung=$1, lobbyreg_link=$2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Varchar"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "cb6abaeeb0cdf6dcf535c1015c322ee9aeb5acb1fda6c3f3be32bed0e10969d4"
+}
