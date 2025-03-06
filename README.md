@@ -13,6 +13,21 @@ Es ist in drei Teile geteilt:
 
 Die Lese-API ist dabei ohne Authentifizierung verfügbar. Die Schreib-API (also die Collectors) sind dagegen mit einer API-Key Authentifizierung versehen um Spam und Missbrauch zu verhindern.
 
+Ein Beispielaufbau könnte sein:
+
+|-Scraper für sächsisches Wirtschaftsministerium  |-Scraper für Bayerischen Landtag
+|-Scraper für sächischen Landtag                  |-Scraper für bayerisches Justizministerium
+|-Scraper für sachen-anhaltinischen Landtag       |
+|                                                 |
+Collector 1, auf Maschine 1 in Sachsen            Collector 2, auf Maschine 2 in Bayern
+                    |                                              |
+                    Datenbankanwendung------------------------------
+                    Auf Maschine 3 bei Hetzner
+                    |
+                    |-------------------------------|
+Website die alle Bundesvorgänge zusammmenfasst      Website die alle Bayerischen Vorgänge anzeigt ...
+
+
 ## Dokumentation
 Die Grundlegenden Konzepte, API-Beschreibung und Projektsetup ist in [docs/README.md](docs/README.md). Geh und lies, junger Padawan!
 
