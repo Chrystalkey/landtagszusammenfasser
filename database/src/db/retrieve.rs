@@ -56,10 +56,6 @@ pub async fn vorgang_by_id(id: i32, executor: &mut sqlx::PgTransaction<'_>) -> R
     })
 }
 
-pub async fn ausschusssitzung_by_id(id: i32,  executor: &mut sqlx::PgTransaction<'_>) -> Result<models::Ausschusssitzung> {
-    todo!()
-}
-
 pub async fn station_by_id(id: i32,  executor:&mut sqlx::PgTransaction<'_>) -> Result<models::Station> {
     let dokids = sqlx::query!("SELECT stat_id FROM rel_station_dokument WHERE dok_id = $1", id)
     .map(|r|r.stat_id).fetch_all(&mut **executor).await?;
@@ -164,6 +160,19 @@ pub async fn dokument_by_id(id: i32,  executor:&mut sqlx::PgTransaction<'_>) -> 
     });
 }
 
+pub async fn top_by_id(id: i32, tx: &mut sqlx::PgTransaction<'_>) -> Result<models::Top>{
+    todo!("top by id")
+}
+pub async fn ausschusssitzung_by_id(id: i32,  executor: &mut sqlx::PgTransaction<'_>) -> Result<models::Ausschusssitzung> {
+    todo!("as by id")
+}
+
+pub async fn as_by_parameter(
+    params: models::AsGetByIdHeaderParams,
+    tx: &mut sqlx::PgTransaction<'_>) ->Result<Vec<models::Ausschusssitzung>>{
+    todo!("AS_BY_PARAMETER")
+}
+
 pub async fn vorgang_by_parameter(
     params: models::VorgangGetQueryParams,
     hparam: models::VorgangGetHeaderParams,
@@ -199,3 +208,5 @@ pub async fn vorgang_by_parameter(
     }
     Ok(vector)
 }
+
+

@@ -15,17 +15,17 @@ Die Lese-API ist dabei ohne Authentifizierung verfügbar. Die Schreib-API (also 
 
 Ein Beispielaufbau könnte sein:
 
-|-Scraper für sächsisches Wirtschaftsministerium  |-Scraper für Bayerischen Landtag
-|-Scraper für sächischen Landtag                  |-Scraper für bayerisches Justizministerium
-|-Scraper für sachen-anhaltinischen Landtag       |
-|                                                 |
-Collector 1, auf Maschine 1 in Sachsen            Collector 2, auf Maschine 2 in Bayern
-                    |                                              |
-                    Datenbankanwendung------------------------------
-                    Auf Maschine 3 bei Hetzner
-                    |
-                    |-------------------------------|
-Website die alle Bundesvorgänge zusammmenfasst      Website die alle Bayerischen Vorgänge anzeigt ...
+|-Scraper für sächsisches Wirtschaftsministerium  |-Scraper für Bayerischen Landtag  
+|-Scraper für sächischen Landtag                  |-Scraper für bayerisches Justizministerium  
+|-Scraper für sachen-anhaltinischen Landtag       |  
+|                                                 |  
+Collector 1, auf Maschine 1 in Sachsen            Collector 2, auf Maschine 2 in Bayern  
+                    |                                              |  
+                    Datenbankanwendung------------------------------  
+                    Auf Maschine 3 bei Hetzner  
+                    |  
+                    |-------------------------------|  
+Website die alle Bundesvorgänge zusammmenfasst      Website die alle Bayerischen Vorgänge anzeigt ...  
 
 
 ## Dokumentation
