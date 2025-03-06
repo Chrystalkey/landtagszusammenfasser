@@ -12,3 +12,4 @@ oapi-generator/
 oapicode
 www/
 temp/
+database/tests/*_dump.json
