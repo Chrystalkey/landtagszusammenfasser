@@ -160,16 +160,77 @@ pub async fn dokument_by_id(id: i32,  executor:&mut sqlx::PgTransaction<'_>) -> 
     });
 }
 
-pub async fn top_by_id(id: i32, tx: &mut sqlx::PgTransaction<'_>) -> Result<models::Top>{
-    todo!("top by id")
+/// the crucial part is how to find out which vg are connected to a DRCKS
+/// if there exists a station which contains a document mentioned in the top, its vorgang is connected
+pub async fn top_by_id(id: i32, tx: &mut sqlx::PgTransaction<'_>) -> Result<models::Top> {
+    let scaffold = sqlx::query!("SELECT titel, nummer FROM top WHERE id = $1", id)
+    .fetch_one(&mut **tx).await?;
+    /// ds 
+    let dids = sqlx::query!("SELECT dok_id FROM tops_doks td WHERE top_id = $1", id)
+    .map(|r|r.dok_id).fetch_all(&mut **tx).await?;
+    let mut doks = vec![];
+    for did in dids{
+        doks.push(dokument_by_id(did, tx).await?);
+    }
+    // vgs
+    let vgs = sqlx::query!("
+    SELECT DISTINCT(v.api_id) FROM station s    -- alle vorgänge von stationen, 
+INNER JOIN stationstyp st ON st.id = s.typ
+INNER JOIN vorgang v ON v.id = s.vg_id
+WHERE
+EXISTS ( 									-- mit denen mindestens ein dokument assoziiert ist, dass hier auftaucht
+	SELECT 1 FROM rel_station_dokument rsd 
+	INNER JOIN tops_doks td ON td.dok_id = rsd.dok_id
+	WHERE td.top_id = $1
+)", id).map(|r|r.api_id).fetch_all(&mut **tx).await?;
+
+    return Ok(
+        models::Top{
+            nummer: scaffold.nummer,
+            titel: scaffold.titel,
+            drucksachen: as_option(doks),
+            vorgang_id: as_option(vgs)
+        }
+    )
 }
 pub async fn ausschusssitzung_by_id(id: i32,  executor: &mut sqlx::PgTransaction<'_>) -> Result<models::Ausschusssitzung> {
-    todo!("as by id")
+    let scaffold =  sqlx::query!(
+        "SELECT a.api_id, a.public, a.termin, p.value as plm, g.name as grname FROM ausschusssitzung a
+        INNER JOIN gremium g ON g.id = a.gr_id
+        INNER JOIN parlament p ON p.id = g.parl WHERE a.id = $1"
+        , id
+    ).fetch_one(&mut **tx).await?;
+    /// tops
+    let topids = sqlx::query!("SELECT top.id FROM rel_ass_tops rat INNER JOIN top ON top.id = rat.top_id WHERE rat.ass_id = $1", id)
+    .map(|r|r.id).fetch_all(&mut **tx).await?;
+    let mut tops = vec![];
+    for tid in topids {
+        tops.push(top_by_id(tid, tx).await?);
+    }
+    /// experten
+    let experten = sqlx::query!("SELECT e.name, e.fachgebiet FROM rel_ass_experten rae 
+    INNER JOIN experte e ON rae.ass_id = $1", id)
+    .map(|r| models::Experte{fachgebiet: r.fachgebiet, name: r.name})
+    .fetch_all(&mut **tx).await?;
+
+    return Ok(
+        models::Ausschusssitzung{
+            api_id: Some(scaffold.api_id),
+            public: scaffold.public,
+            termin: scaffold.termin,
+            ausschuss: models::Gremium{
+                name: scaffold.grname,
+                parlament: models::Parlament::from_str(&scaffold.plm)?
+            },
+            tops,
+            experten: as_option(experten)
+        }
+    )
 }
 
 pub async fn as_by_parameter(
     params: models::AsGetByIdHeaderParams,
-    tx: &mut sqlx::PgTransaction<'_>) ->Result<Vec<models::Ausschusssitzung>>{
+    tx: &mut sqlx::PgTransaction<'_>) ->Result<Vec<models::Ausschusssitzung>> {
     todo!("AS_BY_PARAMETER")
 }
 
