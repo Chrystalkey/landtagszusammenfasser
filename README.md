@@ -36,4 +36,4 @@ Eine grundlegende Setup-Beschreibung für die Projekte ist in [SETUP.md](SETUP.m
 
 ## Lizenz
 
-Do whatever you want, just please mention our names :)
+Do whatever you want, just please mention our names and/or link to our work :)
