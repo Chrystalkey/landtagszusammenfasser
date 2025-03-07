@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT gremium.id FROM gremium\n            INNER JOIN parlament ON parlament.id=gremium.parl\n            WHERE name = $1 AND value=$2",
+  "query": "SELECT e.id FROM experte e WHERE e.name = $1 AND e.fachgebiet = $2",
   "describe": {
     "columns": [
       {
@@ -19,5 +19,5 @@
       false
     ]
   },
-  "hash": "ebcbd7f0056838ffc3c9b860248887a8ded4deee1c760e8d87bbef9a0bf9acf1"
+  "hash": "2de571abe2fd9ff44c4b88364c77a674187e6a04fbf879a1504ccf1de4dfe917"
 }

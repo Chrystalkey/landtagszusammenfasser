@@ -1,0 +1,35 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT g.wp,g.name, SIMILARITY(name, $1) as sim FROM gremium g, parlament p\n    WHERE SIMILARITY(name, $1) > 0.66 AND \n    g.parl = p.id AND p.value = $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "wp",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "sim",
+        "type_info": "Float4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "b44565a29d0930179789f455022f616cde041cb19e8c19acc7889ae3137b9906"
+}

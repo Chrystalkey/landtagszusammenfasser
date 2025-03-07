@@ -1,7 +1,8 @@
+use std::str::FromStr;
+
 use openapi::models;
 use sqlx::PgTransaction;
-use uuid::Uuid;
-use crate::{utils::notify::notify_new_enum_entry, LTZFServer, Result};
+use crate::{ utils::notify::notify_new_enum_entry, LTZFServer, Result};
 
 /// Inserts a new Vorgang into the database.
 pub async fn insert_vorgang(
@@ -70,18 +71,8 @@ pub async fn insert_station(
         return Ok(id.id);
     }
     let gr_id = if let Some(gremium) = stat.gremium{
-        let gr_id = sqlx::query!("WITH inserted as ( INSERT INTO gremium(name, parl)
-        VALUES ($1, (SELECT id FROM parlament p WHERE p.value = $2))
-        ON CONFLICT DO NOTHING
-        RETURNING gremium.id)
-
-        SELECT g.id FROM gremium g
-        INNER JOIN parlament p on p.id = g.parl
-        WHERE g.name = $1 AND p.value = $2
-        UNION 
-        SELECT * FROM inserted;
-        ", stat.gremium.name, stat.gremium.parlament.to_string()).fetch_one(&mut **tx).await?;
-        Some(gr_id);
+        let gr_id = insert_or_retrieve_gremium(&gremium, tx, srv).await?;
+        Some(gr_id)
     }else {
         None
     };
@@ -110,7 +101,7 @@ pub async fn insert_station(
     // assoziierte dokumente
     let mut did = Vec::with_capacity(stat.dokumente.len());
     for dokument in stat.dokumente{
-        did.push(insert_or_connect_dok(&dokument, tx, srv).await?);
+        did.push(insert_or_retrieve_dok(&dokument, tx, srv).await?);
     }
     sqlx::query!("INSERT INTO rel_station_dokument(stat_id, dok_id) 
     SELECT $1, blub FROM UNNEST($2::int4[]) as blub", stat_id, &did[..])
@@ -206,76 +197,108 @@ pub async fn insert_dokument(
 }
 
 pub async fn insert_ausschusssitzung(ass: &models::Ausschusssitzung, tx: &mut PgTransaction<'_>, srv: &LTZFServer) -> Result<i32> {
-    let obj = "ausschusssitzung insert";
     let api_id =ass.api_id.unwrap_or(uuid::Uuid::now_v7());
-    /// gremium insert or fetch
-    let gr_id = sqlx::query!("WITH inserted as ( INSERT INTO gremium(name, parl)
-        VALUES ($1, (SELECT id FROM parlament p WHERE p.value = $2))
-        ON CONFLICT DO NOTHING
-        RETURNING gremium.id)
-
-        SELECT g.id FROM gremium g
-        INNER JOIN parlament p on p.id = g.parl
-        WHERE g.name = $1 AND p.value = $2
-        UNION 
-        SELECT * FROM inserted;
-        ", ass.gremium.name, ass.gremium.parlament.to_string()).fetch_one(&mut **tx).await?;
-    /// master insert
+    
+    // gremium insert or fetch
+    let gr_id = insert_or_retrieve_gremium(&ass.ausschuss, tx, srv).await?;
+    // master insert
     let id = sqlx::query!("INSERT INTO ausschusssitzung (api_id, termin, public, gr_id)
     VALUES ($1, $2, $3, $4) RETURNING id", api_id, ass.termin, ass.public, gr_id)
     .map(|r|r.id).fetch_one(&mut **tx).await?;
-    /// insert tops
+    // insert tops
     let mut tids = vec![];
-    for top in ass.tops{
+    for top in &ass.tops{
         tids.push(insert_top(&top, tx, srv).await?);
     }
     sqlx::query!("INSERT INTO rel_ass_tops(ass_id, top_id) 
-    SELECT $1, tids FROM UNNEST($2::int4[]) as tids", ass_id, &tids[..])
+    SELECT $1, tids FROM UNNEST($2::int4[]) as tids", id, &tids[..])
     .execute(&mut **tx).await?;
 
-    /// insert experten
-    let exp_ids = vec![];
-    for exp in ass.experten.unwrap_or(vec![]) {
-        let ex_id = sqlx::query!("WITH inserted as ( INSERT INTO experte(name, fachgebiet)
-        VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING experte.id)
-
-        SELECT e.id FROM experte e
-        WHERE e.name = $1 AND e.fachgebiet = $2
-        UNION 
-        SELECT * FROM inserted;
-        ", exp.name, exp.fachgebiet).fetch_one(&mut **tx).await?;
+    // insert experten
+    let mut exp_ids = vec![];
+    for exp in ass.experten.as_ref().unwrap_or(&vec![]) {
+        let ex_id = insert_or_retrieve_experte(exp, tx, srv).await?;
         exp_ids.push(ex_id);
     }
     sqlx::query!("INSERT INTO rel_ass_experten(ass_id, exp_id)
     SELECT $1, eids FROM UNNEST($2::int4[]) as eids", 
-    ass_id, &exp_ids[..]).execute(&mut **tx).await?;
-    Ok(ass_id)
+    id, &exp_ids[..]).execute(&mut **tx).await?;
+    Ok(id)
 }
 
 pub async fn insert_top(top: &models::Top, tx: &mut PgTransaction<'_>, srv: &LTZFServer) -> Result<i32> {
-    /// master insert
+    // master insert
     let tid = 
-    sqlx::query!("INSERT INTO top(titel, nummer) VALUES($1, $2)RETURNING id;", top.titel, top.nummer)
+    sqlx::query!("INSERT INTO top(titel, nummer) VALUES($1, $2)RETURNING id;", top.titel, top.nummer as i32)
     .map(|r|r.id).fetch_one(&mut **tx).await?;
 
-    /// drucksachen
+    // drucksachen
     let mut dids = vec![];
-    for d in top.drucksachen.unwrap_or(vec![]){
-        dids.push(insert_or_connect_dok(&d, tx, srv).await?);
+    for d in top.drucksachen.as_ref().unwrap_or(&vec![]){
+        dids.push(insert_or_retrieve_dok(&d, tx, srv).await?);
     }
     sqlx::query!("INSERT INTO tops_doks(top_id, dok_id)
     SELECT $1, did FROM UNNEST($2::int4[]) as did", tid, &dids[..])
     .execute(&mut **tx).await?;
     
-    return tid;
+    return Ok(tid);
 }
 
-pub async fn insert_or_connect_dok(&dr: &models::DokRef, tx: &mut PgTransaction<'_>, srv: &LTZFServer) -> Result<i32>{
+pub async fn insert_or_retrieve_gremium(gr: &models::Gremium, tx: &mut PgTransaction<'_>, srv: &LTZFServer) ->Result<i32>{
+    let gid = sqlx::query!("SELECT g.id FROM gremium g, parlament p WHERE
+    g.name = $1 AND 
+    p.id = g.parl AND  p.value = $2
+    AND g.wp = $3",gr.name, gr.parlament.to_string(), gr.wahlperiode as i32)
+    .map(|r|r.id).fetch_optional(&mut **tx).await?;
+    if gid.is_some(){
+        return Ok(gid.unwrap());
+    }
+    
+    let similarity = 
+    sqlx::query!("SELECT g.wp,g.name, SIMILARITY(name, $1) as sim FROM gremium g, parlament p
+    WHERE SIMILARITY(name, $1) > 0.66 AND 
+    g.parl = p.id AND p.value = $2",
+    gr.name, gr.parlament.to_string())
+    .map(|r| (r.sim.unwrap(), models::Gremium{
+        parlament: gr.parlament,
+        wahlperiode: r.wp as u32,
+        name: r.name}))
+    .fetch_all(&mut **tx).await?;
+    notify_new_enum_entry(gr, similarity, srv)?;
+    let id = sqlx::query!("INSERT INTO gremium(name, parl, wp) VALUES 
+    ($1, (SELECT id FROM parlament p WHERE p.value = $2), $3) 
+    RETURNING gremium.id",
+    gr.name, gr.parlament.to_string(), gr.wahlperiode as i32)
+    .map(|r|r.id).fetch_one(&mut **tx).await?;
+    Ok(id)
+}
+
+pub async fn insert_or_retrieve_experte(ex: &models::Experte, tx: &mut PgTransaction<'_>, srv: &LTZFServer) ->Result<i32>{
+    let eid = sqlx::query!("SELECT e.id FROM experte e WHERE e.name = $1 AND e.fachgebiet = $2",ex.name, ex.fachgebiet)
+    .map(|r|r.id).fetch_optional(&mut **tx).await?;
+    if eid.is_some(){
+        return Ok(eid.unwrap());
+    }
+    
+    let similarity = 
+    sqlx::query!("SELECT *, SIMILARITY(name, $1) as sim FROM experte e 
+    WHERE SIMILARITY(name, $1) > 0.66 AND SIMILARITY(fachgebiet, $2) > 0.66",
+    ex.name, ex.fachgebiet).map(|r| (r.sim.unwrap(), models::Experte{
+        fachgebiet: r.fachgebiet, name: r.name}))
+    .fetch_all(&mut **tx).await?;
+    notify_new_enum_entry(ex, similarity, srv)?;
+    let id = sqlx::query!("INSERT INTO experte(name, fachgebiet) VALUES ($1, $2) RETURNING experte.id", ex.name, ex.fachgebiet)
+    .map(|r|r.id).fetch_one(&mut **tx).await?;
+    Ok(id)
+}
+
+pub async fn insert_or_retrieve_dok(dr: &models::DokRef, tx: &mut PgTransaction<'_>, srv: &LTZFServer) -> Result<i32>{
     match dr{
-        models::DokRef::Dokument(dok) => {Ok(insert_dokument(*dok, tx, srv).await?)},
+        models::DokRef::Dokument(dok) => {Ok(insert_dokument((**dok).clone(), tx, srv).await?)},
         models::DokRef::String(dapi_id) => {
-            let api_id = Uuid::from_str(&*dapi_id)?;
-            Ok(sqlx::query!("SELECT id FROM dokument WHERE api_id = $1", api_id).fetch_one(&mut **tx).await?)
+            let api_id= uuid::Uuid::from_str(dapi_id.as_str())?;
+            Ok(sqlx::query!("SELECT id FROM dokument WHERE api_id = $1", api_id)
+            .map(|r|r.id).fetch_one(&mut **tx).await?)
         }
     }
 }

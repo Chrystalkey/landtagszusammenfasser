@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT g.id FROM gremium g, parlament p WHERE\n    g.name = $1 AND \n    p.id = g.parl AND  p.value = $2\n    AND g.wp = $3",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "7dbc415f90e90ba007220a52a851e34623008c90d40b57a9991561afef80ecb2"
+}

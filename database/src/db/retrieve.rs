@@ -87,9 +87,9 @@ pub async fn station_by_id(id: i32,  executor:&mut sqlx::PgTransaction<'_>) -> R
         .fetch_one(&mut **executor).await?;
     
     let gremium = sqlx::query!("
-    SELECT p.value, g.name FROM gremium g INNER JOIN parlament p on p.id = g.parl
+    SELECT p.value, g.name, g.wp FROM gremium g INNER JOIN parlament p on p.id = g.parl
         WHERE g.id = $1", temp_stat.gr_id)
-        .map(|x|models::Gremium{name: x.name, parlament: models::Parlament::from_str(&x.value).unwrap()})
+        .map(|x|models::Gremium{name: x.name, wahlperiode: x.wp as u32, parlament: models::Parlament::from_str(&x.value).unwrap()})
         .fetch_optional(&mut **executor).await?;
 
     return Ok(models::Station {
@@ -165,12 +165,12 @@ pub async fn dokument_by_id(id: i32,  executor:&mut sqlx::PgTransaction<'_>) -> 
 pub async fn top_by_id(id: i32, tx: &mut sqlx::PgTransaction<'_>) -> Result<models::Top> {
     let scaffold = sqlx::query!("SELECT titel, nummer FROM top WHERE id = $1", id)
     .fetch_one(&mut **tx).await?;
-    /// ds 
+    // ds 
     let dids = sqlx::query!("SELECT dok_id FROM tops_doks td WHERE top_id = $1", id)
     .map(|r|r.dok_id).fetch_all(&mut **tx).await?;
     let mut doks = vec![];
     for did in dids{
-        doks.push(dokument_by_id(did, tx).await?);
+        doks.push(dokument_by_id(did, tx).await?.into());
     }
     // vgs
     let vgs = sqlx::query!("
@@ -186,28 +186,29 @@ EXISTS ( 									-- mit denen mindestens ein dokument assoziiert ist, dass hier
 
     return Ok(
         models::Top{
-            nummer: scaffold.nummer,
+            nummer: scaffold.nummer as u32,
             titel: scaffold.titel,
             drucksachen: as_option(doks),
             vorgang_id: as_option(vgs)
         }
     )
 }
-pub async fn ausschusssitzung_by_id(id: i32,  executor: &mut sqlx::PgTransaction<'_>) -> Result<models::Ausschusssitzung> {
+
+pub async fn ausschusssitzung_by_id(id: i32,  tx: &mut sqlx::PgTransaction<'_>) -> Result<models::Ausschusssitzung> {
     let scaffold =  sqlx::query!(
-        "SELECT a.api_id, a.public, a.termin, p.value as plm, g.name as grname FROM ausschusssitzung a
+        "SELECT a.api_id, a.public, a.termin, p.value as plm, g.name as grname, g.wp FROM ausschusssitzung a
         INNER JOIN gremium g ON g.id = a.gr_id
         INNER JOIN parlament p ON p.id = g.parl WHERE a.id = $1"
         , id
     ).fetch_one(&mut **tx).await?;
-    /// tops
+    // tops
     let topids = sqlx::query!("SELECT top.id FROM rel_ass_tops rat INNER JOIN top ON top.id = rat.top_id WHERE rat.ass_id = $1", id)
     .map(|r|r.id).fetch_all(&mut **tx).await?;
     let mut tops = vec![];
     for tid in topids {
         tops.push(top_by_id(tid, tx).await?);
     }
-    /// experten
+    // experten
     let experten = sqlx::query!("SELECT e.name, e.fachgebiet FROM rel_ass_experten rae 
     INNER JOIN experte e ON rae.ass_id = $1", id)
     .map(|r| models::Experte{fachgebiet: r.fachgebiet, name: r.name})
@@ -218,9 +219,10 @@ pub async fn ausschusssitzung_by_id(id: i32,  executor: &mut sqlx::PgTransaction
             api_id: Some(scaffold.api_id),
             public: scaffold.public,
             termin: scaffold.termin,
-            ausschuss: models::Gremium{
+            ausschuss: models::Gremium {
                 name: scaffold.grname,
-                parlament: models::Parlament::from_str(&scaffold.plm)?
+                wahlperiode: scaffold.wp as u32,
+                parlament: models::Parlament::from_str(&scaffold.plm).unwrap()
             },
             tops,
             experten: as_option(experten)
@@ -229,9 +231,9 @@ pub async fn ausschusssitzung_by_id(id: i32,  executor: &mut sqlx::PgTransaction
 }
 
 pub async fn as_by_parameter(
-    params: models::AsGetByIdHeaderParams,
-    tx: &mut sqlx::PgTransaction<'_>) ->Result<Vec<models::Ausschusssitzung>> {
-    todo!("AS_BY_PARAMETER")
+    qparams : models::AsGetQueryParams,
+    tx: &mut sqlx::PgTransaction<'_>) -> Result<Vec<models::Ausschusssitzung>> {
+    todo!();
 }
 
 pub async fn vorgang_by_parameter(

@@ -202,17 +202,20 @@ paths:
       operationId: "as_get"
       description: "Gibt eine Liste gefilterter Ausschusssitzungen zurück"
       parameters:
-        - name: "If-Modified-Since"
-          in: "header"
+        - name: "from"
+          description: "Inclusive start of a range"
+          in: query
           required: false
           schema:
-            type: "string"
+            type: string
             format: "date-time"
-        - name: "wp"
+        - name: "until"
+          description: "Inclusive End of a range"
           in: query
+          required: false
           schema:
-            type: "integer"
-            minimum: 0
+            type: string
+            format: "date-time"
         - name: "limit"
           in: "query"
           required: false
@@ -269,7 +272,7 @@ paths:
         "401":
           $ref: "#/components/responses/UnauthorizedError"
         "409":
-          description: "Conflict. This Ausschusssitzungs-ID already exists"
+          description: "Konflikt: Datensätze nicht Vereinbar"
       security:
         - apiKey: []
   /api/v1/ausschusssitzung/{as_id}:
@@ -283,12 +286,6 @@ paths:
           schema:
             type: "string"
             format: "uuid"
-        - name: "If-Modified-Since"
-          in: "header"
-          required: false
-          schema:
-            type: "string"
-            format: "date-time"
       responses:
         "200":
           description: "successful operation"
@@ -296,8 +293,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ausschusssitzung"
-        "304":
-          description: "No new changes"
         "404":
           description: "Content not found"
     put:
@@ -465,9 +460,13 @@ components:
       required:
         - "parlament"
         - "name"
+        - "wahlperiode"
       properties:
         parlament:
           $ref: "#/components/schemas/parlament"
+        wahlperiode:
+          type: integer
+          minimum: 0
         name:
           description: "Name des betreffenden Gremiums. 'plenum', 'regierung', 'volk' sind reservierte namen"
           example: "Ausschuss für Inneres und Gemüseauflauf"
@@ -687,9 +686,11 @@ components:
         titel:
           type: "string"
         vorgang_id:
-          description: "Die Nummer eines Vorgangs. Wird beim Upload ignoriert, aber beim Download mitgegeben zusammen mit den konkreten Drucksachen"
-          type: "string"
-          format: "uuid"
+          description: "Die Nummer assoziierter Vorgänge. Wird beim Upload ignoriert, aber beim Download mitgegeben zusammen mit den konkreten Drucksachen"
+          type: "array"
+          items:
+            type: "string"
+            format: "uuid"
         drucksachen:
           type: "array"
           description: "Die Drucksachen, die in diesem TOP besprochen werden sollen"

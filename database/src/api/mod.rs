@@ -3,6 +3,7 @@ use axum::extract::Host;
 use axum::http::Method;
 use lettre::SmtpTransport;
 
+use crate::db::delete::delete_ass_by_api_id;
 use crate::error::{DataValidationError, DatabaseError, LTZFError};
 use crate::{db, Configuration};
 use axum_extra::extract::CookieJar;
@@ -226,7 +227,13 @@ impl openapi::apis::default::Default for LTZFServer {
         cookies: CookieJar,
             claims: Self::Claims,
           path_params: models::AsDeletePathParams,
-        ) -> Result<AsDeleteResponse, ()>{todo!()}
+        ) -> Result<AsDeleteResponse, ()>{
+            if claims.0 != auth::APIScope::Admin && claims.0 != auth::APIScope::KeyAdder{
+                return Ok(AsDeleteResponse::Status401_APIKeyIsMissingOrInvalid);
+            }
+            Ok(delete_ass_by_api_id(path_params.as_id, self).await
+            .map_err(|e| {tracing::warn!("{}", e);})?)
+        }
     
         /// AsGet - GET /api/v1/ausschusssitzung
         async fn as_get(
@@ -234,7 +241,6 @@ impl openapi::apis::default::Default for LTZFServer {
         method: Method,
         host: Host,
         cookies: CookieJar,
-          header_params: models::AsGetHeaderParams,
           query_params: models::AsGetQueryParams,
         ) -> Result<AsGetResponse, ()>{todo!()}
     
@@ -244,9 +250,13 @@ impl openapi::apis::default::Default for LTZFServer {
         method: Method,
         host: Host,
         cookies: CookieJar,
-          header_params: models::AsGetByIdHeaderParams,
           path_params: models::AsGetByIdPathParams,
-        ) -> Result<AsGetByIdResponse, ()>{todo!()}
+        ) -> Result<AsGetByIdResponse, ()> {
+            let ass = get::as_get_by_id(
+                self, path_params
+            ).await.map_err(|e| {tracing::warn!("{}", e);})?;
+            return Ok(ass)
+        }
     
         /// AsIdPut - PUT /api/v1/ausschusssitzung/{as_id}
         async fn as_id_put(
@@ -257,7 +267,15 @@ impl openapi::apis::default::Default for LTZFServer {
             claims: Self::Claims,
           path_params: models::AsIdPutPathParams,
                 body: models::Ausschusssitzung,
-        ) -> Result<AsIdPutResponse, ()>{todo!()}
+        ) -> Result<AsIdPutResponse, ()> {
+            if claims.0 != auth::APIScope::Admin && claims.0 != auth::APIScope::KeyAdder{
+                return Ok(AsIdPutResponse::Status401_APIKeyIsMissingOrInvalid);
+            } 
+            let out = put::as_id_put(self, path_params, body)
+            .await
+            .map_err(|e| {tracing::warn!("{}", e);})?;
+            Ok(out)
+        }
     
         /// AsPut - PUT /api/v1/ausschusssitzung
         async fn as_put(

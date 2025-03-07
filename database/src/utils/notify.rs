@@ -14,16 +14,21 @@ impl LTZFServer{
     }
 }
 
-pub fn notify_new_enum_entry<T: std::fmt::Debug>(
-    identifier: Uuid,
-    object: &str,
+pub fn notify_new_enum_entry<T: std::fmt::Debug+ToString>(
     new_entry: &T,
+    similarity: Vec<(f32, T)>,
     server: &LTZFServer,
 ) -> Result<()> {
-    let subject = format!("Neuer Eintrag des Typs `{}` wurde generiert, da nicht vorhanden. Auf Konsistenz mit dem Datensatz überprüfen.",stringify!(T));
+    let subject = 
+    format!("Für Typ `{}` wurde ein neuer Eintrag `{}` erstellt. ",stringify!(T), new_entry.to_string());
+
+    let simstr = similarity.iter()
+    .map(|(p, t)| format!("{}: {}", p.to_string(), t.to_string()))
+    .fold("".to_string(), |a, n| format!("{a}\n{n}"));
+    
     let body = format!(
-        "Während einer Insert Operation für {} `{}` wurde der Eintrag `{:?}` neu generiert.\n
-        ", object, identifier, new_entry
+        "Es gibt {} ähnliche Einträge: {simstr}",
+        similarity.len()
     );
     send_email(subject, body, server)?;
     tracing::error!("Notify: New Enum Entry! Sending mails is not yet supported.");

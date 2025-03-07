@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT top.id FROM rel_ass_tops rat INNER JOIN top ON top.id = rat.top_id WHERE rat.ass_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "c2c872436817e647898ca457440df6524ecc2008f9ad9567b5da761d2ec29e24"
+}
