@@ -14,12 +14,7 @@ use crate::utils::notify::notify_ambiguous_match;
 use crate::{LTZFServer, Result};
 use crate::db::insert;
 use openapi::models;
-
-pub enum MergeState<T> {
-    AmbiguousMatch(Vec<T>),
-    OneMatch(T),
-    NoMatch,
-}
+use super::MergeState;
 
 /// this function determines what means "matching enough".
 /// 1. wenn api_id matcht

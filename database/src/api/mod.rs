@@ -92,11 +92,7 @@ impl openapi::apis::default::Default for LTZFServer {
         header_params: models::VorgangGetByIdHeaderParams,
         path_params: models::VorgangGetByIdPathParams,
         ) -> Result<VorgangGetByIdResponse, ()> {
-        tracing::info!(
-            "Get By ID endpoint called with ID: {}",
-            path_params.vorgang_id
-        );
-        let vorgang = get::api_v1_vorgang_id_get(self, path_params).await;
+        let vorgang = get::vg_id_get(self, path_params).await;
 
         match vorgang {
             Ok(vorgang) => {
@@ -125,7 +121,6 @@ impl openapi::apis::default::Default for LTZFServer {
         claims: Self::Claims,
         path_params: models::VorgangDeletePathParams,
     ) -> Result<VorgangDeleteResponse, ()> {
-        tracing::trace!("vorgang_delete called with vorgang_id: {}", path_params.vorgang_id);
         if claims.0 != auth::APIScope::Admin && claims.0 != auth::APIScope::KeyAdder{
             return Ok(VorgangDeleteResponse::Status401_APIKeyIsMissingOrInvalid);
         }
@@ -148,13 +143,13 @@ impl openapi::apis::default::Default for LTZFServer {
             path_params: models::VorgangIdPutPathParams,
             body: models::Vorgang,
         ) -> Result<VorgangIdPutResponse, ()> {
-            tracing::trace!("api_v1_vorgang_vorgang_id_put Called with path params: `{:?}`", path_params);
             if claims.0 != auth::APIScope::Admin && claims.0 != auth::APIScope::KeyAdder{
                 return Ok(VorgangIdPutResponse::Status401_APIKeyIsMissingOrInvalid);
             } 
             let out = put::api_v1_vorgang_id_put(self, path_params, body)
             .await
-            .map_err(|e| todo!())?;
+            .map_err(|e| 
+                tracing::warn!("{}", e))?;
             Ok(out)
         }
 
@@ -169,11 +164,7 @@ impl openapi::apis::default::Default for LTZFServer {
               header_params: models::VorgangGetHeaderParams,
               query_params: models::VorgangGetQueryParams,
         ) -> Result<VorgangGetResponse, ()> {
-        tracing::trace!(
-            "GET GSVHByParam endpoint called with query params: {:?}",
-            query_params
-        );
-        match get::api_v1_vorgang_get(self, query_params, header_params).await {
+        match get::vg_get(self, query_params, header_params).await {
             Ok(models::VorgangGet200Response{payload: None}) => Ok(VorgangGetResponse::Status204_NoContentFoundForTheSpecifiedParameters),
             Ok(x) => Ok(VorgangGetResponse::Status200_AntwortAufEineGefilterteAnfrageZuVorgang(x)),
             Err(e) => {
@@ -195,7 +186,6 @@ impl openapi::apis::default::Default for LTZFServer {
           query_params: models::VorgangPutQueryParams,
                 body: models::Vorgang,
         ) -> Result<VorgangPutResponse, ()> {
-        tracing::trace!("api_v1_vorgang_put called by {:?}", query_params);
 
         let rval = put::api_v1_vorgang_put(self, body).await;
         match rval {
@@ -205,10 +195,6 @@ impl openapi::apis::default::Default for LTZFServer {
             Err(e) => {
                 tracing::warn!("Error Occurred and Is Returned: {:?}", e.to_string());
                 match e {
-                    LTZFError::Validation{source: DataValidationError::DuplicateApiId{id}} => {
-                        tracing::warn!("ApiID Equal: {:?}", id);
-                        Ok(VorgangPutResponse::Status409_Conflict)
-                    },
                     LTZFError::Validation{source: DataValidationError::AmbiguousMatch{..}} =>{
                         Ok(VorgangPutResponse::Status409_Conflict)
                     }
@@ -234,15 +220,6 @@ impl openapi::apis::default::Default for LTZFServer {
             Ok(delete_ass_by_api_id(path_params.as_id, self).await
             .map_err(|e| {tracing::warn!("{}", e);})?)
         }
-    
-        /// AsGet - GET /api/v1/ausschusssitzung
-        async fn as_get(
-        &self,
-        method: Method,
-        host: Host,
-        cookies: CookieJar,
-          query_params: models::AsGetQueryParams,
-        ) -> Result<AsGetResponse, ()>{todo!()}
     
         /// AsGetById - GET /api/v1/ausschusssitzung/{as_id}
         async fn as_get_by_id(
@@ -286,5 +263,41 @@ impl openapi::apis::default::Default for LTZFServer {
             claims: Self::Claims,
           query_params: models::AsPutQueryParams,
                 body: models::Ausschusssitzung,
-        ) -> Result<AsPutResponse, ()>{todo!()}
+        ) -> Result<AsPutResponse, ()>{
+            let rval = put::as_put(self, body).await;
+            match rval {
+                Ok(_) => {
+                    Ok(AsPutResponse::Status201_SuccessfullyIntegratedTheObject)
+                }
+                Err(e) => {
+                    tracing::warn!("Error Occurred and Is Returned: {:?}", e.to_string());
+                    match e {
+                        LTZFError::Validation{source: DataValidationError::AmbiguousMatch{..}} =>{
+                            Ok(AsPutResponse::Status409_Konflikt)
+                        }
+                        _ => {
+                            Err(())
+                        },
+                    }
+                }
+            }
+        }
+    
+        /// AsGet - GET /api/v1/ausschusssitzung
+        async fn as_get(
+        &self,
+        method: Method,
+        host: Host,
+        cookies: CookieJar,
+          query_params: models::AsGetQueryParams,
+        ) -> Result<AsGetResponse, ()> {
+            match get::as_get(self, query_params).await {
+                Ok(models::AsGet200Response{payload: None}) => Ok(AsGetResponse::Status204_NoContentFoundForTheSpecifiedParameters),
+                Ok(x) => Ok(AsGetResponse::Status200_AntwortAufEineGefilterteAnfrageZuAusschusssitzungen(x)),
+                Err(e) => {
+                    tracing::warn!("{}", e.to_string());
+                    Err(())
+                }
+            }
+        }
 }

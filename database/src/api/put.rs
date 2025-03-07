@@ -61,3 +61,12 @@ pub async fn as_id_put(
     tx.commit().await?;
     Ok(AsIdPutResponse::Status201_Created)
 }
+
+pub async fn as_put(
+    server: &LTZFServer,
+    ass: models::Ausschusssitzung
+)-> Result<()> {
+    tracing::trace!("api_v1_vorgang_put called");
+    merge::assitzung::run_integration(&ass, server).await?;
+    Ok(())
+}
