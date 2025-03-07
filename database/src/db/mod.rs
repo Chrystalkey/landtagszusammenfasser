@@ -98,7 +98,7 @@ mod scenariotest{
                     if db_out == expected {
                         found = true;
                         break;
-                    }else if xor(db_out.api_id == expected.api_id, self.shouldfail) {
+                    }else if xor(db_out.api_id != expected.api_id, self.shouldfail) {
                         std::fs::write(format!("tests/{}_dumpa.json", self.name), 
                         dump_objects(&expected, &db_out)).unwrap();
                         assert!(false, "Differing object have the same api id: `{}`. Difference:\n{}",
@@ -107,7 +107,7 @@ mod scenariotest{
                     }
                     
                 }
-                if xor(!found, self.shouldfail) {
+                if xor(found, self.shouldfail) {
                     std::fs::write(format!("tests/{}_dump.json", self.name), 
                     serde_json::to_string_pretty(expected).unwrap()).unwrap();
                 }
