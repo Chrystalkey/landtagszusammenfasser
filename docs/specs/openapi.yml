@@ -2,9 +2,7 @@ openapi: 3.0.0
 info:
   title: "Specification for the Landtagszusammenfasser Project"
   version: "0.1.0"
-  description: "Beschreibung der API des LTZF Projekts. Alle Listen, die vom Server kommen sind sortiert in\n\
-  1. datum der letzten modifikation, absteigend\n\
-  2. lexikographisch des titels falls nicht vorhanden"
+  description: "Beschreibung der API des LTZF Projekts. Alle Listen, die vom Server kommen sind sortiert in\n  1. datum der letzten modifikation, absteigend\n  2. lexikographisch des titels falls nicht vorhanden"
 paths:
   /api/v1/vorgang/{vorgang_id}:
     get:
@@ -467,6 +465,12 @@ components:
         wahlperiode:
           type: integer
           minimum: 0
+        link:
+          type: "string"
+          format: "url"
+        link_kalender:
+          type: "string"
+          format: "url"
         name:
           description: "Name des betreffenden Gremiums. 'plenum', 'regierung', 'volk' sind reservierte namen"
           example: "Ausschuss für Inneres und Gemüseauflauf"
@@ -553,7 +557,7 @@ components:
     station:
       type: "object"
       description: "Station ist in vielerlei hinsicht das Kernstück der API der Vorgänge. Jeder Vorgang besteht aus Stationen und die Stationen haben nur wenige verpflichtende Datenfelder.\
-                    Je nach `typ` sind andere Felder nicht-optional. Für weitere Details, siehe die docs"
+                    Für weitere Details, siehe die docs"
       required:
         - "typ"
         - "datum"
@@ -712,6 +716,7 @@ components:
       required:
         - "termin"
         - "ausschuss"
+        - "nummer"
         - "tops"
         - "public"
       properties:
@@ -724,6 +729,15 @@ components:
         termin:
           type: "string"
           format: "date-time"
+        link:
+          type: "string"
+          format: "url"
+        nummer:
+          type: integer
+          minimum: 0
+        titel:
+          type: "string"
+          description: "Titel wenn anwendbar. In den Ländern sind Themenüberschriften für AS üblich"
         ausschuss:
           $ref: "#/components/schemas/gremium"
         tops:
@@ -732,6 +746,6 @@ components:
             $ref: "#/components/schemas/top"
         experten:
           type: "array"
-          description: "Optional: Liste von geladenen Experten. (Anhörung)"
+          description: "Optional: Liste von geladenen Experten. (macht aus der Sitzung eine Anhörung)"
           items:
             $ref: "#/components/schemas/experte"
