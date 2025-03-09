@@ -19,7 +19,7 @@ use super::MergeState;
 /// this function determines what means "matching enough".
 /// 1. wenn api_id matcht
 /// 2. wenn wp, typ und mindestens ein identifikator matchen
-/// [TODO]3. wenn wp, typ und 1/5 des volltextes sich "sehr ähnlich sind (tbd)"
+/// 3. wenn wp, typ und das vorwort sich "sehr ähnlich sind (>0.8)"
 pub async fn vorgang_merge_candidates(
     model: &models::Vorgang,
     executor: impl sqlx::PgExecutor<'_>,
