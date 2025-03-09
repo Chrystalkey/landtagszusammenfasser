@@ -192,7 +192,7 @@ class Scraper(ABC):
 
     # extracts the listing page that is behind self.listing_url into the urls of individual pages
     @abstractmethod
-    async def listing_page_extractor(self, url: str) -> List[str]:
+    async def listing_page_extractor(self, url: str) -> List[Any]:
         """
         Extract a listing page into individual item URLs
         
@@ -206,7 +206,7 @@ class Scraper(ABC):
 
     # extracts the individual pages containing all info into a Vorgang object
     @abstractmethod
-    async def item_extractor(self, listing_item) -> models.Vorgang:
+    async def item_extractor(self, listing_item: Any) -> models.Vorgang:
         """
         Extract an individual item into a Vorgang object
         

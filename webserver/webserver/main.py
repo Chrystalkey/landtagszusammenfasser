@@ -29,7 +29,7 @@ class ContentGenerator:
     def __init__(self):
         self.base_dir = Path().cwd() / Path("./zolasite/content")
 
-    def generate_content(self, response: Optional[List[models.Response]]) -> None:
+    def generate_content(self, response: Optional[List[models.Vorgang]]) -> None:
         """Generate markdown files from legislative proposals."""
         
         pagestatepath = self.base_dir / "pagestate.toml"
@@ -53,51 +53,57 @@ class ContentGenerator:
             except Exception as e:
                 logger.error(f"Failed to write to pagestate or the section sites: {e}")
             return
-        for gsvh in response.payload:
-            # Find latest station
-            latest_station = max(gsvh.stationen, key=lambda s: s.datum)
+            
+        # Handle the updated response structure
+        vorgaenge = response if isinstance(response, list) else getattr(response, 'payload', [])
+        
+        for vg in vorgaenge:
+            # Find latest station using start_zeitpunkt instead of datum
+            latest_station = max(vg.stationen, key=lambda s: s.start_zeitpunkt)
             station_type = latest_station.typ
 
             # Determine output path based on station type
             if station_type.startswith("preparl"):
-                if gsvh.api_id not in pagestate["vorbereitung"]:
-                    pagestate["vorbereitung"].append(gsvh.api_id)
+                if vg.api_id not in pagestate["vorbereitung"]:
+                    pagestate["vorbereitung"].append(vg.api_id)
             elif station_type.startswith("parl") and station_type not in [
-                "parl-abgelehnt",
-                "parl-akzeptiert",
+                "parl-ablehnung",
+                "parl-akzeptanz",
             ]:
-                if gsvh.api_id not in pagestate["beratung"]:
-                    pagestate["beratung"].append(gsvh.api_id)
+                if vg.api_id not in pagestate["beratung"]:
+                    pagestate["beratung"].append(vg.api_id)
             elif station_type.startswith("postparl") or station_type in [
-                "parl-abgelehnt",
-                "parl-akzeptiert",
+                "parl-ablehnung",
+                "parl-akzeptanz",
             ]:
-                if gsvh.api_id not in pagestate["nachbereitung"]:
-                    pagestate["nachbereitung"].append(gsvh.api_id)
+                if vg.api_id not in pagestate["nachbereitung"]:
+                    pagestate["nachbereitung"].append(vg.api_id)
             else:
                 logger.warning(f"Unknown station type: {station_type}")
                 continue
 
-            path = self.base_dir / "gesetze" / f"{gsvh.api_id}.md"
-            content = generation.generate_content(gsvh)
+            path = self.base_dir / "gesetze" / f"{vg.api_id}.md"
+            content = generation.generate_content(vg)
             try:
                 logger.info(f"Updating `{path}`")
                 if path.exists():
                     existing_content = path.read_text(encoding="utf-8")
                     if existing_content == content:
                         logger.info(
-                            f"Content for {gsvh.api_id} already exists and is unchanged"
+                            f"Content for {vg.api_id} already exists and is unchanged"
                         )
                         continue
                     else:
                         logger.info(
-                            f"Content for {gsvh.api_id} already exists but is different"
+                            f"Content for {vg.api_id} already exists but is different"
                         )
                         os.remove(str(path))
+                os.makedirs(path.parent, exist_ok=True)  # Ensure directory exists
                 with path.open("w", encoding="utf-8") as file:
                     file.write(content)
             except Exception as e:
                 logger.error(f"Failed to write to {path}: {e}")
+                
         try:
             ber_path = Path(self.base_dir / "beratung.md")
             ber_path.write_text(generation.generate_beratung(pagestate["beratung"]), encoding="utf-8")
@@ -129,7 +135,8 @@ class WebServer:
         try:
             with ApiClient(config) as api_client:
                 api = DefaultApi(api_client)
-                response = api.gsvh_get()
+                # Update the API call from gsvh_get to vorgang_get
+                response = api.vorgang_get()
                 self.content_generator.generate_content(response)
         except Exception as e:
             logger.error(f"Failed to fetch data: {e}")

@@ -58,8 +58,8 @@ pub async fn vorgang_by_id(id: i32, executor: &mut sqlx::PgTransaction<'_>) -> R
 }
 
 pub async fn station_by_id(id: i32,  executor:&mut sqlx::PgTransaction<'_>) -> Result<models::Station> {
-    let dokids = sqlx::query!("SELECT stat_id FROM rel_station_dokument WHERE dok_id = $1", id)
-    .map(|r|r.stat_id).fetch_all(&mut **executor).await?;
+    let dokids = sqlx::query!("SELECT dok_id FROM rel_station_dokument WHERE stat_id = $1", id)
+    .map(|r|r.dok_id).fetch_all(&mut **executor).await?;
     let mut doks = Vec::with_capacity(dokids.len());
     for did in dokids {
         doks.push(dokument_by_id(did, executor).await?.into());
@@ -139,6 +139,7 @@ pub async fn stellungnahme_by_id(
 }
 
 pub async fn dokument_by_id(id: i32,  executor:&mut sqlx::PgTransaction<'_>) -> Result<models::Dokument> {
+    tracing::debug!("Fetching dokument with id {}", id);
     let rec = sqlx::query!(
         "SELECT d.*, value as typ_value FROM dokument d
         INNER JOIN dokumententyp dt ON dt.id = d.typ
