@@ -403,7 +403,7 @@ mod scenariotest{
     use std::panic::AssertUnwindSafe;
     use crate::LTZFServer;
 
-    use openapi::models::{self, VorgangGetHeaderParams, VorgangGetQueryParams};
+    use openapi::models::{self, VorgangGetQueryParams};
     use serde::Deserialize;
 
     #[allow(unused)]
@@ -475,15 +475,16 @@ mod scenariotest{
             let paramock = VorgangGetQueryParams{
                 vgtyp: None,
                 wp: None,
-                initiator_contains_any: None, 
+                init_contains: None, 
+                init_prsn_contains: None,
+                parlament: None,
+                upd_since: None,
+                upd_until: None,
                 limit: None,
                 offset: None};
-            let hparamock = VorgangGetHeaderParams{
-                if_modified_since: None,
-            };
             let mut tx = self.server.sqlx_db.begin().await.unwrap();
             let db_vorgangs = crate::db::retrieve::vorgang_by_parameter(
-                paramock, hparamock, &mut tx).await.unwrap();
+                paramock, &mut tx).await.unwrap();
                 
             tx.rollback().await.unwrap();
             for expected in self.result.iter() {

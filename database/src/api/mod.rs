@@ -161,10 +161,9 @@ impl openapi::apis::default::Default for LTZFServer {
             method: Method,
             host: Host,
             cookies: CookieJar,
-              header_params: models::VorgangGetHeaderParams,
               query_params: models::VorgangGetQueryParams,
         ) -> Result<VorgangGetResponse, ()> {
-        match get::vg_get(self, query_params, header_params).await {
+        match get::vg_get(self, query_params).await {
             Ok(models::VorgangGet200Response{payload: None}) => Ok(VorgangGetResponse::Status204_NoContentFoundForTheSpecifiedParameters),
             Ok(x) => Ok(VorgangGetResponse::Status200_AntwortAufEineGefilterteAnfrageZuVorgang(x)),
             Err(e) => {

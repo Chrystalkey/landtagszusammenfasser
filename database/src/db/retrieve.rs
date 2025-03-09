@@ -265,34 +265,62 @@ pub async fn ausschusssitzung_by_id(id: i32,  tx: &mut sqlx::PgTransaction<'_>) 
 pub async fn as_by_parameter(
     qparams : models::AsGetQueryParams,
     tx: &mut sqlx::PgTransaction<'_>) -> Result<Vec<models::Ausschusssitzung>> {
-    todo!();
+    let as_list = sqlx::query!("
+    WITH pre_table AS (
+        SELECT a.id, MAX(a.termin) as lastmod FROM  ausschusssitzung a
+		INNER JOIN gremium g ON g.id = a.gr_id
+		INNER JOIN parlament p ON p.id = g.parl
+		WHERE p.value = COALESCE($1, p.value)
+		AND g.wp = 		COALESCE($2, g.wp)
+        GROUP BY a.id
+        ORDER BY lastmod
+        )
+
+SELECT * FROM pre_table WHERE
+lastmod > COALESCE($3, CAST('1940-01-01T20:20:20Z' as TIMESTAMPTZ)) AND
+lastmod < COALESCE($4, NOW())
+ORDER BY pre_table.lastmod ASC
+OFFSET COALESCE($5, 0) 
+LIMIT COALESCE($6, 64)
+    ",qparams.parlament.map(|p|p.to_string()),
+qparams.wp, qparams.upd_since, qparams.upd_until, qparams.offset, qparams.limit)
+    .map(|r|r.id)
+    .fetch_all(&mut **tx).await?;
+    let mut vector = Vec::with_capacity(as_list.len());
+    for id in as_list {
+        vector.push(super::retrieve::ausschusssitzung_by_id(id, tx).await?);
+    }
+    return Ok(vector)
 }
 
 pub async fn vorgang_by_parameter(
     params: models::VorgangGetQueryParams,
-    hparam: models::VorgangGetHeaderParams,
     executor: &mut sqlx::PgTransaction<'_>
 ) -> Result<Vec<models::Vorgang>> {
-
     let vg_list = sqlx::query!(
         "WITH pre_table AS (
         SELECT vorgang.id, MAX(station.start_zeitpunkt) as lastmod FROM vorgang
             INNER JOIN vorgangstyp vt ON vt.id = vorgang.typ
             LEFT JOIN station ON station.vg_id = vorgang.id
+			INNER JOIN parlament on parlament.id = station.p_id
             WHERE TRUE
             AND vorgang.wahlperiode = COALESCE($1, vorgang.wahlperiode)
             AND vt.value = COALESCE($2, vt.value)
+			AND parlament.value= COALESCE($3, parlament.value)
+			AND (CAST($4 as text) IS NULL OR EXISTS(SELECT 1 FROM rel_vorgang_init rvi WHERE rvi.initiator = $4))
+			AND (CAST($5 as text) IS NULL OR EXISTS(SELECT 1 FROM rel_vorgang_init_person rvi WHERE rvi.initiator = $5))
         GROUP BY vorgang.id
         ORDER BY lastmod
         )
-        SELECT * FROM pre_table WHERE
-        lastmod > CAST(COALESCE($3, '1940-01-01T20:20:20Z') as TIMESTAMPTZ)
-        ORDER BY pre_table.lastmod ASC
-        OFFSET COALESCE($4, 0) LIMIT COALESCE($5, 64)",
-    params.wp,
-    params.vgtyp.map(|x|x.to_string()),
-    hparam.if_modified_since.map(|x|x.to_rfc3339()),
-    params.offset,
+SELECT * FROM pre_table WHERE
+lastmod > COALESCE($6, CAST('1940-01-01T20:20:20Z' as TIMESTAMPTZ)) 
+AND lastmod < COALESCE($7, NOW())
+ORDER BY pre_table.lastmod ASC
+OFFSET COALESCE($8, 0) LIMIT COALESCE($9, 64)
+",params.wp, params.vgtyp.map(|x|x.to_string()),
+params.parlament.map(|p|p.to_string()), 
+params.init_contains, params.init_prsn_contains,
+params.upd_since, params.upd_until, params.offset,
     params.limit)
     .map(|r|r.id)
     .fetch_all(&mut **executor).await?;

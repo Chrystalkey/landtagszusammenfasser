@@ -17,10 +17,9 @@ pub async fn vg_id_get(
 pub async fn vg_get(
     server: &LTZFServer,
     query_params: models::VorgangGetQueryParams,
-    header_params: models::VorgangGetHeaderParams,
 ) -> Result<models::VorgangGet200Response> {
     let mut tx = server.sqlx_db.begin().await?;
-    let result = retrieve::vorgang_by_parameter(query_params,header_params, &mut tx).await?;
+    let result = retrieve::vorgang_by_parameter(query_params, &mut tx).await?;
     tx.commit().await?;
     Ok(models::VorgangGet200Response {payload: as_option(result)})
 }
@@ -28,7 +27,7 @@ pub async fn vg_get(
 pub async fn as_get_by_id(
     server: &LTZFServer,
     path_params: models::AsGetByIdPathParams,
-) -> Result<openapi::apis::default::AsGetByIdResponse>{
+) -> Result<openapi::apis::default::AsGetByIdResponse> {
     use openapi::apis::default::AsGetByIdResponse;
     let mut tx = server.sqlx_db.begin().await?;
     let api_id = path_params.as_id;
@@ -38,6 +37,7 @@ pub async fn as_get_by_id(
     tx.commit().await?;
     Ok(AsGetByIdResponse::Status200_SuccessfulOperation(result))
 }
+
 pub async fn as_get(
     server: &LTZFServer,
     query_params: models::AsGetQueryParams,

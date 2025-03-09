@@ -94,44 +94,15 @@ paths:
           description: "Bad Request"
 
       parameters:
-        - name: "If-Modified-Since"
-          in: "header"
-          required: false
-          schema:
-            type: "string"
-            format: "date-time"
-        - name: "wp"
-          in: "query"
-          required: false
-          schema:
-            type: "integer"
-            minimum: 0
-        - name: "limit"
-          in: "query"
-          required: false
-          schema:
-            type: "integer"
-            minimum: 1
-        - name: "offset"
-          in: "query"
-          required: false
-          schema:
-            type: "integer"
-            minimum: 1
-        - name: "initiator-contains-any"
-          in: query
-          required: false
-          description: "If any of the listed Initiators matches the Initiator, it is filtered out"
-          schema:
-            type: array
-            items:
-              type: string
-        - name: "vgtyp"
-          in: query
-          required: false
-          description: Vorgangstyp"
-          schema:
-            $ref: "#/components/schemas/vorgangstyp"
+        - $ref: "#/components/parameters/updated-since"
+        - $ref: "#/components/parameters/updated-until"
+        - $ref: "#/components/parameters/parlament"
+        - $ref: "#/components/parameters/wahlperiode"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+        - $ref: "#/components/parameters/initiator-contains"
+        - $ref: "#/components/parameters/initiator-person-contains"
+        - $ref: "#/components/parameters/vgtyp"
     put:
       operationId: "vorgang_put"
       description: "Pushing a new vorgang"
@@ -200,39 +171,14 @@ paths:
       operationId: "as_get"
       description: "Gibt eine Liste gefilterter Ausschusssitzungen zurück"
       parameters:
-        - name: "from"
-          description: "Inclusive start of a range"
-          in: query
-          required: false
-          schema:
-            type: string
-            format: "date-time"
-        - name: "until"
-          description: "Inclusive End of a range"
-          in: query
-          required: false
-          schema:
-            type: string
-            format: "date-time"
-        - name: "limit"
-          in: "query"
-          required: false
-          schema:
-            type: "integer"
-            minimum: 1
-        - name: "offset"
-          in: "query"
-          required: false
-          schema:
-            type: "integer"
-            minimum: 1
-        - name: "vorgang_id"
-          in: query
-          required: false
-          description: "API ID eines Vorgangs. Liefert Ausschusssitzungen, deren TOPs diesen Vorgang referenzieren"
-          schema:
-            type: "string"
-            format: "uuid"
+        - $ref: "#/components/parameters/updated-since"
+        - $ref: "#/components/parameters/updated-until"
+        - $ref: "#/components/parameters/parlament"
+        - $ref: "#/components/parameters/wahlperiode"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+        - $ref: "#/components/parameters/vorgang-id"
+        - $ref: "#/components/parameters/vgtyp"
 
       responses:
         "200":
@@ -339,12 +285,83 @@ paths:
       security:
         - apiKey: [] 
 components:
+  parameters:
+    updated-since:
+      name: "upd-since"
+      in: "query"
+      description: "inclusive range"
+      required: false
+      schema:
+        type: string
+        format: date-time
+    updated-until:
+      name: "upd-until"
+      in: "query"
+      description: "inclusive range"
+      required: false
+      schema:
+        type: string
+        format: date-time
+    wahlperiode:
+      name: "wp"
+      in: "query"
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+    limit:
+      name: "limit"
+      in: "query"
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        maximum: 64
+    offset:
+      name: "offset"
+      in: "query"
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+    vgtyp:
+      name: "vgtyp"
+      in: "query"
+      required: false
+      schema:
+        $ref: "#/components/schemas/vorgangstyp"
+    parlament:
+      name: "parlament"
+      in: "query"
+      required: false
+      schema:
+        $ref: "#/components/schemas/parlament"
+    initiator-contains:
+      name: "init-contains"
+      in: "query"
+      required: false
+      schema:
+        type: string
+    initiator-person-contains:
+      name: "init-prsn-contains"
+      in: "query"
+      required: false
+      schema:
+        type: string
+    vorgang-id:
+      name: "vgid"
+      in: "query"
+      required: false
+      description: "Assoziierter Vorgang"
+      schema:
+        type: string
+        format: uuid
   securitySchemes:
-      apiKey:
-        description: API key of the Collector
-        type: apiKey
-        name: X-API-Key
-        in: header
+    apiKey:
+      description: API key of the Collector
+      type: apiKey
+      name: X-API-Key
+      in: header
   responses:
     UnauthorizedError:
       description: API key is missing or invalid
