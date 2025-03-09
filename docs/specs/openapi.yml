@@ -452,7 +452,7 @@ components:
     doktyp:
       description: "Dokumententyp"
       type: "string"
-      enum: ["entwurf", "drucksache", "protokoll", "topliste", "stellungnahme", "sonstig"]
+      enum: ["entwurf", "drucksache", "stellungnahme", "plenar-protokoll", "plenar-tops", "as-tops",  "as-tops-aend", "as-tops-ergz", "sonstig"]
     gremium:
       type: "object"
       required:

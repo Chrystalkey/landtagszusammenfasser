@@ -89,9 +89,12 @@ INSERT INTO
 VALUES
     ('entwurf'),
     ('drucksache'),
-    ('protokoll'),
-    ('topliste'),
     ('stellungnahme'),
+    ('plenar-protokoll'),
+    ('plenar-tops'),
+    ('as-tops'),
+    ('as-tops-aend'),
+    ('as-tops-ergz'),
     ('sonstig');
 
 CREATE EXTENSION pg_trgm;
