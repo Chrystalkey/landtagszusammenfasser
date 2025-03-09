@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use openapi::models;
 use sqlx::PgTransaction;
-use crate::{ utils::notify::notify_new_enum_entry, LTZFServer, Result};
+use crate::{ utils::{self, notify::notify_new_enum_entry}, LTZFServer, Result};
 
 /// Inserts a new Vorgang into the database.
 pub async fn insert_vorgang(
@@ -104,7 +104,7 @@ pub async fn insert_station(
         did.push(insert_or_retrieve_dok(&dokument, tx, srv).await?);
     }
     sqlx::query!("INSERT INTO rel_station_dokument(stat_id, dok_id) 
-    SELECT $1, blub FROM UNNEST($2::int4[]) as blub", stat_id, &did[..])
+    SELECT $1, blub FROM UNNEST($2::int4[]) as blub ON CONFLICT DO NOTHING", stat_id, &did[..])
     .execute(&mut **tx).await?;
 
     // stellungnahmen
@@ -134,9 +134,15 @@ pub async fn insert_dokument(
     srv: &LTZFServer) 
     -> Result<i32> {
     let dapi = dok.api_id.unwrap_or(uuid::Uuid::now_v7());
-    if let Some(id) = sqlx::query!("SELECT id FROM dokument WHERE api_id = $1", dapi).fetch_optional(&mut **tx).await?{
-        return Ok(id.id);
-    } 
+    match crate::db::merge::vorgang::dokument_merge_candidates(&dok, &mut **tx, srv).await?{
+        super::merge::MergeState::OneMatch(id) => {return Ok(id)},
+        super::merge::MergeState::AmbiguousMatch(matches) => {
+            let api_ids = sqlx::query!("SELECT api_id FROM dokument WHERE id = ANY($1::int4[])", &matches[..])
+            .map(|r|r.api_id).fetch_all(&mut **tx).await?;
+            utils::notify::notify_ambiguous_match(api_ids, &dok, "insert_dokument", srv)?;
+        }
+        super::merge::MergeState::NoMatch => {}
+    }
     let obj= "Dokument";
     let did = sqlx::query!(
         "INSERT INTO dokument(api_id, drucksnr, typ, titel, kurztitel, vorwort, volltext, zusammenfassung, last_mod, link, hash)

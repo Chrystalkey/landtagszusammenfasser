@@ -169,10 +169,11 @@ class BYLTScraper(Scraper):
                     stat.typ = "parl-initiativ"
                     stat.gremium = models.Gremium.from_dict({
                         "name": "plenum",
-                        "parlament": "BY"
+                        "parlament": "BY",
+                        "wahlperiode": 19
                     })
 
-                    dok = await self.create_document(link, models.Doktyp.DRUCKSACHE)
+                    dok = await self.create_document(link, models.Doktyp.ENTWURF)
                     dok.drucksnr = str(inds)
                     stat.dokumente = [models.DokRef(dok.package())]
                     stat.trojanergefahr = max(dok.trojanergefahr, 1)
@@ -185,7 +186,7 @@ class BYLTScraper(Scraper):
                     dok = await self.create_document(stln_urls["stellungnahme"], models.Doktyp.STELLUNGNAHME)
                     stln = models.Stellungnahme.from_dict(
                         {
-                            "meinung": dok.meinung or 0,
+                            "meinung": dok.meinung or 1,
                             "dokument": dok.package(),
                             "lobbyregister_url": stln_urls["lobbyregister"],
                         }
@@ -197,19 +198,19 @@ class BYLTScraper(Scraper):
                     continue
                 elif cellclass == "plenumsdiskussion-uebrw":
                     stat.typ = "parl-vollvlsgn"
-                    stat.gremium = models.Gremium.from_dict({"name": "plenum", "parlament": "BY"})
-                    dok = await self.create_document(extract_plenproto(cells[1]), models.Doktyp.PROTOKOLL)
+                    stat.gremium = models.Gremium.from_dict({"name": "plenum", "parlament": "BY","wahlperiode": 19})
+                    dok = await self.create_document(extract_plenproto(cells[1]), models.Doktyp.PLENAR_MINUS_PROTOKOLL)
                     stat.betroffene_texte = dok.texte
                     stat.dokumente = [models.DokRef(dok.package())]
                 elif cellclass == "plenumsdiskussion-zustm":
-                    dok = await self.create_document(extract_plenproto(cells[1]), models.Doktyp.PROTOKOLL)
+                    dok = await self.create_document(extract_plenproto(cells[1]), models.Doktyp.PLENAR_MINUS_PROTOKOLL)
                     
                     if len(vg.stationen) > 0 and vg.stationen[-1].typ == "parl-akzeptanz":
                         vg.stationen[-1].dokumente.append(models.DokRef(dok.package()))
                         continue
                     else:
                         stat.typ = "parl-akzeptanz"
-                        stat.gremium = models.Gremium.from_dict({"name": "plenum", "parlament": "BY"})
+                        stat.gremium = models.Gremium.from_dict({"name": "plenum", "parlament": "BY","wahlperiode": 19})
                         
                         stat.dokumente = [models.DokRef(dok.package())]
                 elif cellclass == "plenumsdiskussion-ablng":
@@ -220,10 +221,10 @@ class BYLTScraper(Scraper):
                         stat.typ = "parl-ablehnung"
                         stat.gremium = models.Gremium.from_dict({
                             "name": "plenum", 
-                            "parlament": "BY"
+                            "parlament": "BY","wahlperiode": 19
                         })
                 elif cellclass == "plenumsbeschluss":
-                    dok = await self.create_document(extract_singlelink(cells[1]), models.Doktyp.DRUCKSACHE)
+                    dok = await self.create_document(extract_singlelink(cells[1]), models.Doktyp.ENTWURF)
                     if len(vg.stationen) > 0 and vg.stationen[-1].typ in ["parl-akzeptanz", "parl-ablehnung"]:
                         vg.stationen[-1].dokumente.append(models.DokRef(dok.package()))
                         vg.stationen[-1].trojanergefahr = max(dok.trojanergefahr, 1)
@@ -233,13 +234,13 @@ class BYLTScraper(Scraper):
                         stat.typ = "parl-akzeptanz" 
                         stat.gremium = models.Gremium.from_dict({
                             "name": "plenum", 
-                            "parlament": "BY"
+                            "parlament": "BY","wahlperiode": 19
                         })
                         stat.trojanergefahr = max(dok.trojanergefahr, 1)
                         stat.betroffene_texte = dok.texte
                         stat.dokumente = [models.DokRef(dok.package())]
                 elif cellclass == "ausschussbericht":
-                    dok = await self.create_document(extract_singlelink(cells[1]), models.Doktyp.DRUCKSACHE)
+                    dok = await self.create_document(extract_singlelink(cells[1]), models.Doktyp.BESCHLUSSEMPF)
                     soup: BeautifulSoup = cells[1]
                     ausschuss_name = soup.text.split("\n")[1]
                     
@@ -267,7 +268,7 @@ class BYLTScraper(Scraper):
                         stat.typ = "parl-ausschber"
                         stat.gremium = models.Gremium.from_dict({
                             "name": ausschuss_name,
-                            "parlament": "BY"
+                            "parlament": "BY","wahlperiode": 19
                         })
                         stat.dokumente = [models.DokRef(dok.package())]
                         stat.trojanergefahr = max(dok.trojanergefahr, 1)
@@ -276,7 +277,7 @@ class BYLTScraper(Scraper):
                 elif cellclass == "gesetzesblatt":
                     stat.gremium = models.Gremium.from_dict({
                         "name": "Gesetzesblatt",
-                        "parlament": "BY"
+                        "parlament": "BY","wahlperiode": 19
                     })
                     stat.typ = "postparl-gsblt"
                     dok = await self.create_document(extract_singlelink(cells[1]), models.Doktyp.SONSTIG)

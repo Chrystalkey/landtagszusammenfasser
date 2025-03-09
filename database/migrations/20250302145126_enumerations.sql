@@ -87,9 +87,10 @@ INSERT INTO parlament(value) VALUES
 INSERT INTO
     dokumententyp (value)
 VALUES
+    ('preparl-entwurf'),
     ('entwurf'),
-    ('drucksache'),
     ('stellungnahme'),
+    ('beschlussempf'),
     ('plenar-protokoll'),
     ('plenar-tops'),
     ('as-tops'),

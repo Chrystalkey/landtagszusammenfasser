@@ -71,10 +71,10 @@ Test Title;Group1,Group2;Person1,Person2;Tag1,Tag2;5;Text1,Text2;This is a summa
 
 @pytest.mark.asyncio
 async def test_document_packaging(mock_config):
-    doc = Document(None, "http://example.com/test.pdf", "drucksache", mock_config)
+    doc = Document(None, "http://example.com/test.pdf", "entwurf", mock_config)
     doc.meta.title = "Test Title"
     doc.meta.hash = "testhash"
-    doc.meta.typ = "drucksache"
+    doc.meta.typ = "entwurf"
     doc.meta.last_mod = datetime.datetime.now(datetime.timezone.utc)
     doc.authoren = ["Group1"]
     doc.autorpersonen = ["Person1"]
@@ -99,7 +99,7 @@ async def test_document_json_serialization(mock_config):
     original_doc.meta.hash = "testhash"
     original_doc.meta.last_mod = datetime.datetime.now(datetime.timezone.utc)
     original_doc.meta.full_text = ["Sample text"]
-    original_doc.meta.typ = "drucksache"
+    original_doc.meta.typ = "entwurf"
     original_doc.authoren = ["Group1"]
     original_doc.autorpersonen = ["Person1"]
     original_doc.schlagworte = ["Tag1"]

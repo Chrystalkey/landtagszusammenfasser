@@ -1,8 +1,8 @@
 [package]
-name = "ltzusfas-db"
+name = "ltzf-db"
 version = "0.1.0"
 edition = "2021"
-authors = ["Benedikt Schäfer", "Noah Lokocz", "Liv Märtens"]
+authors = ["Benedikt Schäfer"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]

@@ -2,7 +2,7 @@
 name = "collector"
 version = "0.1.1"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = ["Benedikt Schäfer", "Noah Lokocz", "Liv Märtens"]
 readme = "README.md"
 
 [tool.poetry.dependencies]

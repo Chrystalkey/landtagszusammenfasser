@@ -32,7 +32,7 @@ pub async fn vorgang_merge_candidates(
     .filter(|&s| s.typ == models::Stationstyp::ParlInitiativ)
     .map(|s| 
         s.dokumente.iter().filter(|&d| if let models::DokRef::Dokument(d) = d{
-            d.typ == models::Doktyp::Drucksache && d.vorwort.is_some()
+            d.typ == models::Doktyp::Entwurf && d.vorwort.is_some()
         }else{false})
         .map(|d|if let models::DokRef::Dokument(d) = d{d.vorwort.clone().unwrap()}else{unreachable!()})
         .map(|s|s.to_string())
@@ -50,7 +50,7 @@ pub async fn vorgang_merge_candidates(
 				INNER JOIN dokumententyp dt ON dt.id=d.typ
 				INNER JOIN station s ON s.id = rsd.stat_id
 				WHERE rsd.stat_id=s.id
-				AND dt.value='drucksache'
+				AND dt.value='entwurf'
 		)
 
 SELECT DISTINCT(vorgang.id), vorgang.api_id FROM vorgang -- gib vorgänge, bei denen

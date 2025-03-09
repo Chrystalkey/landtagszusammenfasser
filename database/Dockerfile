@@ -36,16 +36,14 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 
 RUN apt update \
 &&  apt install -y --no-install-recommends libssl-dev pkg-config libpq5 \
-&&  rm -rf /var/lib/apt/lists/* \
-&& cargo install sqlx-cli
+&&  rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /etc/group /etc/group
 COPY --from=builder --chmod=0100 --chown=ltzf-database:ltzf-database /app/target/release/ltzusfas-db /app/ltzusfas-db
-COPY docker-entry.sh /app/docker-entry.sh
 
 WORKDIR /app
 
 USER ltzf-database
 
-ENTRYPOINT ["bash", "/app/docker-entry.sh"]
+ENTRYPOINT ["./ltzusfas-db"]

@@ -25,8 +25,8 @@ gesetzestyp_map = {
 }
 
 doktyp_map = {
-    "entwurf": "Entwurf",
-    "drucksache": "Drucksache", 
+    "entwurf": "Gesetzesentwurf",
+    "preparl-entwurf": "Vorparlamentarischer Entwurf", 
     "protokoll": "Protokoll",
     "topsliste": "TOP",
     "stellungnahme": "Stellungnahme",
@@ -63,7 +63,7 @@ def generate_header(model: models.Gesetzesvorhaben) -> str:
         
         if not last_drucksache or (stat.typ in ["parl-ausschber", "parl-schlussab", "postparl-gsblt"] and last_ds_date < stat.datum):
             for doc in stat.dokumente:
-                if doc.typ == "drucksache":
+                if doc.typ == "entwurf":
                     last_drucksache = doc
                     last_ds_date = stat.datum
                     break
@@ -102,7 +102,7 @@ def generate_body(model: models.Gesetzesvorhaben) -> str:
         
         if not last_drucksache or (stat.typ in ["parl-ausschber", "parl-schlussab", "postparl-gsblt"] and last_ds_date < stat.datum):
             for doc in stat.dokumente:
-                if doc.typ == "drucksache":
+                if doc.typ == "entwurf":
                     last_drucksache = doc
                     last_ds_date = stat.datum
                     break

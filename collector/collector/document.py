@@ -206,7 +206,7 @@ class Document:
             return
         
         # Different prompts for different document types
-        if self.typehint == "drucksache":
+        if self.typehint == "entwurf":
             await self._extract_drucksache_semantics()
         elif self.typehint == "stellungnahme":
             await self._extract_stellungnahme_semantics()
@@ -218,7 +218,7 @@ class Document:
     def _get_default_title(self):
         """Get a default title based on document type"""
         type_titles = {
-            "drucksache": "Drucksache",
+            "entwurf": "Gesetzesentwurf",
             "stellungnahme": "Stellungnahme",
             "protokoll": "Protokoll",
             "sonstig": "Dokument"
@@ -268,11 +268,11 @@ END PROMPT"""
                 self.zusammenfassung = parts[6].strip() if parts[6] != 'None' else ""
             else:
                 logger.error(f"Invalid response format from LLM: {response}")
-                self._set_default_values("drucksache")
+                self._set_default_values("entwurf")
                 
         except Exception as e:
             logger.error(f"Error extracting drucksache semantics: {e}")
-            self._set_default_values("drucksache")
+            self._set_default_values("entwurf")
     
     async def _extract_stellungnahme_semantics(self):
         """Extract semantics for a 'stellungnahme' document"""
@@ -355,7 +355,7 @@ END PROMPT"""
             doc_type = self.typehint
             
         defaults = {
-            "drucksache": {
+            "entwurf": {
                 "title": "Drucksache ohne Titel",
                 "trojanergefahr": 0,
                 "texte": []
@@ -379,7 +379,7 @@ END PROMPT"""
         self.meta.title = type_defaults.get("title")
         
         # Set other defaults
-        if doc_type == "drucksache":
+        if doc_type == "entwurf":
             self.trojanergefahr = type_defaults.get("trojanergefahr", 0)
             self.texte = type_defaults.get("texte", [])
         elif doc_type == "stellungnahme":
