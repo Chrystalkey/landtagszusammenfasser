@@ -1,11 +1,11 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT initiator FROM rel_vorgang_init_person WHERE vg_id = $1",
+  "query": "SELECT autor FROM rel_dok_autorperson WHERE dok_id = $1 ORDER BY autor ASC",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "initiator",
+        "name": "autor",
         "type_info": "Varchar"
       }
     ],
@@ -18,5 +18,5 @@
       false
     ]
   },
-  "hash": "5ea274b33ce9648ff262638f4269f5ed2df18f9e8d87d0763f9ea9976abdb08a"
+  "hash": "2b192dbae57f911821efb143a7f957e1bee6589fde9a354be948b11ef5c46ea1"
 }
