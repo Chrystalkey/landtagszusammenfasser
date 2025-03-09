@@ -13,6 +13,9 @@ CREATE TABLE tops_doks(
 CREATE TABLE ausschusssitzung(
     id SERIAL PRIMARY KEY,
     api_id UUID NOT NULL UNIQUE,
+    nummer INTEGER NOT NULL,
+    titel VARCHAR,
+    link VARCHAR,
     termin TIMESTAMP WITH TIME ZONE NOT NULL,
     public BOOLEAN NOT NULL,
     gr_id INTEGER NOT NULL REFERENCES gremium(id) ON DELETE CASCADE

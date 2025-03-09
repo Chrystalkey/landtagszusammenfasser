@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n    SELECT p.value, g.name, g.wp FROM gremium g INNER JOIN parlament p on p.id = g.parl\n        WHERE g.id = $1",
+  "query": "\n    SELECT p.value, g.name, g.wp, g.link, g.link_kalender FROM gremium g INNER JOIN parlament p on p.id = g.parl\n        WHERE g.id = $1",
   "describe": {
     "columns": [
       {
@@ -17,6 +17,16 @@
         "ordinal": 2,
         "name": "wp",
         "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "link",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "link_kalender",
+        "type_info": "Varchar"
       }
     ],
     "parameters": {
@@ -27,8 +37,10 @@
     "nullable": [
       false,
       false,
-      false
+      false,
+      true,
+      true
     ]
   },
-  "hash": "e442140e887552cd955659c2b84c7ef141177992d6a97424614c497ab369059f"
+  "hash": "4286bd202670b3d40a40b242a8665cf4de65927101a522ebd904793774c40333"
 }

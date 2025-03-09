@@ -97,9 +97,13 @@ pub async fn station_by_id(id: i32,  executor:&mut sqlx::PgTransaction<'_>) -> R
         .fetch_one(&mut **executor).await?;
     
     let gremium = sqlx::query!("
-    SELECT p.value, g.name, g.wp FROM gremium g INNER JOIN parlament p on p.id = g.parl
+    SELECT p.value, g.name, g.wp, g.link, g.link_kalender FROM gremium g INNER JOIN parlament p on p.id = g.parl
         WHERE g.id = $1", temp_stat.gr_id)
-        .map(|x|models::Gremium{name: x.name, wahlperiode: x.wp as u32, parlament: models::Parlament::from_str(&x.value).unwrap()})
+        .map(|x|models::Gremium{
+            name: x.name, wahlperiode: x.wp as u32, 
+            parlament: models::Parlament::from_str(&x.value).unwrap(),
+            link: x.link, link_kalender: x.link_kalender
+        })
         .fetch_optional(&mut **executor).await?;
 
     return Ok(models::Station {
@@ -216,7 +220,8 @@ EXISTS ( 									-- mit denen mindestens ein dokument assoziiert ist, dass hier
 
 pub async fn ausschusssitzung_by_id(id: i32,  tx: &mut sqlx::PgTransaction<'_>) -> Result<models::Ausschusssitzung> {
     let scaffold =  sqlx::query!(
-        "SELECT a.api_id, a.public, a.termin, p.value as plm, g.name as grname, g.wp FROM ausschusssitzung a
+        "SELECT a.api_id, a.public, a.termin, p.value as plm, a.link as as_link, a.titel, a.nummer,
+        g.name as grname, g.wp, g.link as gr_link, g.link_kalender FROM ausschusssitzung a
         INNER JOIN gremium g ON g.id = a.gr_id
         INNER JOIN parlament p ON p.id = g.parl WHERE a.id = $1"
         , id
@@ -243,10 +248,15 @@ pub async fn ausschusssitzung_by_id(id: i32,  tx: &mut sqlx::PgTransaction<'_>) 
             termin: scaffold.termin,
             ausschuss: models::Gremium {
                 name: scaffold.grname,
+                link: scaffold.gr_link,
+                link_kalender: scaffold.link_kalender,
                 wahlperiode: scaffold.wp as u32,
                 parlament: models::Parlament::from_str(&scaffold.plm).unwrap()
             },
             tops,
+            link: scaffold.as_link,
+            nummer: scaffold.nummer as u32,
+            titel: scaffold.titel,
             experten: as_option(experten)
         }
     )

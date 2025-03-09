@@ -39,8 +39,9 @@ pub async fn execute_merge_ass(
 ) -> Result<()> {
     let db_id = candidate;
     sqlx::query!("UPDATE ausschusssitzung SET 
-    termin = $1, public = $2 WHERE id = $3", 
-    model.termin, model.public, db_id)
+    termin = $1, public = $2, link = $3, nummer = $4, titel=$5
+    WHERE id = $6", 
+    model.termin, model.public, model.link, model.nummer as i32, model.titel, db_id)
     .execute(&mut **tx).await?;
     if model.tops.is_empty(){
         return Ok(())

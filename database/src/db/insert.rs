@@ -169,8 +169,8 @@ pub async fn insert_ausschusssitzung(ass: &models::Ausschusssitzung, tx: &mut Pg
     // gremium insert or fetch
     let gr_id = insert_or_retrieve_gremium(&ass.ausschuss, tx, srv).await?;
     // master insert
-    let id = sqlx::query!("INSERT INTO ausschusssitzung (api_id, termin, public, gr_id)
-    VALUES ($1, $2, $3, $4) RETURNING id", api_id, ass.termin, ass.public, gr_id)
+    let id = sqlx::query!("INSERT INTO ausschusssitzung (api_id, termin, public, gr_id, link, nummer, titel)
+    VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id", api_id, ass.termin, ass.public, gr_id, ass.link, ass.nummer as i32, ass.titel)
     .map(|r|r.id).fetch_one(&mut **tx).await?;
     // insert tops
     let mut tids = vec![];
@@ -222,20 +222,23 @@ pub async fn insert_or_retrieve_gremium(gr: &models::Gremium, tx: &mut PgTransac
     }
     
     let similarity = 
-    sqlx::query!("SELECT g.wp,g.name, SIMILARITY(name, $1) as sim FROM gremium g, parlament p
+    sqlx::query!("SELECT g.wp,g.name, SIMILARITY(name, $1) as sim, g.link, g.link_kalender
+    FROM gremium g, parlament p
     WHERE SIMILARITY(name, $1) > 0.66 AND 
     g.parl = p.id AND p.value = $2",
     gr.name, gr.parlament.to_string())
     .map(|r| (r.sim.unwrap(), models::Gremium{
+        link: r.link,
+        link_kalender: r.link_kalender,
         parlament: gr.parlament,
         wahlperiode: r.wp as u32,
         name: r.name}))
     .fetch_all(&mut **tx).await?;
     notify_new_enum_entry(gr, similarity, srv)?;
-    let id = sqlx::query!("INSERT INTO gremium(name, parl, wp) VALUES 
-    ($1, (SELECT id FROM parlament p WHERE p.value = $2), $3) 
+    let id = sqlx::query!("INSERT INTO gremium(name, parl, wp, link, link_kalender) VALUES 
+    ($1, (SELECT id FROM parlament p WHERE p.value = $2), $3, $4, $5) 
     RETURNING gremium.id",
-    gr.name, gr.parlament.to_string(), gr.wahlperiode as i32)
+    gr.name, gr.parlament.to_string(), gr.wahlperiode as i32, gr.link, gr.link_kalender)
     .map(|r|r.id).fetch_one(&mut **tx).await?;
     Ok(id)
 }

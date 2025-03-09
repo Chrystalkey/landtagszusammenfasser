@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO gremium(name, parl, wp, link, link_kalender) VALUES \n    ($1, (SELECT id FROM parlament p WHERE p.value = $2), $3, $4, $5) \n    RETURNING gremium.id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Text",
+        "Int4",
+        "Varchar",
+        "Varchar"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "b7cfffc1ec3e511057c62623efbe1a7fbf87279411f5e6bcb050838c3b375735"
+}

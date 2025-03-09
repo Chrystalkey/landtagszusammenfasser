@@ -4,7 +4,10 @@ CREATE TABLE gremium(
     parl INTEGER NOT NULL REFERENCES parlament(id),
     name VARCHAR NOT NULL,
     wp INTEGER NOT NULL,
-    CONSTRAINT unique_combo UNIQUE (parl, name)
+    link VARCHAR,
+    link_kalender VARCHAR,
+
+    CONSTRAINT unique_combo UNIQUE (parl, name, wp)
 );
 
 CREATE TABLE dokument (

@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE ausschusssitzung SET \n    termin = $1, public = $2, link = $3, nummer = $4, titel=$5\n    WHERE id = $6",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Timestamptz",
+        "Bool",
+        "Varchar",
+        "Int4",
+        "Varchar",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "758ef6f9a474a55d936592dad0a00c6c42b0e1b09b7aaf8070e8ed99e96fc363"
+}
