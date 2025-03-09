@@ -11,13 +11,13 @@ pub async fn vorgang_by_id(id: i32, executor: &mut sqlx::PgTransaction<'_>) -> R
         WHERE v.id = $1", id)
     .fetch_one(&mut **executor).await?;
 
-    let links = sqlx::query!("SELECT link FROM rel_vorgang_links WHERE vg_id = $1", id)
+    let links = sqlx::query!("SELECT link FROM rel_vorgang_links WHERE vg_id = $1 ORDER BY link ASC", id)
     .map(|row| row.link).fetch_all(&mut **executor).await?;
 
-    let init_inst = sqlx::query!("SELECT initiator FROM rel_vorgang_init WHERE vg_id = $1", id)
+    let init_inst = sqlx::query!("SELECT initiator FROM rel_vorgang_init WHERE vg_id = $1 ORDER BY initiator ASC", id)
     .map(|row| row.initiator).fetch_all(&mut **executor).await?;
     
-    let init_prsn = sqlx::query!("SELECT initiator FROM rel_vorgang_init_person WHERE vg_id = $1", id)
+    let init_prsn = sqlx::query!("SELECT initiator FROM rel_vorgang_init_person WHERE vg_id = $1 ORDER BY initiator ASC", id)
     .map(|row| row.initiator).fetch_all(&mut **executor).await?;
 
     let ids = sqlx::query!("
@@ -39,6 +39,7 @@ pub async fn vorgang_by_id(id: i32, executor: &mut sqlx::PgTransaction<'_>) -> R
     for sid in station_ids {
         stationen.push(station_by_id(sid, executor).await?);
     }
+    stationen.sort_by(|a,b| a.start_zeitpunkt.cmp(&b.start_zeitpunkt));
 
     Ok(models::Vorgang {
         api_id: pre_vg.api_id,
@@ -63,17 +64,26 @@ pub async fn station_by_id(id: i32,  executor:&mut sqlx::PgTransaction<'_>) -> R
     for did in dokids {
         doks.push(dokument_by_id(did, executor).await?.into());
     }
+    doks.sort_by(|a,b|
+        match (a, b) {
+            (models::DokRef::Dokument(a), models::DokRef::Dokument(b)) => {
+                a.link.cmp(&b.link)
+            },
+            _ =>{unreachable!("If this is the case document extraction failed")}
+        }
+    );
     let stlid = sqlx::query!("SELECT id FROM stellungnahme WHERE stat_id = $1", id)
     .map(|r|r.id).fetch_all(&mut **executor).await?;
     let mut stellungnahmen = Vec::with_capacity(stlid.len());
     for sid in stlid {
         stellungnahmen.push(stellungnahme_by_id(sid, executor).await?);
     }
+    stellungnahmen.sort_by(|a,b| a.dokument.link.cmp(&b.dokument.link));
     let sw = sqlx::query!(
         "SELECT DISTINCT(value) FROM rel_station_schlagwort r
         LEFT JOIN schlagwort sw ON sw.id = r.sw_id
         WHERE r.stat_id = $1
-        ORDER BY value DESC", id)
+        ORDER BY value ASC", id)
     .map(|sw| sw.value).fetch_all(&mut **executor).await?;
     
     let bet_ges = sqlx::query!("SELECT gesetz FROM rel_station_gesetz WHERE stat_id = $1", id)
@@ -134,11 +144,12 @@ pub async fn dokument_by_id(id: i32,  executor:&mut sqlx::PgTransaction<'_>) -> 
         "SELECT DISTINCT value 
         FROM rel_dok_schlagwort r
         LEFT JOIN schlagwort sw ON sw.id = r.sw_id
-        WHERE dok_id = $1", id)
+        WHERE dok_id = $1
+        ORDER BY value ASC", id)
         .map(|r|r.value).fetch_all(&mut **executor).await?;
-    let autoren = sqlx::query!("SELECT autor FROM rel_dok_autor WHERE dok_id = $1", id)
+    let autoren = sqlx::query!("SELECT autor FROM rel_dok_autor WHERE dok_id = $1 ORDER BY autor ASC", id)
         .map(|r|r.autor).fetch_all(&mut **executor).await?;
-    let autorpersonen = sqlx::query!("SELECT autor FROM rel_dok_autorperson WHERE dok_id = $1", id)
+    let autorpersonen = sqlx::query!("SELECT autor FROM rel_dok_autorperson WHERE dok_id = $1 ORDER BY autor ASC", id)
         .map(|r|r.autor).fetch_all(&mut **executor).await?;
 
     return Ok(models::Dokument {
@@ -172,6 +183,14 @@ pub async fn top_by_id(id: i32, tx: &mut sqlx::PgTransaction<'_>) -> Result<mode
     for did in dids{
         doks.push(dokument_by_id(did, tx).await?.into());
     }
+    doks.sort_by(|a,b|
+        match (a, b) {
+            (models::DokRef::Dokument(a), models::DokRef::Dokument(b)) => {
+                a.link.cmp(&b.link)
+            },
+            _ =>{unreachable!("If this is the case document extraction failed")}
+        }
+    );
     // vgs
     let vgs = sqlx::query!("
     SELECT DISTINCT(v.api_id) FROM station s    -- alle vorgänge von stationen, 
@@ -182,7 +201,8 @@ EXISTS ( 									-- mit denen mindestens ein dokument assoziiert ist, dass hier
 	SELECT 1 FROM rel_station_dokument rsd 
 	INNER JOIN tops_doks td ON td.dok_id = rsd.dok_id
 	WHERE td.top_id = $1
-)", id).map(|r|r.api_id).fetch_all(&mut **tx).await?;
+)
+    ORDER BY api_id ASC", id).map(|r|r.api_id).fetch_all(&mut **tx).await?;
 
     return Ok(
         models::Top{
@@ -202,15 +222,17 @@ pub async fn ausschusssitzung_by_id(id: i32,  tx: &mut sqlx::PgTransaction<'_>) 
         , id
     ).fetch_one(&mut **tx).await?;
     // tops
-    let topids = sqlx::query!("SELECT top.id FROM rel_ass_tops rat INNER JOIN top ON top.id = rat.top_id WHERE rat.ass_id = $1", id)
+    let topids = sqlx::query!("
+    SELECT top.id FROM rel_ass_tops rat INNER JOIN top ON top.id = rat.top_id WHERE rat.ass_id = $1", id)
     .map(|r|r.id).fetch_all(&mut **tx).await?;
     let mut tops = vec![];
     for tid in topids {
         tops.push(top_by_id(tid, tx).await?);
     }
+    tops.sort_by(|a,b| a.titel.cmp(&b.titel));
     // experten
     let experten = sqlx::query!("SELECT e.name, e.fachgebiet FROM rel_ass_experten rae 
-    INNER JOIN experte e ON rae.ass_id = $1", id)
+    INNER JOIN experte e ON rae.ass_id = $1 ORDER BY e.name ASC, e.fachgebiet ASC", id)
     .map(|r| models::Experte{fachgebiet: r.fachgebiet, name: r.name})
     .fetch_all(&mut **tx).await?;
 
@@ -255,8 +277,8 @@ pub async fn vorgang_by_parameter(
         )
         SELECT * FROM pre_table WHERE
         lastmod > CAST(COALESCE($3, '1940-01-01T20:20:20Z') as TIMESTAMPTZ)
-        OFFSET COALESCE($4, 0)
-        LIMIT COALESCE($5, 64)",
+        ORDER BY pre_table.lastmod ASC
+        OFFSET COALESCE($4, 0) LIMIT COALESCE($5, 64)",
     params.wp,
     params.vgtyp.map(|x|x.to_string()),
     hparam.if_modified_since.map(|x|x.to_rfc3339()),

@@ -123,24 +123,7 @@ pub async fn insert_station(
         ).execute(&mut **tx).await?;
     }
     // schlagworte
-    sqlx::query!("
-        WITH 
-        existing_ids AS (SELECT DISTINCT id FROM schlagwort WHERE value = ANY($1::text[])),
-        inserted AS(
-            INSERT INTO schlagwort(value) 
-            SELECT DISTINCT(key) FROM UNNEST($1::text[]) as key
-            ON CONFLICT DO NOTHING
-            RETURNING id
-        ),
-        allofthem AS(
-            SELECT id FROM inserted UNION SELECT id FROM existing_ids
-        )
-
-        INSERT INTO rel_station_schlagwort(stat_id, sw_id)
-        SELECT $2, allofthem.id FROM allofthem",
-        stat.schlagworte.as_ref().map(|x|&x[..]), stat_id
-    )
-    .execute(&mut **tx).await?;
+    insert_station_sw( stat_id, stat.schlagworte.unwrap_or(vec![]), tx).await?;
 
     return Ok(stat_id);
 }
@@ -166,23 +149,7 @@ pub async fn insert_dokument(
     ).map(|r|r.id).fetch_one(&mut **tx).await?;
 
     // Schlagworte
-    sqlx::query!("
-        WITH existing_ids AS (SELECT DISTINCT id FROM schlagwort WHERE value = ANY($1::text[])),
-        inserted AS(
-            INSERT INTO schlagwort(value) 
-            SELECT DISTINCT(key) FROM UNNEST($1::text[]) as key
-            ON CONFLICT DO NOTHING
-            RETURNING id
-        ),
-        allofthem AS(
-            SELECT id FROM inserted UNION SELECT id FROM existing_ids
-        )
-
-        INSERT INTO rel_dok_schlagwort(dok_id, sw_id)
-        SELECT $2, allofthem.id FROM allofthem",
-        dok.schlagworte.as_ref().map(|x|&x[..]), did
-    )
-    .execute(&mut **tx).await?;
+    insert_dok_sw(did, dok.schlagworte.unwrap_or(vec![]), tx).await?;
 
     // authoren
     sqlx::query!("INSERT INTO rel_dok_autor(dok_id, autor) 
@@ -301,4 +268,46 @@ pub async fn insert_or_retrieve_dok(dr: &models::DokRef, tx: &mut PgTransaction<
             .map(|r|r.id).fetch_one(&mut **tx).await?)
         }
     }
+}
+pub async fn insert_station_sw(sid: i32, sw: Vec<String>, tx: &mut PgTransaction<'_>) -> Result<()>{
+    let sw: Vec<_> = sw.iter().map(|s| s.trim().to_lowercase()).collect();
+    sqlx::query!("
+    WITH 
+    existing_ids AS (SELECT DISTINCT id FROM schlagwort WHERE value = ANY($1::text[])),
+    inserted AS (
+        INSERT INTO schlagwort(value) 
+        SELECT DISTINCT(key) FROM UNNEST($1::text[]) as key
+        ON CONFLICT DO NOTHING
+        RETURNING id
+    ),
+    allofthem AS(
+        SELECT id FROM inserted UNION SELECT id FROM existing_ids
+    )
+
+    INSERT INTO rel_station_schlagwort(stat_id, sw_id)
+    SELECT $2, allofthem.id FROM allofthem
+    ON CONFLICT DO NOTHING", &sw[..], sid)
+    .execute(&mut **tx).await?;
+    Ok(())
+}
+pub async fn insert_dok_sw(did: i32, sw: Vec<String>, tx: &mut PgTransaction<'_>) -> Result<()>{
+    let sw: Vec<_> = sw.iter().map(|s| s.trim().to_lowercase()).collect();
+    sqlx::query!("
+    WITH 
+    existing_ids AS (SELECT DISTINCT id FROM schlagwort WHERE value = ANY($1::text[])),
+    inserted AS (
+        INSERT INTO schlagwort(value) 
+        SELECT DISTINCT(key) FROM UNNEST($1::text[]) as key
+        ON CONFLICT DO NOTHING
+        RETURNING id
+    ),
+    allofthem AS(
+        SELECT id FROM inserted UNION SELECT id FROM existing_ids
+    )
+
+    INSERT INTO rel_dok_schlagwort(dok_id, sw_id)
+    SELECT $2, allofthem.id FROM allofthem
+    ON CONFLICT DO NOTHING", &sw[..], did)
+    .execute(&mut **tx).await?;
+    Ok(())
 }

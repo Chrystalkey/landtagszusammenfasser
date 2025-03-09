@@ -68,7 +68,7 @@
             {
               "dokument": {
                 "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa4",
-                "drucksnr": "string",
+                "drucksnr": null,
                 "typ": "entwurf",
                 "titel": "string",
                 "kurztitel": "string",
@@ -99,10 +99,10 @@
     }],
     "vorgang": {
       "api_id": "123e4567-e89b-12d3-a456-426614174001",
-      "titel": "strong",
-      "kurztitel": "strang",
+      "titel": "stringa",
+      "kurztitel": "stringa",
       "wahlperiode": 0,
-      "verfassungsaendernd": true,
+      "verfassungsaendernd": false,
       "initiatoren": [
         "Staatsministerium für Justiz"
       ],
@@ -117,7 +117,7 @@
         }
       ],
       "links": [
-        "string"
+        "strong"
       ],
       "stationen": [
         {
@@ -166,7 +166,7 @@
             {
               "dokument": {
                 "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa4",
-                "drucksnr": "string",
+                "drucksnr": null,
                 "typ": "entwurf",
                 "titel": "string",
                 "kurztitel": "string",
@@ -197,10 +197,10 @@
     },
     "result": [{
       "api_id": "123e4567-e89b-12d3-a456-426614174001",
-      "titel": "strong",
-      "kurztitel": "strang",
+      "titel": "stringa",
+      "kurztitel": "stringa",
       "wahlperiode": 0,
-      "verfassungsaendernd": true,
+      "verfassungsaendernd": false,
       "initiatoren": [
         "Staatsministerium für Justiz"
       ],
@@ -215,7 +215,7 @@
         }
       ],
       "links": [
-        "string"
+        "string", "strong"
       ],
       "stationen": [
         {
@@ -264,7 +264,7 @@
             {
               "dokument": {
                 "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa4",
-                "drucksnr": "string",
+                "drucksnr": null,
                 "typ": "entwurf",
                 "titel": "string",
                 "kurztitel": "string",

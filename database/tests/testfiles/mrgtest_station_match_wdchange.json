@@ -117,11 +117,11 @@
         }
       ],
       "links": [
-        "strong"
+        "string"
       ],
       "stationen": [
         {
-          "titel": "string",
+          "titel": "stringa",
           "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa2",
           "start_zeitpunkt": "2025-03-03T14:39:36.022Z",
           "letztes_update": "2025-03-03T14:39:36.022Z",
@@ -157,7 +157,7 @@
           "betroffene_texte": [
             "§ 1 Abs. 1 Satz 1"
           ],
-          "link": "string",
+          "link": "strong",
           "parlament": "BT",
           "schlagworte": [
             "string"
@@ -191,7 +191,7 @@
             }
           ],
           "typ": "preparl-regent",
-          "trojanergefahr": 10
+          "trojanergefahr": 2
         }
       ]
     },
@@ -219,7 +219,7 @@
       ],
       "stationen": [
         {
-          "titel": "string",
+          "titel": "stringa",
           "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa2",
           "start_zeitpunkt": "2025-03-03T14:39:36.022Z",
           "letztes_update": "2025-03-03T14:39:36.022Z",
@@ -255,7 +255,7 @@
           "betroffene_texte": [
             "§ 1 Abs. 1 Satz 1"
           ],
-          "link": "string",
+          "link": "strong",
           "parlament": "BT",
           "schlagworte": [
             "string"
@@ -289,9 +289,8 @@
             }
           ],
           "typ": "preparl-regent",
-          "trojanergefahr": 10
+          "trojanergefahr": 2
         }
       ]
-    }],
-    "shouldfail": true
+    }]
 }

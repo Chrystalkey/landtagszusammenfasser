@@ -29,9 +29,9 @@ pub async fn vorgang_merge_candidates(
     let ident_t: Vec<_> = model.ids.as_ref().unwrap_or(&vec![]).iter().map(|x|x.id.clone()).collect();
     let identt_t: Vec<_> = model.ids.as_ref().unwrap_or(&vec![]).iter().map(|x| srv.guard_ts(x.typ, model.api_id, obj).unwrap()).collect();
     let initds: Vec<_> = model.stationen.iter()
-    .filter(|s| s.typ == models::Stationstyp::ParlInitiativ)
+    .filter(|&s| s.typ == models::Stationstyp::ParlInitiativ)
     .map(|s| 
-        s.dokumente.iter().filter(|d| if let models::DokRef::Dokument(d) = d{
+        s.dokumente.iter().filter(|&d| if let models::DokRef::Dokument(d) = d{
             d.typ == models::Doktyp::Drucksache && d.vorwort.is_some()
         }else{false})
         .map(|d|if let models::DokRef::Dokument(d) = d{d.vorwort.clone().unwrap()}else{unreachable!()})
@@ -106,11 +106,10 @@ pub async fn station_merge_candidates(model: &models::Station, vorgang: i32, exe
     WHERE s.api_id = $1 OR
     (s.vg_id = $2 AND st.value = $3 AND 
     EXISTS (SELECT * FROM rel_station_dokument rsd
-	INNER JOIN dokument d ON rsd.dok_id=d.id
-	WHERE rsd.stat_id = s.id
-	AND d.hash IN (SELECT str FROM UNNEST($4::text[]) blub(str))
-	)
-	)", model.api_id, vorgang, srv.guard_ts(model.typ, api_id, obj)?, &dok_hash[..])
+        INNER JOIN dokument d ON rsd.dok_id=d.id
+        WHERE rsd.stat_id = s.id
+        AND d.hash IN (SELECT str FROM UNNEST($4::text[]) blub(str))
+	))", model.api_id, vorgang, srv.guard_ts(model.typ, api_id, obj)?, &dok_hash[..])
     .fetch_all(executor).await?;
     tracing::debug!("Found {} matches for Station with api_id: {}",result.len(), api_id);
 
@@ -169,24 +168,7 @@ pub async fn execute_merge_dokument (
         model.letzte_modifikation, model.link, model.hash
     ).execute(&mut **tx).await?;
     // schlagworte
-    sqlx::query!("
-        WITH 
-        existing_ids AS (SELECT DISTINCT id FROM schlagwort WHERE value = ANY($1::text[])),
-        inserted AS(
-            INSERT INTO schlagwort(value) 
-            SELECT DISTINCT(key) FROM UNNEST($1::text[]) as key
-            ON CONFLICT DO NOTHING
-            RETURNING id
-        ),
-        allofthem AS(
-            SELECT id FROM inserted UNION SELECT id FROM existing_ids
-        )
-
-        INSERT INTO rel_dok_schlagwort(dok_id, sw_id)
-        SELECT $2, allofthem.id FROM allofthem",
-        model.schlagworte.as_ref().map(|x|&x[..]), db_id
-    )
-    .execute(&mut **tx).await?;
+    insert::insert_dok_sw(db_id, model.schlagworte.clone().unwrap_or(vec![]), tx).await?;
     // autoren
     sqlx::query!("INSERT INTO rel_dok_autor(dok_id, autor)
     SELECT $1, blub FROM UNNEST($2::text[]) as blub ON CONFLICT DO NOTHING", db_id,
@@ -209,10 +191,7 @@ pub async fn execute_merge_station (
     .map(|x| x.api_id).fetch_one(&mut **tx).await?;
     // pre-master updates
     let gr_id = if let Some(gremium) = &model.gremium {
-        let id = sqlx::query!("INSERT INTO gremium(name, parl) 
-        VALUES ($1, (SELECT id FROM parlament WHERE value=$2)) 
-        ON CONFLICT(name, parl) DO UPDATE SET name=$1 RETURNING id",
-        gremium.name, gremium.parlament.to_string()).map(|r|r.id).fetch_one(&mut **tx).await?;
+        let id = insert::insert_or_retrieve_gremium(gremium, tx, srv).await?;
         Some(id)
     }else {
         None
@@ -223,13 +202,15 @@ pub async fn execute_merge_station (
         p_id = (SELECT id FROM parlament WHERE value = $3),
         typ = (SELECT id FROM stationstyp WHERE value = $4),
         titel = COALESCE($5, titel), 
-        start_zeitpunkt = $6, letztes_update = NOW(),
-        trojanergefahr = COALESCE($7, trojanergefahr),
-        link = COALESCE($8, link)
+        start_zeitpunkt = $6, letztes_update = COALESCE($7, NOW()),
+        trojanergefahr = COALESCE($8, trojanergefahr),
+        link = COALESCE($9, link)
         WHERE station.id = $1", 
         db_id, gr_id, model.parlament.to_string(),
         srv.guard_ts(model.typ, sapi, obj)?,
-        model.titel, model.start_zeitpunkt, model.trojanergefahr.map(|x| x as i32), model.link
+        model.titel, model.start_zeitpunkt, 
+        model.letztes_update,
+        model.trojanergefahr.map(|x| x as i32), model.link
         ).execute(&mut **tx).await?;
     // betroffene Texte
     sqlx::query!(
@@ -240,24 +221,8 @@ pub async fn execute_merge_station (
     )
     .execute(&mut **tx).await?;
     // schlagworte
-    sqlx::query!("
-    WITH 
-    existing_ids AS (SELECT DISTINCT id FROM schlagwort WHERE value = ANY($1::text[])),
-    inserted AS (
-        INSERT INTO schlagwort(value) 
-        SELECT DISTINCT(key) FROM UNNEST($1::text[]) as key
-        ON CONFLICT DO NOTHING
-        RETURNING id
-    ),
-    allofthem AS(
-        SELECT id FROM inserted UNION SELECT id FROM existing_ids
-    )
-
-    INSERT INTO rel_station_schlagwort(stat_id, sw_id)
-    SELECT $2, allofthem.id FROM allofthem",
-    model.schlagworte.as_ref().map(|x|&x[..]), db_id
-    )
-    .execute(&mut **tx).await?;
+    
+    insert::insert_station_sw( db_id, model.schlagworte.clone().unwrap_or(vec![]), tx).await?;
     // dokumente
     let mut insert_ids = vec![];
     for dok in model.dokumente.iter(){
@@ -292,7 +257,7 @@ pub async fn execute_merge_station (
                         .map(|r| r.api_id)
                         .fetch_all(&mut **tx).await?;
                         notify_ambiguous_match(api_ids, &**dok, "execute merge station.dokumente", srv)?;
-                        return Err(DataValidationError::AmbiguousMatch { message: format!("Ambiguous match, see notification") }.into());
+                        return Err(DataValidationError::AmbiguousMatch { message: format!("Ambiguous document match(station), see notification") }.into());
                     }
                 }
             }
@@ -321,7 +286,7 @@ pub async fn execute_merge_station (
                         .map(|r| r.api_id)
                         .fetch_all(&mut **tx).await?;
                 notify_ambiguous_match(api_ids, stln, "execute merge station.stellungnahmen", srv)?;
-                return Err(DataValidationError::AmbiguousMatch { message: format!("Ambiguous match, see notification") }.into());
+                return Err(DataValidationError::AmbiguousMatch { message: format!("Ambiguous document match(Stln), see notification") }.into());
             }
         };
     }
@@ -369,7 +334,7 @@ pub async fn execute_merge_vorgang (
 
     let identt_list = model.ids.as_ref().map(|x|x.iter()
     .map(|el| srv.guard_ts(el.typ, model.api_id, obj).unwrap()).collect::<Vec<_>>());
-
+    
     sqlx::query!("INSERT INTO rel_vg_ident (vg_id, typ, identifikator)
         SELECT $1, vit.id, ident FROM 
         UNNEST($2::text[], $3::text[]) blub(typ_value, ident)
@@ -377,6 +342,20 @@ pub async fn execute_merge_vorgang (
         ON CONFLICT DO NOTHING
         ", db_id, identt_list.as_ref().map(|x| &x[..]), ident_list.as_ref().map(|x| &x[..]))
         .execute(&mut **tx).await?;
+    
+    for stat in &model.stationen{
+        match station_merge_candidates(stat, db_id, &mut **tx, srv).await?{
+            MergeState::NoMatch => {insert::insert_station(stat.clone(), db_id, tx, srv).await?;},
+            MergeState::OneMatch(merge_station) => {execute_merge_station(stat, db_id, tx, srv).await?},
+            MergeState::AmbiguousMatch(matches) => {
+                let mids = sqlx::query!("SELECT api_id FROM vorgang WHERE id = ANY($1::int4[]);", &matches[..])
+                .map(|r|r.api_id).fetch_all(&mut **tx).await?;
+                notify_ambiguous_match(mids, stat, "exec_merge_vorgang", srv);
+            }
+        }
+    }
+
+    
     tracing::info!("Merging of Vg Successful: Merged `{}`(ext) with  `{}`(db)", model.api_id, vapi);
     Ok(())
 }
@@ -415,4 +394,186 @@ pub async fn run_integration(model: &models::Vorgang, server: &LTZFServer) -> Re
     }
     tx.commit().await?;
     Ok(())
+}
+mod scenariotest{
+    #![cfg(test)]
+    use std::collections::HashSet;
+    use futures::FutureExt;
+    use similar::ChangeTag;
+    use std::panic::AssertUnwindSafe;
+    use crate::LTZFServer;
+
+    use openapi::models::{self, VorgangGetHeaderParams, VorgangGetQueryParams};
+    use serde::Deserialize;
+
+    #[allow(unused)]
+    use tracing::{info, error, warn, debug};
+
+    fn xor(one: bool, two: bool) -> bool{
+        return (one &&two) || (!one && !two);
+    }
+    #[allow(unused)]
+    struct TestScenario<'obj>{
+        name: &'obj str,
+        context: Vec<models::Vorgang>,
+        vorgang: models::Vorgang,
+        result: Vec<models::Vorgang>,
+        shouldfail: bool,
+        server: LTZFServer,
+        span: tracing::Span,
+    }
+    #[derive(Deserialize)]
+    struct PTS {
+        context: Vec<models::Vorgang>,
+        vorgang: models::Vorgang,
+        result: Vec<models::Vorgang>,
+        #[serde(default = "default_bool")]
+        shouldfail: bool,
+    }
+    fn default_bool()->bool{ false }
+    impl<'obj> TestScenario<'obj>{
+        async fn new(path: &'obj std::path::Path, server: &LTZFServer) -> Self {
+            let name = path.file_stem().unwrap().to_str().unwrap();
+            info!("Creating Merge Test Scenario with name: {}", name);
+            let span = tracing::span!(tracing::Level::INFO, "Mergetest", name = name);
+            let dropquery = format!("DROP DATABASE IF EXISTS testing_{} WITH (FORCE);", name);
+            let query = format!("CREATE DATABASE testing_{} WITH OWNER 'ltzf-user';", name);
+            sqlx::query(&dropquery).execute(&server.sqlx_db).await.unwrap();
+            sqlx::query(&query).execute(&server.sqlx_db).await.unwrap();
+            let test_db_url = std::env::var("DATABASE_URL").unwrap()
+                .replace("5432/ltzf", &format!("5432/testing_{}", name));
+            let pts: PTS = serde_json::from_reader(std::fs::File::open(path).unwrap()).unwrap();
+            let server = LTZFServer {
+                config: crate::Configuration{
+                    ..Default::default()
+                },
+                mailer: None,
+                sqlx_db: sqlx::postgres::PgPoolOptions::new()
+                .max_connections(5)
+                .connect(&test_db_url).await.unwrap()
+            };
+            sqlx::migrate!().run(&server.sqlx_db).await.unwrap();
+            for vorgang in pts.context.iter() {
+                crate::db::merge::vorgang::run_integration(vorgang, &server).await.unwrap()
+            }
+            Self {
+                name,
+                context: pts.context,
+                vorgang: pts.vorgang,
+                result: pts.result,
+                shouldfail: pts.shouldfail,
+                span,
+                server,
+            }
+        }
+        async fn push(&self) {
+            info!("Running main Merge test");
+            crate::db::merge::vorgang::run_integration(&self.vorgang, &self.server).await.unwrap();
+        }
+        async fn check(&self) {
+            info!("Checking for Correctness");
+            let paramock = VorgangGetQueryParams{
+                vgtyp: None,
+                wp: None,
+                initiator_contains_any: None, 
+                limit: None,
+                offset: None};
+            let hparamock = VorgangGetHeaderParams{
+                if_modified_since: None,
+            };
+            let mut tx = self.server.sqlx_db.begin().await.unwrap();
+            let db_vorgangs = crate::db::retrieve::vorgang_by_parameter(
+                paramock, hparamock, &mut tx).await.unwrap();
+                
+            tx.rollback().await.unwrap();
+            for expected in self.result.iter() {
+                let mut found = false;
+                for db_out in db_vorgangs.iter() {
+                    if db_out == expected {
+                        found = true;
+                        break;
+                    }else if xor(db_out.api_id != expected.api_id, self.shouldfail) {
+                        std::fs::write(format!("tests/{}_dumpa.json", self.name), 
+                        dump_objects(&expected, &db_out)).unwrap();
+                        assert!(false, "Differing object have the same api id: `{}`. Difference:\n{}",
+                            db_out.api_id, crate::db::merge::display_strdiff(
+                                &serde_json::to_string_pretty(expected).unwrap(),
+                                &serde_json::to_string_pretty(db_out).unwrap())
+                        );
+                    }
+                }
+                if xor(found, self.shouldfail) {
+                    std::fs::write(format!("tests/{}_dump.json", self.name), 
+                    serde_json::to_string_pretty(expected).unwrap()).unwrap();
+                }
+                assert!(found, 
+                    "Expected to find Vorgang with api_id `{}`, but was not present in the output set, which contained: {:?}.\n\nDetails(Output Set):\n{:#?}", 
+                expected.api_id, 
+                self.result.iter().map(|e|e.api_id).collect::<Vec<uuid::Uuid>>(),
+                db_vorgangs.iter().map(|v|
+                {println!("{}", serde_json::to_string_pretty(v).unwrap());""})
+                .collect::<Vec<_>>()
+                );
+            }
+            
+            assert!(self.result.len()==db_vorgangs.len(), 
+            "Mismatch between the length of the expected set and the output set: {} (e) vs {} (o)\nOutput Set: {:#?}", 
+            self.result.len(), db_vorgangs.len(), db_vorgangs);
+
+        }
+        async fn run(self) {
+            self.push().await;
+            self.check().await;
+        }
+    }
+
+    #[tokio::test]
+    async fn test_merge_scenarios() {
+        // set up database connection and clear it
+        info!("Setting up Test Database Connection");
+        let test_db_url = std::env::var("DATABASE_URL").unwrap();
+        let master_server = LTZFServer{
+            config: crate::Configuration{
+                ..Default::default()
+            },
+            mailer: None,
+            sqlx_db: sqlx::postgres::PgPoolOptions::new()
+            .max_connections(5)
+            .connect(&test_db_url).await.unwrap()
+        };
+
+        for path in std::fs::read_dir("tests/testfiles").unwrap() {
+            if let Ok(path) = path {
+                info!("Executing Scenario: {}", path.path().display());
+                let ptb = path.path();
+                let name = ptb.file_stem().unwrap().to_str().unwrap();
+
+                let mut shouldfail = false;
+                let scenario = TestScenario::new(&ptb, &master_server).await;
+                let result = AssertUnwindSafe(async {
+                    shouldfail = scenario.shouldfail;
+                    scenario.run().await
+                }
+                ).catch_unwind().await;
+                
+                if result.is_ok() == shouldfail {
+                    assert!(false, "The Scenario {} did not behave as expected: {}", 
+                    name,
+                    if shouldfail{"Succeeded, but should fail"}else{"Failed but should succeed"}
+                    );
+                }else{
+                    let query = format!("DROP DATABASE testing_{}", name);
+                    sqlx::query(&query)
+                    .execute(&master_server.sqlx_db).await.unwrap();
+                }
+            }else{
+                error!("Error: {:?}", path.unwrap_err())
+            }
+        }
+    }
+    fn dump_objects<T: serde::Serialize, S: serde::Serialize>(expected: &T, actual: &S) -> String {
+        format!("{{ \"expected-object\" : {},\n\"actual-object\" : {}}}", 
+        serde_json::to_string_pretty(expected).unwrap(), serde_json::to_string_pretty(actual).unwrap()
+        )
+    }
 }
