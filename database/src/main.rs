@@ -1,7 +1,8 @@
-pub(crate)mod api;
+#![forbid(unsafe_code)]
+pub(crate) mod api;
 pub(crate) mod db;
-pub(crate)mod error;
-pub(crate)mod utils;
+pub(crate) mod error;
+pub(crate) mod utils;
 
 use std::sync::Arc;
 
@@ -10,8 +11,8 @@ use sqlx;
 
 use error::LTZFError;
 use lettre::{transport::smtp::authentication::Credentials, SmtpTransport};
-use tokio::net::TcpListener;
 use sha256::digest;
+use tokio::net::TcpListener;
 
 pub use api::{LTZFArc, LTZFServer};
 pub use error::Result;
@@ -43,11 +44,15 @@ pub struct Configuration {
     #[arg(long, short)]
     pub config: Option<String>,
 
-    #[arg(long, env = "LTZF_KEYADDER_KEY", help = "The API Key that is used to add new Keys. This is not saved in the database.")]
+    #[arg(
+        long,
+        env = "LTZF_KEYADDER_KEY",
+        help = "The API Key that is used to add new Keys. This is not saved in the database."
+    )]
     pub keyadder_key: String,
 
-    #[arg(long, env = "MERGE_TITLE_SIMILARITY", default_value="0.8")]
-    pub merge_title_similarity : f32,
+    #[arg(long, env = "MERGE_TITLE_SIMILARITY", default_value = "0.8")]
+    pub merge_title_similarity: f32,
 }
 
 impl Configuration {
@@ -58,8 +63,12 @@ impl Configuration {
             || self.mail_sender.is_none()
             || self.mail_recipient.is_none()
         {
-            return Err(LTZFError::Infrastructure{
-                source: error::InfrastructureError::Configuration{message: "Mail Configuration is incomplete".into(), config: self.clone()}}); 
+            return Err(LTZFError::Infrastructure {
+                source: error::InfrastructureError::Configuration {
+                    message: "Mail Configuration is incomplete".into(),
+                    config: self.clone(),
+                },
+            });
         }
         let mailer = SmtpTransport::relay(self.mail_server.as_ref().unwrap().as_str())?
             .credentials(Credentials::new(
@@ -88,24 +97,33 @@ async fn main() -> Result<()> {
 
     tracing::debug!("Started Listener");
     let sqlx_db = sqlx::postgres::PgPoolOptions::new()
-    .max_connections(5)
-    .connect(&config.db_url).await?;
+        .max_connections(5)
+        .connect(&config.db_url)
+        .await?;
 
     let mut available = false;
     for i in 0..14 {
         let r = sqlx_db.acquire().await;
         match r {
-            Ok(_) => {available = true;break;}
-            Err(sqlx::Error::PoolTimedOut) => { tracing::warn!("Connection to Database `{}` timed out", config.db_url);
-            },
-            _ => {let _ = r?;}
+            Ok(_) => {
+                available = true;
+                break;
+            }
+            Err(sqlx::Error::PoolTimedOut) => {
+                tracing::warn!("Connection to Database `{}` timed out", config.db_url);
+            }
+            _ => {
+                let _ = r?;
+            }
         }
         let milliseconds = 2i32.pow(i) as u64;
         tracing::info!("DB Unavailable, Retrying in {} ms...", milliseconds);
         std::thread::sleep(std::time::Duration::from_millis(milliseconds));
-    };
+    }
     if !available {
-        return Err(LTZFError::Other{message: "Server Connection failed after 10 retries".into() });
+        return Err(LTZFError::Other {
+            message: "Server Connection failed after 10 retries".into(),
+        });
     }
     tracing::debug!("Started Database Pool");
     sqlx::migrate!().run(&sqlx_db).await?;
@@ -137,7 +155,7 @@ async fn main() -> Result<()> {
     tracing::debug!("Constructed Server State");
 
     // Init Axum router
-    let app  = openapi::server::new(state.clone());
+    let app = openapi::server::new(state.clone());
     tracing::debug!("Constructed Router");
     tracing::info!(
         "Starting Server on {}:{}",

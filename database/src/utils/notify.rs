@@ -1,35 +1,35 @@
-
-use lettre::{Message, Transport};
 use crate::{LTZFServer, Result};
+use lettre::{Message, Transport};
 use uuid::Uuid;
 
-impl LTZFServer{
+impl LTZFServer {
     /// guarded to String conversion
-    pub fn guard_ts<T: ToString>(&self, input: T, api_id : Uuid, object: &str) -> Result<String>{
+    pub fn guard_ts<T: ToString>(&self, input: T, api_id: Uuid, object: &str) -> Result<String> {
         let temp = input.to_string();
-        if temp == "sonstig"{
+        if temp == "sonstig" {
             notify_unknown_variant::<T>(api_id, object, self)?
         }
         return Ok(temp);
     }
 }
 
-pub fn notify_new_enum_entry<T: std::fmt::Debug+ToString>(
+pub fn notify_new_enum_entry<T: std::fmt::Debug + ToString>(
     new_entry: &T,
     similarity: Vec<(f32, T)>,
     server: &LTZFServer,
 ) -> Result<()> {
-    let subject = 
-    format!("Für Typ `{}` wurde ein neuer Eintrag `{}` erstellt. ",stringify!(T), new_entry.to_string());
-
-    let simstr = similarity.iter()
-    .map(|(p, t)| format!("{}: {}", p.to_string(), t.to_string()))
-    .fold("".to_string(), |a, n| format!("{a}\n{n}"));
-    
-    let body = format!(
-        "Es gibt {} ähnliche Einträge: {simstr}",
-        similarity.len()
+    let subject = format!(
+        "Für Typ `{}` wurde ein neuer Eintrag `{}` erstellt. ",
+        stringify!(T),
+        new_entry.to_string()
     );
+
+    let simstr = similarity
+        .iter()
+        .map(|(p, t)| format!("{}: {}", p.to_string(), t.to_string()))
+        .fold("".to_string(), |a, n| format!("{a}\n{n}"));
+
+    let body = format!("Es gibt {} ähnliche Einträge: {simstr}", similarity.len());
     send_email(subject, body, server)?;
     tracing::error!("Notify: New Enum Entry! Sending mails is not yet supported.");
 
@@ -39,25 +39,28 @@ pub fn notify_ambiguous_match<T: std::fmt::Debug>(
     api_ids: Vec<Uuid>,
     object: &T,
     at_loc: &str,
-    server: &LTZFServer
+    server: &LTZFServer,
 ) -> Result<()> {
-    let subject = format!("Mehrere Datensätze gefunden die neuem Objekt ähnlich sind. Bitte um Konfliktauflösung.");
+    let subject = format!(
+        "Mehrere Datensätze gefunden die neuem Objekt ähnlich sind. Bitte um Konfliktauflösung."
+    );
     let body = format!(
         "Während: `{}` wurde folgendes Objekt wurde hochgeladen: {:#?}.
-        Folgende Objekte in der Datenbank sind ähnlich: {:#?}", at_loc, object, api_ids
+        Folgende Objekte in der Datenbank sind ähnlich: {:#?}",
+        at_loc, object, api_ids
     );
     send_email(subject, body, server)?;
     tracing::error!("Notify: Ambiguous Match! Sending mails is not yet supported.");
     Ok(())
 }
 
-pub fn notify_unknown_variant<T>(
-    api_id: Uuid,
-    object: &str,
-    server: &LTZFServer,
-)->Result<()>{
-    let topic = format!("Für {} `{}` wurde `sonstig` angegeben als Wert für `{}`",
-    object, api_id, stringify!(T));
+pub fn notify_unknown_variant<T>(api_id: Uuid, object: &str, server: &LTZFServer) -> Result<()> {
+    let topic = format!(
+        "Für {} `{}` wurde `sonstig` angegeben als Wert für `{}`",
+        object,
+        api_id,
+        stringify!(T)
+    );
     send_email(topic, String::new(), server)?;
     tracing::error!("Notify: Unknown Variant! Sending mails is not yet supported.");
     Ok(())
@@ -69,11 +72,20 @@ pub fn send_email(subject: String, body: String, state: &LTZFServer) -> Result<(
     }
     let email = Message::builder()
         .from(
-            format!("Landtagszusammenfasser <{}>", state.config.mail_sender.as_ref().unwrap())
-                .parse()
-                .unwrap(),
+            format!(
+                "Landtagszusammenfasser <{}>",
+                state.config.mail_sender.as_ref().unwrap()
+            )
+            .parse()
+            .unwrap(),
         )
-        .to(state.config.mail_recipient.as_ref().unwrap().parse().unwrap())
+        .to(state
+            .config
+            .mail_recipient
+            .as_ref()
+            .unwrap()
+            .parse()
+            .unwrap())
         .subject(subject.clone())
         .body(body.clone())
         .unwrap();
