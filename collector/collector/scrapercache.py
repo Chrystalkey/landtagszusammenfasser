@@ -108,7 +108,7 @@ class ScraperCache:
                 logger.warning(f"Retrieved document {key} from cache but it was not successfully extracted")
                 return None
                 
-            logger.info(f"Document {key} retrieved from cache")
+            logger.debug(f"Document {key} retrieved from cache")
             return doc
         except json.JSONDecodeError as e:
             logger.error(f"Error decoding cached document {key}: {e}")

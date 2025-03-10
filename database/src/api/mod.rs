@@ -14,6 +14,7 @@ mod auth;
 mod get;
 mod put;
 
+#[derive(Clone)]
 pub struct LTZFServer {
     pub sqlx_db: sqlx::PgPool,
     pub mailer: Option<SmtpTransport>,

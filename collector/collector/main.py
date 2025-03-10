@@ -54,8 +54,8 @@ if __name__ == "__main__":
     CYCLE_TIME = 3 * 60 * 60 # 3 hours
     last_run = None
     while True:
-        if last_run is not None and time.time() - last_run > CYCLE_TIME:
-            logger.info("Last scraping cycle finished longer than 3 hours ago, skipping")
+        if last_run is not None and time.time() - last_run < CYCLE_TIME:
+            logger.info("Last scraping cycle finished, running again in 3 hours. Bye!")
             time.sleep(CYCLE_TIME-(time.time() - last_run))
             continue
         try:

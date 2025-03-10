@@ -1,4 +1,4 @@
-use crate::{LTZFServer, Result};
+use crate::{error::DataValidationError, LTZFServer, Result};
 use lettre::{Message, Transport};
 use uuid::Uuid;
 
@@ -35,19 +35,21 @@ pub fn notify_new_enum_entry<T: std::fmt::Debug + ToString>(
 
     Ok(())
 }
-pub fn notify_ambiguous_match<T: std::fmt::Debug>(
+pub fn notify_ambiguous_match<T: std::fmt::Debug + serde::Serialize>(
     api_ids: Vec<Uuid>,
     object: &T,
-    at_loc: &str,
+    during_operation: &str,
     server: &LTZFServer,
 ) -> Result<()> {
     let subject = format!(
-        "Mehrere Datensätze gefunden die neuem Objekt ähnlich sind. Bitte um Konfliktauflösung."
+        "Ambiguous Match: Während {}", during_operation
     );
     let body = format!(
-        "Während: `{}` wurde folgendes Objekt wurde hochgeladen: {:#?}.
+        "Während: `{}` wurde folgendes Objekt wurde hochgeladen: {}.
         Folgende Objekte in der Datenbank sind ähnlich: {:#?}",
-        at_loc, object, api_ids
+        during_operation, 
+        serde_json::to_string_pretty(object)
+        .map_err(|e| DataValidationError::InvalidFormat { field: "passed obj for ambiguous match".to_string(), message: e.to_string() })?, api_ids
     );
     send_email(subject, body, server)?;
     tracing::error!("Notify: Ambiguous Match! Sending mails is not yet supported.");

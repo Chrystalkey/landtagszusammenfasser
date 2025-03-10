@@ -119,7 +119,7 @@ SELECT DISTINCT(vorgang.id), vorgang.api_id FROM vorgang -- gib vorgänge, bei d
 
 /// bei gleichem Vorgang => Vorraussetzung
 /// 1. wenn die api_id matcht
-/// 2. wenn typ, parlament matcht und mindestens ein Dokument gleich ist
+/// 2. wenn typ, parlament, gremium matcht und mindestens ein Dokument gleich ist
 pub async fn station_merge_candidates(
     model: &models::Station,
     vorgang: i32,
@@ -143,19 +143,30 @@ pub async fn station_merge_candidates(
             }
         })
         .collect();
+    let (gr_name, gr_wp, gr_parl) = if let Some(gremium) = &model.gremium {
+        (Some(gremium.name.clone()), Some(gremium.wahlperiode as i32), Some(gremium.parlament.to_string()))
+    } else {
+        (None, None, None)
+    };
     let result = sqlx::query!(
         "SELECT s.id, s.api_id FROM station s
     INNER JOIN stationstyp st ON st.id=s.typ
+    LEFT JOIN gremium g ON g.id=s.gr_id
+    LEFT JOIN parlament p ON p.id = g.parl
     WHERE s.api_id = $1 OR
-    (s.vg_id = $2 AND st.value = $3 AND 
+    (s.vg_id = $2 AND st.value = $3 AND  -- vorgang und stationstyp übereinstimmen
+    (g.name = $4 OR $4 IS NULL) AND  -- gremiumname übereinstimmt
+    (p.value = $5 OR $5 IS NULL) AND  -- parlamentname übereinstimmt
+    (g.wp = $6 OR $6 IS NULL) AND -- gremium wahlperiode übereinstimmt
     EXISTS (SELECT * FROM rel_station_dokument rsd
         INNER JOIN dokument d ON rsd.dok_id=d.id
         WHERE rsd.stat_id = s.id
-        AND d.hash IN (SELECT str FROM UNNEST($4::text[]) blub(str))
+        AND d.hash IN (SELECT str FROM UNNEST($7::text[]) blub(str))
 	))",
         model.api_id,
         vorgang,
         srv.guard_ts(model.typ, api_id, obj)?,
+        gr_name, gr_parl, gr_wp,
         &dok_hash[..]
     )
     .fetch_all(executor)
@@ -519,13 +530,14 @@ pub async fn execute_merge_vorgang(
             }
             MergeState::AmbiguousMatch(matches) => {
                 let mids = sqlx::query!(
-                    "SELECT api_id FROM vorgang WHERE id = ANY($1::int4[]);",
+                    "SELECT api_id FROM station WHERE id = ANY($1::int4[]);",
                     &matches[..]
                 )
                 .map(|r| r.api_id)
                 .fetch_all(&mut **tx)
                 .await?;
-                notify_ambiguous_match(mids, stat, "exec_merge_vorgang", srv);
+                notify_ambiguous_match(mids, stat, 
+                    "exec_merge_vorgang: station matching", srv);
             }
         }
     }

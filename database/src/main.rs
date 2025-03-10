@@ -4,7 +4,7 @@ pub(crate) mod db;
 pub(crate) mod error;
 pub(crate) mod utils;
 
-use std::sync::Arc;
+use std::{num::NonZeroU64, sync::Arc};
 
 use clap::Parser;
 use sqlx;
@@ -155,7 +155,15 @@ async fn main() -> Result<()> {
     tracing::debug!("Constructed Server State");
 
     // Init Axum router
-    let app = openapi::server::new(state.clone());
+    let rate_limiter = axum_gcra::RateLimitLayer::<()>::builder()
+    .with_default_quota(axum_gcra::gcra::Quota::new(std::time::Duration::from_secs(1), NonZeroU64::new(256).unwrap()))
+    .with_global_fallback(true)
+    .with_extension(true)
+    .default_handle_error();
+    let request_size_limit = tower_http::limit::RequestBodyLimitLayer::new(1024*1024*256); // 256 MB
+    let app = openapi::server::new(state.clone())
+    .layer(request_size_limit)
+    .layer(rate_limiter);
     tracing::debug!("Constructed Router");
     tracing::info!(
         "Starting Server on {}:{}",

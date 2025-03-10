@@ -84,7 +84,7 @@ class BYLTScraper(Scraper):
                     "stationen": [],
                 }
             )
-            logger.info(
+            logger.debug(
                 f"New vg mit Initiativdrucksache: {inds}, ApiID: {vg.api_id}"
             )
 
@@ -186,7 +186,7 @@ class BYLTScraper(Scraper):
                     dok = await self.create_document(stln_urls["stellungnahme"], models.Doktyp.STELLUNGNAHME)
                     stln = models.Stellungnahme.from_dict(
                         {
-                            "meinung": dok.meinung or 1,
+                            "meinung": max(dok.meinung or 1, 1),
                             "dokument": dok.package(),
                             "lobbyregister_url": stln_urls["lobbyregister"],
                         }
@@ -249,7 +249,7 @@ class BYLTScraper(Scraper):
                     
                     if existing_idx >= 0:
                         # Merge with existing committee station
-                        logger.info(f"Merging ausschussbericht for committee '{ausschuss_name}'")
+                        logger.debug(f"Merging ausschussbericht for committee '{ausschuss_name}'")
                         existing_station = vg.stationen[existing_idx]
                         existing_station.dokumente.append(dok.package())
                         
@@ -288,7 +288,7 @@ class BYLTScraper(Scraper):
                 else:
                     logger.error("Reached an unreachable state. Discarded.")
                     continue
-                logger.info(
+                logger.debug(
                     f"Adding New Station of class `{""+stat.typ}` to GSVH `{vg.api_id}`"
                 )
                 vg.stationen.append(stat)
@@ -299,13 +299,13 @@ class BYLTScraper(Scraper):
         logger.debug(f"Creating document from url: {url}")
         document = self.config.cache.get_dokument(url)
         if document is None:
-            logger.info("Cached version not found, fetching from source")
+            logger.debug("Cached version not found, fetching from source")
             document = Document(self.session, url, type_hint, self.config)
             await document.run_extraction()
             self.config.cache.store_dokument(url, document)
             return document
         else:
-            logger.info("Cached version found, used")
+            logger.debug("Cached version found, used")
             return self.config.cache.get_dokument(url)
 
     def classify_cell(self, context) -> str:
