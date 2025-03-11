@@ -53,11 +53,14 @@ class DocumentMeta:
         return instance
         
 class Document:
+    testing_mode = False
     def __init__(self, session, url, typehint: str, config):
         self.config = config
         if config.testing_mode:
+            self.testing_mode = True
             self.set_testing_values()
             return
+        self.testing_mode = False
         self.session = session
         self.url = url
         self.typehint = typehint
@@ -93,21 +96,20 @@ class Document:
         self.drucksnr = "example"
         
         
-    def to_json(self):
+    def to_json(self) -> str:
         return json.dumps(self.to_dict())
     
     @classmethod
-    def from_json(cls, json_str):
-        return cls.from_dict(json.loads(json_str))
+    def from_json(cls, json_str: str):
+        inst = cls.from_dict(json.loads(json_str))
+        inst.testing_mode = False
 
     def __del__(self):
-        if self.config is None or self.config.testing_mode:
-            return
         self._cleanup_tempfiles()
             
     def _cleanup_tempfiles(self):
         """Clean up any temporary files created during document processing"""
-        if os.path.exists(f"{self.fileid}.pdf"):
+        if self.fileid and os.path.exists(f"{self.fileid}.pdf"):
             try:
                 os.remove(f"{self.fileid}.pdf")
             except Exception as e:
@@ -117,6 +119,7 @@ class Document:
     def from_dict(cls, dic):
         instance = cls(None, dic["url"], dic["typehint"], None)  # Create new instance
         instance.meta = DocumentMeta.from_dict(dic["meta"])
+        instance.testing_mode = dic.get("testing_mode", False)
         instance.authoren = dic["autoren"]
         instance.autorpersonen = dic["autorpersonen"]
         instance.schlagworte = dic.get("schlagworte")
@@ -144,7 +147,7 @@ class Document:
     
     async def run_extraction(self):
         """Main method to download and extract information from a document"""
-        if self.config.testing_mode:
+        if self.testing_mode:
             return True
         try:
             await self.download()
@@ -166,7 +169,7 @@ class Document:
 
     async def download(self):
         """Download the document from the URL"""
-        if self.config.testing_mode:
+        if self.testing_mode:
             return True
         logger.info(f"Downloading document from {self.url}")
         try:
@@ -185,7 +188,7 @@ class Document:
     
     async def extract_metadata(self) -> DocumentMeta:
         """Extract metadata from the PDF file"""
-        if self.config.testing_mode:
+        if self.testing_mode:
             return True
         logger.debug(f"Extracting PDF Metadata for Url {self.url}, using file {self.fileid}.pdf")
         
@@ -238,7 +241,7 @@ class Document:
 
     async def extract_semantics(self):
         """Extract semantic information using the LLM"""
-        if self.config.testing_mode:
+        if self.testing_mode:
             return True
         if not self.meta.full_text or all(not text for text in self.meta.full_text):
             logger.warning(f"No text to analyze in document {self.url}")

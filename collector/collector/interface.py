@@ -146,7 +146,7 @@ class Scraper(ABC):
         
         for item in iset:
             # Check if item is already in cache
-            cached = self.config.cache.get_gsvh(str(item))
+            cached = self.config.cache.get_vorgang(str(item))
             if cached is not None:
                 logger.debug(f"URL {item} found in cache, skipping...")
                 skipped_count += 1
@@ -177,7 +177,7 @@ class Scraper(ABC):
                 obj = result[0]
                 item = result[1]
                 self.result_objects.append(obj)
-                self.config.cache.store_gsvh(str(item), obj)
+                self.config.cache.store_vorgang(str(item), obj)
                 success_count += 1
             else:
                 error_count += 1

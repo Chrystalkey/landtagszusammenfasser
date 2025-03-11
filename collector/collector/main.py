@@ -49,7 +49,7 @@ def load_scrapers(config, session):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s: \t%(filename)s: \t\t%(message)s")
     logger.info("Starting collector manager.")
-    config = CollectorConfiguration()
+    config = CollectorConfiguration(None, None, False)
     logger.info("Configuration Complete")
     CYCLE_TIME = 3 * 60 * 60 # 3 hours
     last_run = None

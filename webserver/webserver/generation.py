@@ -66,7 +66,7 @@ def generate_header(model: models.Vorgang) -> str:
         status = "In Vorbereitung"
     elif last_station_type.startswith("parl") and last_station_type not in ["parl-akzeptanz", "parl-ablehnung"]:
         status = "In Beratung"
-    elif last_station_type.startswith("postparl") or last_station_type in ["parl-akzeptanz", "parl-ablehnung"]:
+    elif last_station_type.startswith("postparl") or last_station_type in ["parl-akzeptanz", "parl-ablehnung", "parl-zurueckgz"]:
         status = "In Nachbereitung"
     
     initiative = None
@@ -199,7 +199,7 @@ def generate_nachbereitung(gesetze: List[str]) -> str:
 title="In Nachbereitung"
 template="categorypage.html"
 [extra]
-tables=[{name="Abgelehnt", stations=["parl-ablehnung"]},{name="Angenommen", stations=["parl-akzeptanz"]},{name="Veröffentlicht", stations=["postparl-vesja", "postparl-vesne", "postparl-gsblt", "postparl-kraft"]}]\n"""
+tables=[{name="Abgelehnt/Zurückgezogen", stations=["parl-ablehnung", "parl-zurueckgz"]},{name="Angenommen", stations=["parl-akzeptanz"]},{name="Veröffentlicht", stations=["postparl-vesja", "postparl-vesne", "postparl-gsblt", "postparl-kraft"]}]\n"""
     builder += f"laws={gesetze}\n"
     builder += "+++\n"
     return builder

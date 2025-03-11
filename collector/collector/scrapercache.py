@@ -48,7 +48,7 @@ class ScraperCache:
             logger.error(f"Unexpected error connecting to Redis: {e}")
             sys.exit(1)
 
-    def store_gsvh(self, key: str, value: models.Vorgang):
+    def store_vorgang(self, key: str, value: models.Vorgang):
         """Store Vorgang data in Redis cache"""
         if self.disabled:
             return True
@@ -86,7 +86,7 @@ class ScraperCache:
             logger.error(f"Error storing document {key} in cache: {e}")
             return False
 
-    def get_gsvh(self, key: str) -> Optional[models.Vorgang]:
+    def get_vorgang(self, key: str) -> Optional[models.Vorgang]:
         """Get Vorgang data from cache"""
         if self.disabled:
             return None

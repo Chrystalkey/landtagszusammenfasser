@@ -1,0 +1,212 @@
+{
+  "url": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157573",
+  "result": {
+    "api_id": "00000000-0000-0000-0000-000000000000",
+    "titel": "Gesetzentwurf der Staatsregierung zur Änderung des Bayerischen Kinderbildungs- und -betreuungsgesetzes",
+    "kurztitel": "Gesetzentwurf der Staatsregierung zur Änderung des Bayerischen Kinderbildungs- und -betreuungsgesetzes",
+    "wahlperiode": 19,
+    "verfassungsaendernd": false,
+    "initiatoren": [
+      "Staatsregierung"
+    ],
+    "typ": "gg-land-parl",
+    "ids": [
+      {
+        "id": "19/3816",
+        "typ": "initdrucks"
+      }
+    ],
+    "links": [
+      "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157573",
+      "https://www.bayern.landtag.de/www/ElanTextAblage_WP19/Drucksachen/Basisdrucksachen/0000002500/0000002951.pdf"
+    ],
+    "stationen": [
+      {
+        "start_zeitpunkt": "1940-01-01T00:00:00+00:00",
+        "gremium": {
+          "parlament": "BY",
+          "wahlperiode": 19,
+          "name": "plenum"
+        },
+        "dokumente": [
+          {
+            "drucksnr": "19/3816",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "letzte_modifikation": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autorpersonen": [
+              "autorpersonen"
+            ],
+            "autoren": [
+              "autoren"
+            ]
+          }
+        ],
+        "betroffene_texte": [
+          "test"
+        ],
+        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157573",
+        "parlament": "BY",
+        "schlagworte": [],
+        "stellungnahmen": [],
+        "typ": "parl-initiativ",
+        "trojanergefahr": 1
+      },
+      {
+        "start_zeitpunkt": "1940-01-01T00:00:00+00:00",
+        "gremium": {
+          "parlament": "BY",
+          "wahlperiode": 19,
+          "name": "plenum"
+        },
+        "dokumente": [
+          {
+            "drucksnr": "example",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "letzte_modifikation": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autorpersonen": [
+              "autorpersonen"
+            ],
+            "autoren": [
+              "autoren"
+            ]
+          }
+        ],
+        "betroffene_texte": [
+          "test"
+        ],
+        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157573",
+        "parlament": "BY",
+        "schlagworte": [],
+        "stellungnahmen": [],
+        "typ": "parl-vollvlsgn"
+      },
+      {
+        "start_zeitpunkt": "1940-01-01T00:00:00+00:00",
+        "gremium": {
+          "parlament": "BY",
+          "wahlperiode": 19,
+          "name": "Ausschuss für Arbeit und Soziales, Jugend und Familie"
+        },
+        "dokumente": [
+          {
+            "drucksnr": "example",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "letzte_modifikation": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autorpersonen": [
+              "autorpersonen"
+            ],
+            "autoren": [
+              "autoren"
+            ]
+          }
+        ],
+        "betroffene_texte": [
+          "test"
+        ],
+        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157573",
+        "parlament": "BY",
+        "schlagworte": [],
+        "stellungnahmen": [],
+        "typ": "parl-ausschber",
+        "trojanergefahr": 1
+      },
+      {
+        "start_zeitpunkt": "1940-01-01T00:00:00+00:00",
+        "gremium": {
+          "parlament": "BY",
+          "wahlperiode": 19,
+          "name": "Ausschuss für Verfassung, Recht, Parlamentsfragen und Integration"
+        },
+        "dokumente": [
+          {
+            "drucksnr": "example",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "letzte_modifikation": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autorpersonen": [
+              "autorpersonen"
+            ],
+            "autoren": [
+              "autoren"
+            ]
+          }
+        ],
+        "betroffene_texte": [
+          "test"
+        ],
+        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157573",
+        "parlament": "BY",
+        "schlagworte": [],
+        "stellungnahmen": [],
+        "typ": "parl-ausschber",
+        "trojanergefahr": 1
+      },
+      {
+        "start_zeitpunkt": "1940-01-01T00:00:00+00:00",
+        "gremium": {
+          "parlament": "BY",
+          "wahlperiode": 19,
+          "name": "Gesetzesblatt"
+        },
+        "dokumente": [
+          {
+            "drucksnr": "example",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "letzte_modifikation": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autorpersonen": [
+              "autorpersonen"
+            ],
+            "autoren": [
+              "autoren"
+            ]
+          }
+        ],
+        "betroffene_texte": [],
+        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157573",
+        "parlament": "BY",
+        "schlagworte": [],
+        "stellungnahmen": [],
+        "typ": "postparl-gsblt"
+      }
+    ]
+  }
+}
