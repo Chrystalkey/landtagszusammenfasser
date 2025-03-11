@@ -307,7 +307,8 @@ pub async fn ausschusssitzung_by_id(
         "SELECT a.api_id, a.public, a.termin, p.value as plm, a.link as as_link, a.titel, a.nummer,
         g.name as grname, g.wp, g.link as gr_link, g.link_kalender FROM ausschusssitzung a
         INNER JOIN gremium g ON g.id = a.gr_id
-        INNER JOIN parlament p ON p.id = g.parl WHERE a.id = $1",
+        INNER JOIN parlament p ON p.id = g.parl 
+        WHERE a.id = $1",
         id
     )
     .fetch_one(&mut **tx)
@@ -355,8 +356,13 @@ pub async fn ausschusssitzung_by_id(
 
 pub async fn as_by_parameter(
     qparams: models::AsGetQueryParams,
+    header_params: models::AsGetHeaderParams,
     tx: &mut sqlx::PgTransaction<'_>,
 ) -> Result<Vec<models::Ausschusssitzung>> {
+    let lower_bnd = header_params.if_modified_since.map(|el| 
+        if qparams.upd_since.is_some() {qparams.upd_since.unwrap().min(el)}else{el}
+    );
+
     let as_list = sqlx::query!(
         "
     WITH pre_table AS (
@@ -378,7 +384,7 @@ LIMIT COALESCE($6, 64)
     ",
         qparams.parlament.map(|p| p.to_string()),
         qparams.wp,
-        qparams.upd_since,
+        lower_bnd,
         qparams.upd_until,
         qparams.offset,
         qparams.limit
@@ -395,8 +401,12 @@ LIMIT COALESCE($6, 64)
 
 pub async fn vorgang_by_parameter(
     params: models::VorgangGetQueryParams,
+    header_params: models::VorgangGetHeaderParams,
     executor: &mut sqlx::PgTransaction<'_>,
 ) -> Result<Vec<models::Vorgang>> {
+    let lower_bnd = header_params.if_modified_since.map(|el| 
+        if params.upd_since.is_some() {params.upd_since.unwrap().min(el)}else{el}
+    );
     let vg_list = sqlx::query!(
         "WITH pre_table AS (
         SELECT vorgang.id, MAX(station.start_zeitpunkt) as lastmod FROM vorgang
@@ -420,7 +430,7 @@ OFFSET COALESCE($8, 0) LIMIT COALESCE($9, 64)
 ",params.wp, params.vgtyp.map(|x|x.to_string()),
 params.parlament.map(|p|p.to_string()),
 params.init_contains, params.init_prsn_contains,
-params.upd_since, params.upd_until, params.offset,
+lower_bnd, params.upd_until, params.offset,
     params.limit)
     .map(|r|r.id)
     .fetch_all(&mut **executor).await?;

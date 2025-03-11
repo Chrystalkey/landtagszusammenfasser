@@ -15,12 +15,7 @@ paths:
           schema:
             type: "string"
             format: "uuid"
-        - name: "If-Modified-Since"
-          in: "header"
-          required: false
-          schema:
-            type: "string"
-            format: "date-time"
+        - $ref: "#/components/parameters/if-mod-since"
       responses:
         "200":
           description: "successful operation"
@@ -94,6 +89,7 @@ paths:
           description: "Bad Request"
 
       parameters:
+        - $ref: "#/components/parameters/if-mod-since"
         - $ref: "#/components/parameters/updated-since"
         - $ref: "#/components/parameters/updated-until"
         - $ref: "#/components/parameters/parlament"
@@ -171,6 +167,7 @@ paths:
       operationId: "as_get"
       description: "Gibt eine Liste gefilterter Ausschusssitzungen zurück"
       parameters:
+        - $ref: "#/components/parameters/if-mod-since"
         - $ref: "#/components/parameters/updated-since"
         - $ref: "#/components/parameters/updated-until"
         - $ref: "#/components/parameters/parlament"
@@ -230,6 +227,7 @@ paths:
           schema:
             type: "string"
             format: "uuid"
+        - $ref: "#/components/parameters/if-mod-since"
       responses:
         "200":
           description: "successful operation"
@@ -286,6 +284,14 @@ paths:
         - apiKey: [] 
 components:
   parameters:
+    if-mod-since:
+      name: "If-Modified-Since"
+      in: "header"
+      description: "Returns all elements that were updated after the specified time stamp"
+      required: false
+      schema:
+        type: string
+        format: date-time
     updated-since:
       name: "upd-since"
       in: "query"

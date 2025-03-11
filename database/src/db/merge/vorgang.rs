@@ -599,7 +599,7 @@ mod scenariotest {
     use std::collections::HashSet;
     use std::panic::AssertUnwindSafe;
 
-    use openapi::models::{self, VorgangGetQueryParams};
+    use openapi::models::{self, VorgangGetHeaderParams, VorgangGetQueryParams};
     use serde::Deserialize;
 
     #[allow(unused)]
@@ -694,8 +694,11 @@ mod scenariotest {
                 limit: None,
                 offset: None,
             };
+            let hdmock = VorgangGetHeaderParams{
+                if_modified_since: None
+            };
             let mut tx = self.server.sqlx_db.begin().await.unwrap();
-            let db_vorgangs = crate::db::retrieve::vorgang_by_parameter(paramock, &mut tx)
+            let db_vorgangs = crate::db::retrieve::vorgang_by_parameter(paramock, hdmock, &mut tx)
                 .await
                 .unwrap();
 

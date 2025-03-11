@@ -107,7 +107,7 @@ impl openapi::apis::default::Default for LTZFServer {
         header_params: models::VorgangGetByIdHeaderParams,
         path_params: models::VorgangGetByIdPathParams,
     ) -> Result<VorgangGetByIdResponse, ()> {
-        let vorgang = get::vg_id_get(self, path_params).await;
+        let vorgang = get::vg_id_get(self, header_params, path_params).await;
 
         match vorgang {
             Ok(vorgang) => Ok(VorgangGetByIdResponse::Status200_SuccessfulOperation(
@@ -181,9 +181,24 @@ impl openapi::apis::default::Default for LTZFServer {
         method: Method,
         host: Host,
         cookies: CookieJar,
+        header_params: models::VorgangGetHeaderParams,
         query_params: models::VorgangGetQueryParams,
     ) -> Result<VorgangGetResponse, ()> {
-        match get::vg_get(self, query_params).await {
+        let now = chrono::Utc::now();
+        let lowest_upd_bound = if query_params.upd_since.is_some() && header_params.if_modified_since.is_some(){
+            query_params.upd_since.unwrap().min(header_params.if_modified_since.unwrap())
+        }else{
+            query_params.upd_since.unwrap_or(
+                header_params.if_modified_since.unwrap_or(
+                    chrono::DateTime::parse_from_rfc3339("1940-01-01T00:00:00").unwrap().to_utc()
+                )
+            )
+        };
+
+        if  lowest_upd_bound > now || (query_params.upd_until.is_some() && query_params.upd_until.unwrap() < lowest_upd_bound) {
+            return Ok(VorgangGetResponse::Status416_RequestRangeNotSatisfiable);
+        }
+        match get::vg_get(self, header_params, query_params).await {
             Ok(models::VorgangGet200Response { payload: None }) => {
                 Ok(VorgangGetResponse::Status204_NoContentFoundForTheSpecifiedParameters)
             }
@@ -246,9 +261,10 @@ impl openapi::apis::default::Default for LTZFServer {
         method: Method,
         host: Host,
         cookies: CookieJar,
+        header_params: models::AsGetByIdHeaderParams,
         path_params: models::AsGetByIdPathParams,
     ) -> Result<AsGetByIdResponse, ()> {
-        let ass = get::as_get_by_id(self, path_params).await.map_err(|e| {
+        let ass = get::as_get_by_id(self,header_params, path_params).await.map_err(|e| {
             tracing::warn!("{}", e);
         })?;
         return Ok(ass);
@@ -304,9 +320,24 @@ impl openapi::apis::default::Default for LTZFServer {
         method: Method,
         host: Host,
         cookies: CookieJar,
+        header_params: models::AsGetHeaderParams,
         query_params: models::AsGetQueryParams,
     ) -> Result<AsGetResponse, ()> {
-        match get::as_get(self, query_params).await {
+        let now = chrono::Utc::now();
+        let lowest_upd_bound = if query_params.upd_since.is_some() && header_params.if_modified_since.is_some(){
+            query_params.upd_since.unwrap().min(header_params.if_modified_since.unwrap())
+        }else{
+            query_params.upd_since.unwrap_or(
+                header_params.if_modified_since.unwrap_or(
+                    chrono::DateTime::parse_from_rfc3339("1940-01-01T00:00:00").unwrap().to_utc()
+                )
+            )
+        };
+
+        if  lowest_upd_bound > now || (query_params.upd_until.is_some() && query_params.upd_until.unwrap() < lowest_upd_bound) {
+            return Ok(AsGetResponse::Status416_RequestRangeNotSatisfiable);
+        }
+        match get::as_get(self,header_params, query_params).await {
             Ok(models::AsGet200Response { payload: None }) => {
                 Ok(AsGetResponse::Status204_NoContentFoundForTheSpecifiedParameters)
             }

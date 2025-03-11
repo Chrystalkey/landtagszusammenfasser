@@ -43,6 +43,9 @@ pub enum DataValidationError {
 
     #[snafu(display("UUID parsing error: {source}"))]
     UuidParse { source: uuid::Error },
+
+    #[snafu(display(""))]
+    QueryParametersNotSatisfied
 }
 
 error_from!(uuid::Error, Validation, DataValidationError, UuidParse);

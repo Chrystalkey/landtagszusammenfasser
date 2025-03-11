@@ -48,7 +48,7 @@ pub async fn execute_merge_ass(
     let db_id = candidate;
     sqlx::query!(
         "UPDATE ausschusssitzung SET 
-    termin = $1, public = $2, link = $3, nummer = $4, titel=$5
+    termin = $1, public = $2, link = $3, nummer = $4, titel=$5, last_update=NOW()
     WHERE id = $6",
         model.termin,
         model.public,

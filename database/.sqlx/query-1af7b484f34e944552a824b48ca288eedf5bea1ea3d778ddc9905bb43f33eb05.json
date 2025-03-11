@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT a.api_id, a.public, a.termin, p.value as plm, a.link as as_link, a.titel, a.nummer,\n        g.name as grname, g.wp, g.link as gr_link, g.link_kalender FROM ausschusssitzung a\n        INNER JOIN gremium g ON g.id = a.gr_id\n        INNER JOIN parlament p ON p.id = g.parl WHERE a.id = $1",
+  "query": "SELECT a.api_id, a.public, a.termin, p.value as plm, a.link as as_link, a.titel, a.nummer,\n        g.name as grname, g.wp, g.link as gr_link, g.link_kalender FROM ausschusssitzung a\n        INNER JOIN gremium g ON g.id = a.gr_id\n        INNER JOIN parlament p ON p.id = g.parl \n        WHERE a.id = $1",
   "describe": {
     "columns": [
       {
@@ -78,5 +78,5 @@
       true
     ]
   },
-  "hash": "2a14b478118355912c2680f311aba6cf240a13ea5479f12838fb3dbf58c04434"
+  "hash": "1af7b484f34e944552a824b48ca288eedf5bea1ea3d778ddc9905bb43f33eb05"
 }
