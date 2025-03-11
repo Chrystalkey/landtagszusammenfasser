@@ -90,7 +90,9 @@ INSERT INTO
 VALUES
     ('preparl-entwurf'),
     ('entwurf'),
+    ('mitteilung'),
     ('stellungnahme'),
+    ('gutachten'),
     ('beschlussempf'),
     ('plenar-protokoll'),
     ('plenar-tops'),

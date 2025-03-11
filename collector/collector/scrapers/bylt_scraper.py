@@ -14,7 +14,8 @@ from collector.interface import Scraper
 from collector.document import Document
 
 logger = logging.getLogger(__name__)
-
+NULL_UUID = uuid.UUID("00000000-0000-0000-0000-000000000000")
+TEST_DATE = dt_datetime.fromisoformat("1940-01-01T00:00:00+00:00")
 
 class BYLTScraper(Scraper):
     def __init__(self, config, session: aiohttp.ClientSession):
@@ -49,11 +50,11 @@ class BYLTScraper(Scraper):
             return vgpage_urls
 
     async def item_extractor(self, listing_item) -> models.Vorgang:
-        global logger
+        global logger, NULL_UUID, TEST_DATE
         async with self.session.get(listing_item) as get_result:
             soup = BeautifulSoup(await get_result.text(), "html.parser")
             vorgangs_table = soup.find("tbody", id="vorgangsanzeigedokumente_data")
-            rows = vorgangs_table.findAll("tr")
+            rows = vorgangs_table.find_all("tr")
 
             btext_soup = soup.find("span", id="basistext")
             assert (
@@ -67,7 +68,7 @@ class BYLTScraper(Scraper):
                     .strip()
             vg = models.Vorgang.from_dict(
                 {
-                    "api_id": str(uuid.uuid4()),
+                    "api_id": str(uuid.uuid4()) if not self.config.testing_mode else str(NULL_UUID),
                     "titel": titel,
                     "kurztitel": titel,
                     "wahlperiode":  19,
@@ -90,7 +91,7 @@ class BYLTScraper(Scraper):
 
             # Initiatoren
             init_ptr = soup.find(string="Initiatoren")
-            initiat_lis = init_ptr.find_next("ul").findAll("li")
+            initiat_lis = init_ptr.find_next("ul").find_all("li")
             init_dings = []
             init_persn = []
             for ini in initiat_lis:
@@ -130,7 +131,7 @@ class BYLTScraper(Scraper):
 
             # station extraction
             for row in rows:
-                cells = row.findAll("td")
+                cells = row.find_all("td")
 
                 assert (
                     len(cells) == 2
@@ -148,6 +149,8 @@ class BYLTScraper(Scraper):
                     hour=0, minute=0, second=0
                 ).astimezone(datetime.timezone.utc)
                 # content is in the second cell
+                if self.config.testing_mode:
+                    timestamp = TEST_DATE
                 stat = models.Station.from_dict(
                     {
                         "start_zeitpunkt": timestamp,
@@ -213,6 +216,22 @@ class BYLTScraper(Scraper):
                         stat.gremium = models.Gremium.from_dict({"name": "plenum", "parlament": "BY","wahlperiode": 19})
                         
                         stat.dokumente = [models.DokRef(dok.package())]
+                elif cellclass == "rueckzugmeldung":
+                    dok = await self.create_document(extract_singlelink(cells[1]), models.Doktyp.MITTEILUNG)
+                    stat.typ = models.Stationstyp.PARL_MINUS_ZURUECKGZ
+                    stat.trojanergefahr = max(dok.trojanergefahr, 1)
+                    stat.betroffene_texte = dok.texte
+                    stat.gremium = models.Gremium.from_dict({"name": "plenum", "parlament": "BY","wahlperiode": 19})
+                    stat.dokumente = [models.DokRef(dok.package())]
+                    
+                elif cellclass == "plenumsmitteilung-rueckzug":
+                    if (len(vg.stationen) > 0 and vg.stationen[-1].typ == "parl-zurueckgz"):
+                        dok = await self.create_document(extract_plenproto(cells[1]), models.Doktyp.PLENAR_MINUS_PROTOKOLL)
+                        vg.stationen[-1].typ = "parl-zurueckgz"
+                        vg.stationen[-1].dokumente.append(models.DokRef(dok.package()))
+                    else:
+                        logger.warning(f"Warnung: Plenumsmitteilung über Gesetzesrücknahme ohne vorherige Zeile über Rücknahme")
+                    continue
                 elif cellclass == "plenumsdiskussion-ablng":
                     if len(vg.stationen) > 0 and vg.stationen[-1].typ in ["parl-akzeptanz", "parl-ablehnung"]:
                         vg.stationen[-1].typ = "parl-ablehnung"
@@ -231,7 +250,7 @@ class BYLTScraper(Scraper):
                         vg.stationen[-1].betroffene_texte = dok.texte
                         continue
                     else:
-                        stat.typ = "parl-ablng"
+                        stat.typ = models.Stationstyp.PARL_MINUS_ABLEHNUNG
                         stat.gremium = models.Gremium.from_dict({
                             "name": "plenum", 
                             "parlament": "BY","wahlperiode": 19
@@ -308,7 +327,7 @@ class BYLTScraper(Scraper):
             logger.debug("Cached version found, used")
             return self.config.cache.get_dokument(url)
 
-    def classify_cell(self, context) -> str:
+    def classify_cell(self, context: BeautifulSoup) -> str:
         cellsoup = context
         if cellsoup.text.find("Initiativdrucksache") != -1:
             return "initiativdrucksache"
@@ -317,6 +336,10 @@ class BYLTScraper(Scraper):
             != -1
         ):
             return "stellungnahme"
+        elif cellsoup.text.find("Plenum") != -1 and \
+            cellsoup.text.find("Rücknahme") != -1 and \
+            cellsoup.text.find("Plenarprotokoll") == -1:
+            return "rueckzugmeldung"
         elif (
             cellsoup.text.find("Plenum") != -1
             and cellsoup.text.find("Plenarprotokoll") != -1
@@ -327,16 +350,13 @@ class BYLTScraper(Scraper):
                 return "plenumsdiskussion-zustm"
             elif cellsoup.text.find("Ablehnung") != -1:
                 return "plenumsdiskussion-ablng"
+            elif cellsoup.text.find("Plenarprotokoll") != -1 and cellsoup.text.find("Rücknahme") != -1:
+                return "plenumsmitteilung-rueckzug"
             else:
                 print(
                     f"Warning: Plenumsdiskussion without specific classification: `{cellsoup}`"
                 )
-                return "plenumsbeschluss"
-        elif (
-            cellsoup.text.find("Plenum") != -1
-            and cellsoup.text.find("Plenarprotokoll") == -1
-        ):
-            return "unclassified"
+                return "unclassified"
         elif cellsoup.text.find("Ausschuss") != -1:
             return "ausschussbericht"
         elif cellsoup.text.find("Gesetz- und Verordnungsblatt") != -1:

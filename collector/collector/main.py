@@ -47,7 +47,7 @@ def load_scrapers(config, session):
     return scrapers
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO,format="%(asctime)s | %(levelname)s:\t%(filename)s: \t\t%(message)s")
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s: \t%(filename)s: \t\t%(message)s")
     logger.info("Starting collector manager.")
     config = CollectorConfiguration()
     logger.info("Configuration Complete")

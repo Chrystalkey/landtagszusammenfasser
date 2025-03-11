@@ -41,9 +41,23 @@ class DocumentMeta:
             "hash": self.hash,
             "typ": self.typ
         }
+    @classmethod
+    def testinit(cls):
+        instance = cls()
+        instance.link = "https://www.example.com"
+        instance.title = "Testtitel"
+        instance.last_mod = datetime.datetime.fromisoformat("1940-01-01T00:00:00+00:00")
+        instance.full_text = ["test"]
+        instance.typ = "entwurf"
+        instance.hash = "testhash"
+        return instance
         
 class Document:
     def __init__(self, session, url, typehint: str, config):
+        self.config = config
+        if config.testing_mode:
+            self.set_testing_values()
+            return
         self.session = session
         self.url = url
         self.typehint = typehint
@@ -58,10 +72,26 @@ class Document:
         self.meinung: Optional[int] = None # only relevant for stellungnahmen
         self.drucksnr : Optional[str] = None
 
-        self.config = config
         self.fileid = str(uuid.uuid4())
         self.download_success = False
         self.extraction_success = False
+
+    def set_testing_values(self):
+        self.meta = DocumentMeta.testinit()
+        self.authoren = ["autoren"]
+        self.autorpersonen = ["autorpersonen"]
+        self.schlagworte = ["test"]
+        self.trojanergefahr = 0
+        self.texte = ["test"]
+        self.zusammenfassung = "test"
+        self.meinung = 1
+        self.download_success = True
+        self.extraction_success = True
+        self.fileid = str(uuid.UUID("00000000-0000-0000-0000-000000000000"))
+        self.url = "https://www.example.com"
+        self.typehint = "entwurf"
+        self.drucksnr = "example"
+        
         
     def to_json(self):
         return json.dumps(self.to_dict())
@@ -71,6 +101,8 @@ class Document:
         return cls.from_dict(json.loads(json_str))
 
     def __del__(self):
+        if self.config is None or self.config.testing_mode:
+            return
         self._cleanup_tempfiles()
             
     def _cleanup_tempfiles(self):
@@ -112,6 +144,8 @@ class Document:
     
     async def run_extraction(self):
         """Main method to download and extract information from a document"""
+        if self.config.testing_mode:
+            return True
         try:
             await self.download()
             self.download_success = True
@@ -132,6 +166,8 @@ class Document:
 
     async def download(self):
         """Download the document from the URL"""
+        if self.config.testing_mode:
+            return True
         logger.info(f"Downloading document from {self.url}")
         try:
             async with self.session.get(self.url) as response:
@@ -149,6 +185,8 @@ class Document:
     
     async def extract_metadata(self) -> DocumentMeta:
         """Extract metadata from the PDF file"""
+        if self.config.testing_mode:
+            return True
         logger.debug(f"Extracting PDF Metadata for Url {self.url}, using file {self.fileid}.pdf")
         
         try:
@@ -200,6 +238,8 @@ class Document:
 
     async def extract_semantics(self):
         """Extract semantic information using the LLM"""
+        if self.config.testing_mode:
+            return True
         if not self.meta.full_text or all(not text for text in self.meta.full_text):
             logger.warning(f"No text to analyze in document {self.url}")
             self.meta.title = self._get_default_title()

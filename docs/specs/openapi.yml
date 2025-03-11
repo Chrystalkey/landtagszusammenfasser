@@ -476,7 +476,19 @@ components:
     doktyp:
       description: "Dokumententyp"
       type: "string"
-      enum: ["preparl-entwurf", "entwurf", "beschlussempf", "stellungnahme", "plenar-protokoll", "plenar-tops", "as-tops",  "as-tops-aend", "as-tops-ergz", "sonstig"]
+      enum: 
+        - "preparl-entwurf"  # Vorparlamentarischer Entwurf
+        - "entwurf"          # Gesetzesentwurf auf einer Drucksache
+        - "mitteilung"       # Mitteilung über z.B. Rücknahme
+        - "beschlussempf"    # Beschlussempfehlung von Ausschüssen
+        - "stellungnahme"    # Stellungnahme von Personen oder Organisationen
+        - "gutachten"        # Gutachten die im Auftrag des Parlaments erstellt werden
+        - "plenar-protokoll" # Plenarprotokoll
+        - "plenar-tops"      # Plenarprotokoll TOPs
+        - "as-tops"          # Ausschuss TOPs
+        - "as-tops-aend"     # Ausschuss TOPs Änderung
+        - "as-tops-ergz"     # Ausschuss TOPs Ergänzung
+        - "sonstig"          # Sonstiges
     gremium:
       type: "object"
       required:

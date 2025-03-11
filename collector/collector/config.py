@@ -19,21 +19,25 @@ class CollectorConfiguration:
     api_key : str = None
     trojan_threshold : int = None
     cache : ScraperCache = None
-    
+    testing_mode: int = None
 
-    def __init__(self):
+    def __init__(self, api_key, openai_api_key, testing_mode=False):
         global logger
         unset_keys = []
         # Database
         self.database_url = os.getenv("LTZF_DATABASE", "http://localhost:80")
-        self.api_key = os.getenv("API_KEY")
+        self.api_key = os.getenv("API_KEY", api_key)
         if self.api_key is None:
             unset_keys.append("API_KEY")
-        
+        self.testing_mode = os.getenv("TESTING_MODE", 0) == 1 or testing_mode
         # Caching
         self.redis_host = os.getenv("REDIS_HOST", "localhost")
         self.redis_port = int(os.getenv("REDIS_PORT", "6379"))
-        self.cache = ScraperCache(self.redis_host, self.redis_port)
+        if not self.testing_mode:
+            self.cache = ScraperCache(self.redis_host, self.redis_port)
+        else:
+            logger.info(f"Testing mode: {self.testing_mode}")
+            self.cache = ScraperCache(self.redis_host, self.redis_port, disabled=True)
         
         # Scraperdir
         self.scrapers_dir = self.scrapers_dir or os.path.join(
@@ -49,8 +53,9 @@ class CollectorConfiguration:
         self.oapiconfig.api_key["apiKey"] = self.api_key
 
         # LLM Connector, currently only openai is supported
-        if os.getenv("OPENAI_API_KEY"):
-            self.llm_connector = LLMConnector.from_openai(os.getenv("OPENAI_API_KEY"))
+        oai_key = os.getenv("OPENAI_API_KEY", openai_api_key)
+        if oai_key:
+            self.llm_connector = LLMConnector.from_openai(oai_key)
         else:
             unset_keys.append("OPENAI_API_KEY")
         if len(unset_keys) > 0:
