@@ -70,6 +70,7 @@ VALUES
     ('parl-vollvlsgn'),
     ('parl-akzeptanz'),
     ('parl-ablehnung'),
+    ('parl-zurueckgz'),
     ('parl-ggentwurf'),
     ('postparl-vesja'),
     ('postparl-vesne'),

@@ -1,0 +1,5 @@
+{
+    "listing_url": "https://example.com/",
+    "url_regex": "regex",
+    "minimum_count": 40
+}

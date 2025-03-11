@@ -231,7 +231,7 @@ class BYLTScraper(Scraper):
                         vg.stationen[-1].betroffene_texte = dok.texte
                         continue
                     else:
-                        stat.typ = "parl-akzeptanz" 
+                        stat.typ = "parl-ablng"
                         stat.gremium = models.Gremium.from_dict({
                             "name": "plenum", 
                             "parlament": "BY","wahlperiode": 19
@@ -331,12 +331,12 @@ class BYLTScraper(Scraper):
                 print(
                     f"Warning: Plenumsdiskussion without specific classification: `{cellsoup}`"
                 )
-                return "unclassified"
+                return "plenumsbeschluss"
         elif (
             cellsoup.text.find("Plenum") != -1
             and cellsoup.text.find("Plenarprotokoll") == -1
         ):
-            return "plenumsbeschluss"
+            return "unclassified"
         elif cellsoup.text.find("Ausschuss") != -1:
             return "ausschussbericht"
         elif cellsoup.text.find("Gesetz- und Verordnungsblatt") != -1:

@@ -20,7 +20,7 @@ pub fn notify_new_enum_entry<T: std::fmt::Debug + ToString>(
 ) -> Result<()> {
     let subject = format!(
         "Für Typ `{}` wurde ein neuer Eintrag `{}` erstellt. ",
-        stringify!(T),
+        std::any::type_name::<T>(),
         new_entry.to_string()
     );
 
@@ -61,7 +61,7 @@ pub fn notify_unknown_variant<T>(api_id: Uuid, object: &str, server: &LTZFServer
         "Für {} `{}` wurde `sonstig` angegeben als Wert für `{}`",
         object,
         api_id,
-        stringify!(T)
+        std::any::type_name::<T>()
     );
     send_email(topic, String::new(), server)?;
     tracing::error!("Notify: Unknown Variant! Sending mails is not yet supported.");

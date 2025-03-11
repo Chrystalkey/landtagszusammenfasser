@@ -462,6 +462,7 @@ components:
         - "parl-vollvlsgn" # Vollversammlung / Lesung
         - "parl-akzeptanz" # Schlussabstimmung & Akzeptanz des Parlaments
         - "parl-ablehnung" # Schlussabstimmung & Ablehnung des Parlaments
+        - "parl-zurueckgz" # "Plenarsitzung & Rückzug des Vorhabens"
         - "parl-ggentwurf" # Gegenentwurf des Parlaments auf abgel. Volksbegehren
         - "postparl-vesja" # Volksentscheid nach Parlamentsbeschluss & Akzeptanz
         - "postparl-vesne" # Volksentscheid nach Parlamentsbeschluss & Ablehnung

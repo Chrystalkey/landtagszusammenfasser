@@ -100,7 +100,7 @@ class Document:
         return {
             "meta": self.meta.to_dict(),
             "url": self.url,
-            "typehint": self.typehint,
+            "typehint": self.typehint+"",
             "autoren": self.authoren,
             "autorpersonen": self.autorpersonen,
             "schlagworte": self.schlagworte,
@@ -187,7 +187,7 @@ class Document:
                     "title": meta.title if hasattr(meta, 'title') and meta.title else None,
                     "link": self.url,
                     "hash": doc_hash,
-                    "typ": self.typehint,
+                    "typ": self.typehint+"",
                     "last_mod": dtime.astimezone(datetime.timezone.utc).isoformat(),
                     "full_text": full_text
                 })
@@ -341,7 +341,7 @@ END PROMPT"""
     
     def _extract_default_semantics(self):
         """Set default values for an unknown document type"""
-        self.meta.title = f"Dokument ({self.typehint})"
+        self.meta.title = f"Dokument ("+self.typehint+")"
         self.authoren = None
         self.autorpersonen = None
         self.schlagworte = None
@@ -352,7 +352,7 @@ END PROMPT"""
     def _set_default_values(self, doc_type=None):
         """Set default values for a document when extraction fails"""
         if not doc_type:
-            doc_type = self.typehint
+            doc_type = self.typehint + ""
             
         defaults = {
             "entwurf": {
@@ -368,7 +368,7 @@ END PROMPT"""
                 "title": "Protokoll"
             },
             "default": {
-                "title": f"Dokument ({self.typehint})"
+                "title": f"Dokument ("+self.typehint+")"
             }
         }
         
@@ -398,6 +398,6 @@ END PROMPT"""
             "hash": self.meta.hash,
             "letzte_modifikation": self.meta.last_mod,
             "link": self.url,
-            "typ": self.typehint,
+            "typ": self.typehint+"",
             "zusammenfassung": self.zusammenfassung.strip() if self.zusammenfassung else None
         })

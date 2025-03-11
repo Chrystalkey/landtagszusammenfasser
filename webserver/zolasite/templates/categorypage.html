@@ -18,21 +18,27 @@
                     </thead>
                     <tbody>
                         {% set_global matching_pages = [] %}
-                        {% for law_path in page.extra.laws %}
-                            {% set law = get_page(path="gesetze/"~law_path~".md") %}
-                            {% if law.extra.station in table.stations %}
+                        {% for law_id in page.extra.laws %}
+                            {% set law = get_page(path="gesetze/" ~ law_id ~ ".md") %}
+                            {% if law and law.extra.station and law.extra.station in table.stations %}
                                 {% set_global matching_pages = matching_pages | concat(with=law) %}
                             {% endif %}
                         {% endfor %}
                         
-                        {% for subpage in matching_pages | sort(attribute="extra.date") | reverse %}
+                        {% if matching_pages | length > 0 %}
+                            {% for subpage in matching_pages | sort(attribute="extra.date") | reverse %}
+                                <tr>
+                                    <td class="date-col" data-sort-value="{{ subpage.extra.date | date(format='%Y-%m-%d') }}">{{ subpage.extra.date | date(format="%d.%m.%Y") }}</td>
+                                    <td class="date-col"></td>
+                                    <td data-sort-value="{{ subpage.title }}"><a href="{{ subpage.path }}">{{ subpage.title }}</a></td>
+                                    <td class="right-col" data-sort-value="{{ subpage.extra.initiator | default(value="") }}">{{ subpage.extra.initiator | default(value="") }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
                             <tr>
-                                <td class="date-col" data-sort-value="{{ subpage.extra.date | date(format='%Y-%m-%d') }}">{{ subpage.extra.date | date(format="%d.%m.%Y") }}</td>
-                                <td class="date-col"></td>
-                                <td data-sort-value="{{ subpage.title }}"><a href="{{ subpage.path }}">{{ subpage.title }}</a></td>
-                                <td class="right-col" data-sort-value="{{ subpage.extra.initiator | default(value="") }}">{{ subpage.extra.initiator | default(value="") }}</td>
+                                <td colspan="4" class="no-results">Keine Einträge gefunden</td>
                             </tr>
-                        {% endfor %}
+                        {% endif %}
                     </tbody>
                 </table>
             </section>

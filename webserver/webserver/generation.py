@@ -89,7 +89,7 @@ def generate_header(model: models.Vorgang) -> str:
     builder += f"date=\"{format_datetime(latest_station.start_zeitpunkt)}\"\n"
     builder += "template=\"gesetzpage.html\"\n"
     builder += "[extra]\n"
-    builder += f"station=\"{last_station_type}\"\n"
+    builder += f"station=\"" + last_station_type + "\"\n"
     builder += f"status=\"{status}\"\n"
     builder += f"date=\"{format_datetime(latest_station.start_zeitpunkt)}\"\n"
     builder += f"initiator=\"{initiatoren}\"\n"

@@ -185,17 +185,13 @@ impl openapi::apis::default::Default for LTZFServer {
         query_params: models::VorgangGetQueryParams,
     ) -> Result<VorgangGetResponse, ()> {
         let now = chrono::Utc::now();
-        let lowest_upd_bound = if query_params.upd_since.is_some() && header_params.if_modified_since.is_some(){
-            query_params.upd_since.unwrap().min(header_params.if_modified_since.unwrap())
-        }else{
-            query_params.upd_since.unwrap_or(
-                header_params.if_modified_since.unwrap_or(
-                    chrono::DateTime::parse_from_rfc3339("1940-01-01T00:00:00").unwrap().to_utc()
-                )
-            )
-        };
+        let lower_bnd = header_params.if_modified_since.map(|el| 
+            if query_params.upd_since.is_some() {query_params.upd_since.unwrap().min(el)}else{el}
+        );
 
-        if  lowest_upd_bound > now || (query_params.upd_until.is_some() && query_params.upd_until.unwrap() < lowest_upd_bound) {
+        if  lower_bnd.map(|l|
+            l > now || query_params.upd_until.is_some() && query_params.upd_until.unwrap() < l
+        ).unwrap_or(false) {
             return Ok(VorgangGetResponse::Status416_RequestRangeNotSatisfiable);
         }
         match get::vg_get(self, header_params, query_params).await {
@@ -324,17 +320,13 @@ impl openapi::apis::default::Default for LTZFServer {
         query_params: models::AsGetQueryParams,
     ) -> Result<AsGetResponse, ()> {
         let now = chrono::Utc::now();
-        let lowest_upd_bound = if query_params.upd_since.is_some() && header_params.if_modified_since.is_some(){
-            query_params.upd_since.unwrap().min(header_params.if_modified_since.unwrap())
-        }else{
-            query_params.upd_since.unwrap_or(
-                header_params.if_modified_since.unwrap_or(
-                    chrono::DateTime::parse_from_rfc3339("1940-01-01T00:00:00").unwrap().to_utc()
-                )
-            )
-        };
+        let lower_bnd = header_params.if_modified_since.map(|el| 
+            if query_params.upd_since.is_some() {query_params.upd_since.unwrap().min(el)}else{el}
+        );
 
-        if  lowest_upd_bound > now || (query_params.upd_until.is_some() && query_params.upd_until.unwrap() < lowest_upd_bound) {
+        if  lower_bnd.map(|l|
+            l > now || query_params.upd_until.is_some() && query_params.upd_until.unwrap() < l
+        ).unwrap_or(false) {
             return Ok(AsGetResponse::Status416_RequestRangeNotSatisfiable);
         }
         match get::as_get(self,header_params, query_params).await {
