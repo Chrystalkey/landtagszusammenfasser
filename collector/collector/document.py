@@ -435,12 +435,17 @@ END PROMPT"""
             "titel": self.meta.title or "Ohne Titel",
             "drucksnr" : self.drucksnr,
             "volltext": " ".join(self.meta.full_text).strip() if self.meta.full_text else "",
-            "autoren": self.authoren,
-            "autorpersonen": self.autorpersonen,
-            "schlagworte": self.schlagworte,
+            "autoren": deduplicate(self.authoren),
+            "autorpersonen": deduplicate(self.autorpersonen),
+            "schlagworte": deduplicate(self.schlagworte),
             "hash": self.meta.hash,
             "letzte_modifikation": self.meta.last_mod,
             "link": self.url,
             "typ": self.typehint+"",
+            "texte": deduplicate(self.texte),
             "zusammenfassung": self.zusammenfassung.strip() if self.zusammenfassung else None
         })
+
+def deduplicate(ls: list) -> list:
+    x = set(ls)
+    return list(x)

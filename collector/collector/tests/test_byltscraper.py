@@ -1,4 +1,5 @@
 import asyncio
+import jsondiff
 from collector.scrapers.bylt_scraper import BYLTScraper
 from collector.convert import sanitize_for_serialization
 from collector.config import CollectorConfiguration
@@ -39,6 +40,11 @@ async def inner_bylt_listing_extract():
                     regex = listing.get("url_regex")
                     if re.fullmatch(regex, url) is None:
                         raise Exception(f"Url `{url}`\n does not match regex \n`{regex}`\n for listing \n`{url}`")
+def json_difference(a,b):
+    return jsondiff.diff(
+        json.dumps(a, indent=2, ensure_ascii=False),
+        json.dumps(b, indent=2, ensure_ascii=False)
+    )
 
 async def inner_bylt_item_extract():
     async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit_per_host=1)) as session:
@@ -55,7 +61,9 @@ async def inner_bylt_item_extract():
                 vg = await scraper.item_extractor(item_scenario.get("url"))
                 assert vg is not None
                 sanitized_vg = sanitize_for_serialization(vg)
-                assert vg == item, f"Item `{item_scenario.get('url')}` does not match expected result for scenario `{file}`.Output:\n{json.dumps(sanitized_vg, indent=2, ensure_ascii=False).replace('\\n', '\n')}"
+                sanitized_item = sanitize_for_serialization(item)
+                dumped = json.dumps(sanitized_vg, indent=2, ensure_ascii=False)
+                assert sanitized_vg == sanitized_item, f"Item `{item_scenario.get('url')}` does not match expected result for scenario `{file}`.\nDifference:\n{json_difference(sanitized_vg, sanitized_item)}\nOutput:\n{dumped}"
 
 def test_bylt_listing_extract():
     asyncio.run(inner_bylt_listing_extract())

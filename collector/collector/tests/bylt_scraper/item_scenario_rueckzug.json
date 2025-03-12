@@ -101,9 +101,8 @@
           "name": "plenum"
         },
         "dokumente": [
-          
           {
-            "drucksnr": "example",
+            "drucksnr": "19/4166",
             "typ": "entwurf",
             "titel": "Testtitel",
             "volltext": "test",

@@ -7,29 +7,29 @@
     "wahlperiode": 19,
     "verfassungsaendernd": false,
     "initiatoren": [
-      "Staatsregierung"
+        "Staatsregierung"
     ],
     "typ": "gg-land-parl",
     "ids": [
-      {
+        {
         "id": "19/3816",
         "typ": "initdrucks"
-      }
+        }
     ],
     "links": [
-      "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157573",
-      "https://www.bayern.landtag.de/www/ElanTextAblage_WP19/Drucksachen/Basisdrucksachen/0000002500/0000002951.pdf"
+        "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157573",
+        "https://www.bayern.landtag.de/www/ElanTextAblage_WP19/Drucksachen/Basisdrucksachen/0000002500/0000002951.pdf"
     ],
     "stationen": [
-      {
+        {
         "start_zeitpunkt": "1940-01-01T00:00:00+00:00",
         "gremium": {
-          "parlament": "BY",
-          "wahlperiode": 19,
-          "name": "plenum"
+            "parlament": "BY",
+            "wahlperiode": 19,
+            "name": "plenum"
         },
         "dokumente": [
-          {
+            {
             "drucksnr": "19/3816",
             "typ": "entwurf",
             "titel": "Testtitel",
@@ -39,18 +39,18 @@
             "link": "https://www.example.com",
             "hash": "testhash",
             "schlagworte": [
-              "test"
+                "test"
             ],
             "autorpersonen": [
-              "autorpersonen"
+                "autorpersonen"
             ],
             "autoren": [
-              "autoren"
+                "autoren"
             ]
-          }
+            }
         ],
         "betroffene_texte": [
-          "test"
+            "test"
         ],
         "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157573",
         "parlament": "BY",
@@ -58,16 +58,16 @@
         "stellungnahmen": [],
         "typ": "parl-initiativ",
         "trojanergefahr": 1
-      },
-      {
+        },
+        {
         "start_zeitpunkt": "1940-01-01T00:00:00+00:00",
         "gremium": {
-          "parlament": "BY",
-          "wahlperiode": 19,
-          "name": "plenum"
+            "parlament": "BY",
+            "wahlperiode": 19,
+            "name": "plenum"
         },
         "dokumente": [
-          {
+            {
             "drucksnr": "example",
             "typ": "entwurf",
             "titel": "Testtitel",
@@ -77,35 +77,35 @@
             "link": "https://www.example.com",
             "hash": "testhash",
             "schlagworte": [
-              "test"
+                "test"
             ],
             "autorpersonen": [
-              "autorpersonen"
+                "autorpersonen"
             ],
             "autoren": [
-              "autoren"
+                "autoren"
             ]
-          }
+            }
         ],
         "betroffene_texte": [
-          "test"
+            "test"
         ],
         "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157573",
         "parlament": "BY",
         "schlagworte": [],
         "stellungnahmen": [],
         "typ": "parl-vollvlsgn"
-      },
-      {
+        },
+        {
         "start_zeitpunkt": "1940-01-01T00:00:00+00:00",
         "gremium": {
-          "parlament": "BY",
-          "wahlperiode": 19,
-          "name": "Ausschuss für Arbeit und Soziales, Jugend und Familie"
+            "parlament": "BY",
+            "wahlperiode": 19,
+            "name": "Ausschuss für Arbeit und Soziales, Jugend und Familie"
         },
         "dokumente": [
-          {
-            "drucksnr": "example",
+            {
+            "drucksnr": "19/4821",
             "typ": "entwurf",
             "titel": "Testtitel",
             "volltext": "test",
@@ -114,18 +114,18 @@
             "link": "https://www.example.com",
             "hash": "testhash",
             "schlagworte": [
-              "test"
+                "test"
             ],
             "autorpersonen": [
-              "autorpersonen"
+                "autorpersonen"
             ],
             "autoren": [
-              "autoren"
+                "autoren"
             ]
-          }
+            }
         ],
         "betroffene_texte": [
-          "test"
+            "test"
         ],
         "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157573",
         "parlament": "BY",
@@ -133,17 +133,17 @@
         "stellungnahmen": [],
         "typ": "parl-ausschber",
         "trojanergefahr": 1
-      },
-      {
+        },
+        {
         "start_zeitpunkt": "1940-01-01T00:00:00+00:00",
         "gremium": {
-          "parlament": "BY",
-          "wahlperiode": 19,
-          "name": "Ausschuss für Verfassung, Recht, Parlamentsfragen und Integration"
+            "parlament": "BY",
+            "wahlperiode": 19,
+            "name": "Ausschuss für Verfassung, Recht, Parlamentsfragen und Integration"
         },
         "dokumente": [
-          {
-            "drucksnr": "example",
+            {
+            "drucksnr": "19/4821",
             "typ": "entwurf",
             "titel": "Testtitel",
             "volltext": "test",
@@ -152,18 +152,18 @@
             "link": "https://www.example.com",
             "hash": "testhash",
             "schlagworte": [
-              "test"
+                "test"
             ],
             "autorpersonen": [
-              "autorpersonen"
+                "autorpersonen"
             ],
             "autoren": [
-              "autoren"
+                "autoren"
             ]
-          }
+            }
         ],
         "betroffene_texte": [
-          "test"
+            "test"
         ],
         "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157573",
         "parlament": "BY",
@@ -171,16 +171,72 @@
         "stellungnahmen": [],
         "typ": "parl-ausschber",
         "trojanergefahr": 1
-      },
-      {
+        },
+        {
         "start_zeitpunkt": "1940-01-01T00:00:00+00:00",
         "gremium": {
-          "parlament": "BY",
-          "wahlperiode": 19,
-          "name": "Gesetzesblatt"
+            "parlament": "BY",
+            "wahlperiode": 19,
+            "name": "plenum"
         },
         "dokumente": [
-          {
+            {
+                "drucksnr": "example",
+                "typ": "entwurf",
+                "titel": "Testtitel",
+                "volltext": "test",
+                "zusammenfassung": "test",
+                "letzte_modifikation": "1940-01-01T00:00:00+00:00",
+                "link": "https://www.example.com",
+                "hash": "testhash",
+                "schlagworte": [
+                    "test"
+                ],
+                "autorpersonen": [
+                    "autorpersonen"
+                ],
+                "autoren": [
+                    "autoren"
+                ]
+            },
+            {
+                "drucksnr": "19/5064",
+                "typ": "entwurf",
+                "titel": "Testtitel",
+                "volltext": "test",
+                "zusammenfassung": "test",
+                "letzte_modifikation": "1940-01-01T00:00:00+00:00",
+                "link": "https://www.example.com",
+                "hash": "testhash",
+                "schlagworte": [
+                    "test"
+                ],
+                "autorpersonen": [
+                    "autorpersonen"
+                ],
+                "autoren": [
+                    "autoren"
+                ]
+            }
+        ],
+        "betroffene_texte": [
+            "test"
+        ],
+        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157573",
+        "parlament": "BY",
+        "schlagworte": [],
+        "stellungnahmen": [],
+        "typ": "parl-akzeptanz"
+        },
+        {
+        "start_zeitpunkt": "1940-01-01T00:00:00+00:00",
+        "gremium": {
+            "parlament": "BY",
+            "wahlperiode": 19,
+            "name": "gesetzesblatt"
+        },
+        "dokumente": [
+            {
             "drucksnr": "example",
             "typ": "entwurf",
             "titel": "Testtitel",
@@ -190,15 +246,15 @@
             "link": "https://www.example.com",
             "hash": "testhash",
             "schlagworte": [
-              "test"
+                "test"
             ],
             "autorpersonen": [
-              "autorpersonen"
+                "autorpersonen"
             ],
             "autoren": [
-              "autoren"
+                "autoren"
             ]
-          }
+            }
         ],
         "betroffene_texte": [],
         "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157573",
@@ -206,7 +262,7 @@
         "schlagworte": [],
         "stellungnahmen": [],
         "typ": "postparl-gsblt"
-      }
+        }
     ]
-  }
+    }
 }
