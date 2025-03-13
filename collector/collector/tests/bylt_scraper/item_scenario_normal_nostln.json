@@ -226,7 +226,8 @@
         "parlament": "BY",
         "schlagworte": [],
         "stellungnahmen": [],
-        "typ": "parl-akzeptanz"
+        "typ": "parl-akzeptanz",
+        "trojanergefahr": 1
         },
         {
         "start_zeitpunkt": "1940-01-01T00:00:00+00:00",

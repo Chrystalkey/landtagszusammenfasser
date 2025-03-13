@@ -270,6 +270,7 @@ class BYLTScraper(Scraper):
                     dok = await self.create_document(extract_singlelink(cells[1]), models.Doktyp.ENTWURF)
                     dok.drucksnr = extract_drucksnr(cells[1])
                     typ = None
+                    trojanergefahr = max(dok.trojanergefahr, 1)
                     gremium = models.Gremium.from_dict({"name": "plenum", "parlament": "BY","wahlperiode": 19})
                     betroffene_texte = list(set(dok.texte))
                     if cellclass.endswith("zustm"):
@@ -281,12 +282,14 @@ class BYLTScraper(Scraper):
                         vg.stationen[-1].dokumente.append(models.DokRef(dok.package()))
                         vg.stationen[-1].gremium = gremium
                         vg.stationen[-1].betroffene_texte = betroffene_texte
+                        vg.stationen[-1].trojanergefahr = trojanergefahr
                         continue
                     else:
                         stat.typ = typ      
                         stat.dokumente = [models.DokRef(dok.package())]
                         stat.gremium = gremium
                         stat.betroffene_texte = betroffene_texte
+                        stat.trojanergefahr = trojanergefahr
                 ## Ausschussberichterstattung
                 ## hat 1 Link: Beschlussempfehlung
                 ## doppelt sich manchmal aus unbekannten Gründen
@@ -387,8 +390,6 @@ class BYLTScraper(Scraper):
             != -1
         ):
             return "stellungnahme"
-        elif cellsoup.text.find("Plenum") != -1 and cellsoup.text.find("Rücknahme") != -1:
-            return "rueckzug"
         elif (
             cellsoup.text.find("Plenum") != -1):
             if cellsoup.text.find("Plenarprotokoll") != -1:
@@ -400,21 +401,18 @@ class BYLTScraper(Scraper):
                     return "plenum-proto-ablng"
                 elif cellsoup.text.find("Rücknahme") != -1:
                     return "plenum-proto-rueckzug"
-                else:
-                    return "unknown"
             else: # plenum aber kein plenarprotokoll == beschluss
                 if cellsoup.text.find("Ablehnung") != -1:
                     return "plenum-beschluss-ablng"
                 elif cellsoup.text.find("Zustimmung") != -1:
                     return "plenum-beschluss-zustm"
-                else:
-                    return "unknown"
+                elif cellsoup.text.find("Rücknahme") != -1:
+                    return "rueckzug"
         elif cellsoup.text.find("Ausschuss") != -1:
             return "ausschuss-bse"
         elif cellsoup.text.find("Gesetz- und Verordnungsblatt") != -1:
             return "gsblatt"
-        else:
-            return "unknown"
+        return "unknown"
 
 def dedup_drucks(doks: list[models.DokRef]) -> list[models.Dokument]:
     unique_doks = []
@@ -451,9 +449,9 @@ def extract_schrstellung(cellsoup: BeautifulSoup) -> dict:
         len(links) > 0 and len(links) < 3
     ), f"Error: Unexpected number of links in Stellungnahme: {len(links)}, in cellsoup `{cellsoup}`"
     if len(links) == 2:
-        return {"lobbyregister": links[0]["href"], "stellungnahme": links[1]["href"], "autor": links[0].text if links[0] != "Download PDF" else None}
+        return {"lobbyregister": links[0]["href"], "stellungnahme": links[1]["href"], "autor": links[0].text if links[0].text != "Download PDF" else None}
     elif len(links) == 1:
-        return {"stellungnahme": links[0]["href"], "lobbyregister": "", "autor": links[0].text if links[0] != "Download PDF" else None}
+        return {"stellungnahme": links[0]["href"], "lobbyregister": "", "autor": links[0].text if links[0].text != "Download PDF" else None}
 
 
 def extract_plenproto(cellsoup: BeautifulSoup) -> str:
