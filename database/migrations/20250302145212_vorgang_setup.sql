@@ -83,6 +83,7 @@ CREATE TABLE station (
     id SERIAL PRIMARY KEY,
     api_id UUID NOT NULL UNIQUE,
     gr_id INTEGER REFERENCES gremium(id) ON DELETE SET NULL,
+    gremium_isff BOOLEAN,
     vg_id INTEGER NOT NULL REFERENCES vorgang(id) ON DELETE CASCADE,
     p_id INTEGER NOT NULL REFERENCES parlament(id) ON DELETE CASCADE,
     typ INTEGER NOT NULL REFERENCES stationstyp(id) ON DELETE CASCADE,
@@ -104,11 +105,15 @@ CREATE TABLE rel_station_schlagwort(
     sw_id INTEGER NOT NULL REFERENCES schlagwort(id) ON DELETE CASCADE,
     PRIMARY KEY (stat_id, sw_id)
 );
-
 CREATE TABLE rel_station_gesetz (
     stat_id INTEGER NOT NULL REFERENCES station(id) ON DELETE CASCADE,
     gesetz VARCHAR NOT NULL,
     PRIMARY KEY (stat_id, gesetz)
+);
+CREATE TABLE rel_station_link (
+    stat_id INTEGER NOT NULL REFERENCES station(id) ON DELETE CASCADE,
+    link VARCHAR NOT NULL,
+    PRIMARY KEY (stat_id, link)
 );
 
 CREATE TABLE stellungnahme (

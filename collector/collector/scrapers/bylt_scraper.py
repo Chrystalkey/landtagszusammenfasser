@@ -165,6 +165,7 @@ class BYLTScraper(Scraper):
                         "typ": "postparl-kraft",
                         "trojaner": False,
                         "betroffene_texte": [],
+                        "additional_links": [],
                     }
                 )
 
@@ -202,7 +203,10 @@ class BYLTScraper(Scraper):
                     stln_urls = extract_schrstellung(cells[1])
                     dok = await self.create_document(stln_urls["stellungnahme"], models.Doktyp.STELLUNGNAHME)
                     if stln_urls["autor"]:
-                        dok.authoren.append(stln_urls["autor"])
+                        if dok.authoren is None:
+                            dok.authoren = stln_urls["autor"]
+                        else:
+                            dok.authoren.append(stln_urls["autor"])
                     stln = models.Stellungnahme.from_dict(
                         {
                             "meinung": max(dok.meinung or 1, 1),
@@ -224,6 +228,7 @@ class BYLTScraper(Scraper):
                     dok = await self.create_document(pproto["pprotoaz"], models.Doktyp.PLENAR_MINUS_PROTOKOLL)
                     betroffene_texte = list(set(dok.texte))
                     typ = None
+                    video_link = pproto.get("video")
                     if cellclass == "plenum-proto-uebrw":
                         typ = "parl-vollvlsgn"
                     elif cellclass == "plenum-proto-zustm":
@@ -237,12 +242,14 @@ class BYLTScraper(Scraper):
                         vg.stationen[-1].dokumente.append(models.DokRef(dok.package()))
                         vg.stationen[-1].gremium = gremium
                         vg.stationen[-1].betroffene_texte = betroffene_texte
+                        vg.stationen[-1].additional_links.append(video_link)
                         continue
                     else:
                         stat.typ = typ
                         stat.dokumente = [models.DokRef(dok.package())]
                         stat.gremium = gremium
                         stat.betroffene_texte = betroffene_texte
+                        stat.additional_links.append(video_link)
 
                 ## Rückzugsmitteilung
                 ## Ein Link

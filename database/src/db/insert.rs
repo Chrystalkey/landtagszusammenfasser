@@ -106,15 +106,16 @@ pub async fn insert_station(
     };
     let stat_id = sqlx::query!(
         "INSERT INTO station 
-        (api_id, gr_id, link, p_id, titel, trojanergefahr, typ, start_zeitpunkt, vg_id, letztes_update)
+        (api_id, gr_id, link, p_id, titel, trojanergefahr, typ, start_zeitpunkt, vg_id, letztes_update, gremium_isff)
         VALUES
         ($1, $2, $3,
         (SELECT id FROM parlament   WHERE value = $4), $5, $6,
-        (SELECT id FROM stationstyp WHERE value = $7), $8, $9, COALESCE($10, NOW()))
+        (SELECT id FROM stationstyp WHERE value = $7), $8, $9, 
+        COALESCE($10, NOW()), $11)
         RETURNING station.id",
         sapi, gr_id, stat.link,
         stat.parlament.to_string(), stat.titel, stat.trojanergefahr.map(|x|x as i32), srv.guard_ts(stat.typ, sapi, obj)?,
-        stat.start_zeitpunkt, vg_id, stat.letztes_update
+        stat.start_zeitpunkt, vg_id, stat.letztes_update, stat.gremium_federf
     ).map(|r|r.id)
     .fetch_one(&mut **tx).await?;
 
@@ -124,6 +125,15 @@ pub async fn insert_station(
         SELECT $1, blub FROM UNNEST($2::text[]) as blub ON CONFLICT DO NOTHING",
         stat_id,
         stat.betroffene_texte.as_ref().map(|x| &x[..])
+    )
+    .execute(&mut **tx)
+    .await?;
+    // links
+    sqlx::query!(
+        "INSERT INTO rel_station_link(stat_id, link)
+        SELECT $1, blub FROM UNNEST($2::text[]) as blub ON CONFLICT DO NOTHING",
+        stat_id,
+        stat.additional_links.as_ref().map(|x| &x[..])
     )
     .execute(&mut **tx)
     .await?;

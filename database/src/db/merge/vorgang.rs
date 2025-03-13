@@ -298,7 +298,8 @@ pub async fn execute_merge_station(
         titel = COALESCE($5, titel),
         start_zeitpunkt = $6, letztes_update = COALESCE($7, NOW()),
         trojanergefahr = COALESCE($8, trojanergefahr),
-        link = COALESCE($9, link)
+        link = COALESCE($9, link),
+        gremium_isff = $10
         WHERE station.id = $1",
         db_id,
         gr_id,
@@ -308,7 +309,8 @@ pub async fn execute_merge_station(
         model.start_zeitpunkt,
         model.letztes_update,
         model.trojanergefahr.map(|x| x as i32),
-        model.link
+        model.link,
+        model.gremium_federf
     )
     .execute(&mut **tx)
     .await?;
@@ -322,9 +324,20 @@ pub async fn execute_merge_station(
     )
     .execute(&mut **tx)
     .await?;
-    // schlagworte
+    // links
+    sqlx::query!(
+        "INSERT INTO rel_station_link(stat_id, link)
+        SELECT $1, blub FROM UNNEST($2::text[]) as blub
+        ON CONFLICT DO NOTHING",
+        db_id,
+        model.additional_links.as_ref().map(|x| &x[..])
+    )
+    .execute(&mut **tx)
+    .await?;
 
+    // schlagworte
     insert::insert_station_sw(db_id, model.schlagworte.clone().unwrap_or(vec![]), tx).await?;
+    
     // dokumente
     let mut insert_ids = vec![];
     for dok in model.dokumente.iter() {

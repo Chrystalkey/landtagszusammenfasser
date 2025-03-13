@@ -10,7 +10,7 @@ station_map = {
     "preparl-vbegde": "Volksbegehren/Diskussionsentwurf",
     "parl-initiativ": "Parlamentarische Initiative",
     "parl-ausschber": "Ausschussberatung",
-    "parl-vollvlsgn": "Vollversammlung",
+    "parl-vollvlsgn": "Lesung",
     "parl-akzeptanz": "Akzeptiert",
     "parl-ablehnung": "Abgelehnt",
     "parl-ggentwurf": "Gegenentwurf des Parlaments",
@@ -83,6 +83,10 @@ def generate_header(model: models.Vorgang) -> str:
                     last_drucksache = doc.actual_instance
                     last_ds_date = stat.start_zeitpunkt
                     break
+    if last_drucksache and hasattr(last_drucksache, 'zusammenfassung') and last_drucksache.zusammenfassung:
+        zusammenfassung = last_drucksache.zusammenfassung
+    else:
+        zusammenfassung = "Keine Zusammenfassung verfügbar."
 
     builder = "+++\n"
     builder += f"title=\"{title}\"\n"
@@ -94,6 +98,7 @@ def generate_header(model: models.Vorgang) -> str:
     builder += f"date=\"{format_datetime(latest_station.start_zeitpunkt)}\"\n"
     builder += f"initiator=\"{initiatoren}\"\n"
     builder += f"gesetzestyp=\"{gesetzestyp_map.get(model.typ, model.typ)}\"\n"
+    builder += f"zusammenfassung=\"{zusammenfassung}\"\n"
     
     if last_drucksache:
         builder += f"drucksache_link=\"{last_drucksache.link}\"\n"
@@ -134,34 +139,27 @@ def generate_body(model: models.Vorgang) -> str:
     
     last_stype_readable = station_map.get(last_station_type, last_station_type)
 
-    builder = f"# {title}\n\n"
     
-    builder += "## Kurzzusammenfassung\n"
-    zusammenfassung = "Keine Zusammenfassung verfügbar."
-    if last_drucksache and hasattr(last_drucksache, 'zusammenfassung') and last_drucksache.zusammenfassung:
-        zusammenfassung = last_drucksache.zusammenfassung
-    builder += f"{zusammenfassung}\n\n"
-    
-    builder += "## Beratungsverlauf\n"
+    builder = "# Beratungsverlauf\n"
 
     # Sort by start_zeitpunkt as datetime objects
     sorted_stations = sorted(model.stationen, key=lambda x: (x.start_zeitpunkt, 0 if x.typ.startswith("prep") else 1 if x.typ.startswith("parl") else 2))
     for s in sorted_stations:
         if s.typ == "parl-ausschber" and hasattr(s, 'gremium') and s.gremium:
-            builder += "### " + station_map.get(s.typ) + f" im {s.gremium.name}" + "\n"
+            builder += "## " + station_map.get(s.typ) + f" im {s.gremium.name}" + "\n"
         else:
-            builder += "### " + station_map.get(s.typ, "Unbekannte Station") + "\n"
+            builder += "## " + station_map.get(s.typ, "Unbekannte Station") + "\n"
         # Format the datetime for display
         builder += f"Datum: {format_datetime(s.start_zeitpunkt)}\n\n"
         if len(s.dokumente) > 0: 
-            builder += "#### Dokumente\n"
+            builder += "### Dokumente\n"
         for dok in s.dokumente:
             d = dok.actual_instance
             title_text = d.titel if d.titel != "None" else ""
             dok_type = doktyp_map.get(d.typ, "Sonstiges")
             builder += f"- [{title_text} ({dok_type})]({d.link})\n"
     
-    builder += "\n## Weiterführende Links\n"
+    builder += "\n# Weiterführende Links\n"
     if model.links:
         for link in model.links:
             urls = urlsplit(link)

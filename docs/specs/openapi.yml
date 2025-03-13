@@ -611,11 +611,18 @@ components:
         start_zeitpunkt:
           type: "string"
           format: "date-time"
+          description: "Datum an dem die erste Aktion dieser Station erstellt wurde"
+          example: "Erstes Sitzungsdatum des Ausschusses"
         letztes_update:
           type: "string"
           format: "date-time"
+          description: "Letztes relevantes Datum an dem die Station angefasst wurde"
+          example: "letzte Ausschusssitzung oder nächste geplante Ausschusssitzung"
         gremium:
           $ref: "#/components/schemas/gremium"
+        gremium_federf:
+          type: boolean
+          description: "Ist die Station eine Ausschussberatung gibt dieses Feld an ob es im Federführenden Ausschuss ist"
         dokumente:
           type: "array"
           items:
@@ -630,6 +637,13 @@ components:
           type: "string"
           format: "uri"
           description: "Link zu einer Übersichtsseite zu dieser Station. _NICHT_ zu einem Dokument (PDF)"
+        additional_links:
+          type: "array"
+          items:
+            type: "string"
+            format: "uri"
+            description: "Weitere Links zu interessanten Infos für diese Station"
+            example: "Link zu einem Videomitschnitt der Plenarsitzung"
         parlament:
           $ref: "#/components/schemas/parlament"
         schlagworte:

@@ -138,6 +138,13 @@ pub async fn station_by_id(
     .map(|r| r.gesetz)
     .fetch_all(&mut **executor)
     .await?;
+    let add_links = sqlx::query!(
+        "SELECT link FROM rel_station_link WHERE stat_id = $1",
+        id
+    )
+    .map(|r| r.link)
+    .fetch_all(&mut **executor)
+    .await?;
     let temp_stat = sqlx::query!(
         "SELECT s.*, p.value as parlv, st.value as stattyp
         FROM station s
@@ -175,6 +182,8 @@ pub async fn station_by_id(
         gremium,
         api_id: Some(temp_stat.api_id),
         link: temp_stat.link,
+        additional_links: as_option(add_links),
+        gremium_federf: temp_stat.gremium_isff
     });
 }
 
