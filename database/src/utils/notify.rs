@@ -1,5 +1,5 @@
 use crate::{error::DataValidationError, LTZFServer, Result};
-use lettre::{Message, Transport};
+use lettre::{message::header::ContentType, Message, Transport};
 use uuid::Uuid;
 
 impl LTZFServer {
@@ -19,9 +19,9 @@ pub fn notify_new_enum_entry<T: std::fmt::Debug + ToString>(
     server: &LTZFServer,
 ) -> Result<()> {
     let subject = format!(
-        "Für Typ `{}` wurde ein neuer Eintrag `{}` erstellt. ",
+        "Für Typ `{}` wurde ein neuer Eintrag `{:?}` erstellt. ",
         std::any::type_name::<T>(),
-        new_entry.to_string()
+        new_entry
     );
 
     let simstr = similarity
@@ -30,8 +30,8 @@ pub fn notify_new_enum_entry<T: std::fmt::Debug + ToString>(
         .fold("".to_string(), |a, n| format!("{a}\n{n}"));
 
     let body = format!("Es gibt {} ähnliche Einträge: {simstr}", similarity.len());
-    send_email(subject, body, server)?;
-    tracing::error!("Notify: New Enum Entry! Sending mails is not yet supported.");
+    send_email(subject.clone(), body.clone(), server)?;
+    tracing::error!("Notify: New Enum Entry: {}\n{}!", subject, body);
 
     Ok(())
 }
@@ -79,7 +79,7 @@ pub fn send_email(subject: String, body: String, state: &LTZFServer) -> Result<(
                 state.config.mail_sender.as_ref().unwrap()
             )
             .parse()
-            .unwrap(),
+            .map_err(|e| DataValidationError::InvalidFormat { field: "mail address".to_string(), message: format!("{}", e) })?,
         )
         .to(state
             .config
@@ -87,8 +87,9 @@ pub fn send_email(subject: String, body: String, state: &LTZFServer) -> Result<(
             .as_ref()
             .unwrap()
             .parse()
-            .unwrap())
+            .map_err(|e| DataValidationError::InvalidFormat { field: "mail address".to_string(), message: format!("{}", e) })?)
         .subject(subject.clone())
+        .header(ContentType::TEXT_PLAIN)
         .body(body.clone())
         .unwrap();
     tracing::info!("Mail was Sent. Subject: {}", subject);
