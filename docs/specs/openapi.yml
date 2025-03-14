@@ -519,7 +519,9 @@ components:
         - "volltext"
         - "hash"
         - "typ"
-        - "letzte-modifikation"
+        - "herausgeber"
+        - "erstellt_am"
+        - "letzte_modifikation"
         - "link"
       properties:
         api_id:
@@ -544,9 +546,27 @@ components:
           description: "Volltext des Dokuments"
         zusammenfassung:
           type: "string"
+        herausgeber:
+          type: string
+          description: "Dokument wurde Veröffentlich von... (Parlament, Ministerium, ...)"
+        referenzdatum:
+          type: string
+          format: date-time
+          description: "Datum, auf das sich das Dokument bezieht"
+          example: "Plenarprotokoll für Sitzung am ==7.3.==, wurde erstellt am 8.3."
+        erstellt_am:
+          type: string
+          format: date-time
+          example: "Dateierstellungsdatum"
         letzte_modifikation:
           type: "string"
           format: "date-time"
+          example: "Letzte Modifikation der Datei"
+        meinung:
+          type: "integer"
+          description: "Meinungsbild des Dokuments. (z.B. Stellungnahme, Beschlussempfehlung) Intervall [1;5]. Falls Beschlussempfehlung: 1=ablehnung, 2-4: zstm in geänderter Fassung, 5: Zustimmung"
+          minimum: 1
+          maximum: 5
         link:
           type: "string"
           format: "uri"
@@ -556,38 +576,60 @@ components:
           type: "array"
           items:
             type: "string"
-        autorpersonen:
-          type: "array"
-          items:
-            type: "string"
-            example: "Ach, Manfred (CSU)"
-            description: "The authors of the document if they are persons"
         autoren:
           type: "array"
+          example: "Ach, Manfred; Staatsregierung; Fraktion die Grünen; Fraktion CDU/CSU"
           items:
-            type: "string"
-            example: "Staatsregierung, Fraktion die Grünen, Fraktion CDU/CSU"
-            description: "The authors of the document if they are not persons"
+            $ref: "#/components/schemas/autor"
+        redepunkte:
+          type: array
+          description: "Falls Redeprotokoll: Liste an Redepunkten"
+          items:
+            $ref: "#/components/schemas/redepunkt"
+    gesetzmodifikation:
+      type: object
+      description: "Geplanter Modifikationsstand eines Gesetzes"
+      properties:
+        gesetz:
+          type: string
+        paragraph:
+          type: integer
+        zustand:
+          type: string
+          enum: ["add", "sub", "mod"]
+          description: "Addition, Subtraktion, Modifikation"
+    redepunkt:
+      type: object
+      description: "Redebeitrag einer Plenar- oder Ausschusssitzung"
+      properties:
+        redner:
+          type: string
+        redezeit:
+          type: integer
+          minimum: 0
+          description: "Redezeit in Sekunden"
+        organisation:
+          type: string
+          description: "Zugehörigkeit des Redners, Kontextabhängig"
+          example: "CDU; Agora Energiewende; Fraktion Linke/Die Partei/ÖDP"
     dok_ref:
       oneOf:
         - $ref: "#/components/schemas/dokument"
         - type: "string"
           description: "Schon vorher hochgeladenes Dokument"
-    stellungnahme:
+    autor:
       type: "object"
-      description: "Wrapper um ein `dokument`, der noch ein bisschen mehr Kontext mitgibt."
+      description: "Autor mit Kontext"
       required:
-        - "dokument"
-        - "meinung"
+        - organisation
       properties:
-        dokument:
-          $ref: "#/components/schemas/dokument"
-        meinung:
-          type: "integer"
-          description: "Meinung des Stellungnehmenden im Intervall [1;10]. Unbekannte Meinung: 0"
-          minimum: 0
-          maximum: 10
-        lobbyregister_link:
+        organisation:
+          type: string
+        person:
+          type: string
+        fachgebiet:
+          type: string
+        lobbyregister:
           type: "string"
           format: "uri"
     station:
@@ -629,10 +671,9 @@ components:
             $ref: "#/components/schemas/dok_ref"
         betroffene_texte:
           type: "array"
+          description: "Gesetze, die von dem geplanten Vorgang berührt werden."
           items:
-            type: "string"
-            example: "§ 1 Abs. 1 Satz 1"
-            description: "Gesetze, die von dem geplanten Vorgang berührt werden."
+            $ref: "#/components/schemas/gesetzmodifikation"
         link:
           type: "string"
           format: "uri"
@@ -654,7 +695,7 @@ components:
         stellungnahmen:
           type: "array"
           items: 
-            $ref: "#/components/schemas/stellungnahme"
+            $ref: "#/components/schemas/dokument"
         typ:
           $ref: "#/components/schemas/stationstyp"
         trojanergefahr:
@@ -750,16 +791,6 @@ components:
           description: "Die Drucksachen, die in diesem TOP besprochen werden sollen"
           items:
             $ref: "#/components/schemas/dok_ref"
-    experte:
-      type: "object"
-      required:
-        - "name"
-        - "fachgebiet"
-      properties:
-        name:
-          type: "string"
-        fachgebiet:
-          type: "string"
     ausschusssitzung:
       type: "object"
       description: "Sitzung oder Anhörung. Eine Anhörung wird es, wenn Experten geladen werden"
@@ -798,4 +829,4 @@ components:
           type: "array"
           description: "Optional: Liste von geladenen Experten. (macht aus der Sitzung eine Anhörung)"
           items:
-            $ref: "#/components/schemas/experte"
+            $ref: "#/components/schemas/autor"
