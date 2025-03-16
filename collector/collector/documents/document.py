@@ -28,7 +28,7 @@ class Document(ABC):
     session = None
     config = config
 
-    def __init__(self, typhint: models.Doktyp, session, config : Configuration):
+    def __init__(self, typhint: models.Doktyp, session, config: Configuration):
         self.typ=typhint
         self.fileid = UUID("00000000-0000-0000-0000-000000000000") if config.testing_mode else uuid4()
         self.session = session

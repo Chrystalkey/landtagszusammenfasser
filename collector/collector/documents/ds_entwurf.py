@@ -1,16 +1,17 @@
 from documents import Document
 from oapicode.openapi_client import models
+from collector.config import Configuration
 
 class DSEntwurf(Document):
     drucksnr = None
     vorwort = None
     betroffene_gesetze = None
 
-    def __init__(self, session, testing_mode: bool = False):
+    def __init__(self, session, config: Configuration):
         self.vorwort = None
         self.betroffene_gesetze = None
         self.drucksnr = None
-        super.__init__(self, models.Doktyp.ENTWURF, session, testing_mode)
+        super.__init__(self, models.Doktyp.ENTWURF, session, config)
 
     def semantic_extraction(self):
         prompt = """Extrahiere folgende Daten aus dem nachfolgenden Text:
@@ -19,4 +20,3 @@ class DSEntwurf(Document):
         {drucksnr:\"\", autorpersonen: [], autoren: [], schlagworte: [], sum_intent: \"\", sum_cost: \"\", sum_changes: \"\", sum_alternatives: \"\", trojanergf: 0}
         ENDE DES PROMPTS TEXT FOLGT
         """
-        pass

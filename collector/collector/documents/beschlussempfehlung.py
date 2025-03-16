@@ -1,14 +1,15 @@
 from documents import Document
 from oapicode.openapi_client import models
+from collector.config import Configuration
 
 class DSEntwurf(Document):
     drucksnr = None
     meinung = None
 
-    def __init__(self, session, testing_mode: bool = False):
+    def __init__(self, session, config: Configuration):
         self.drucksnr = None
         self.meinung = None
-        super.__init__(self, models.Doktyp.BESCHLUSSEMPF, session, testing_mode)
+        super.__init__(self, models.Doktyp.BESCHLUSSEMPF, session, config)
 
     def semantic_extraction(self):
         prompt = """Extrahiere folgende Daten aus dem nachfolgenden Text:

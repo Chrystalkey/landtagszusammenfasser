@@ -1,5 +1,6 @@
 from documents import Document
 from oapicode.openapi_client import models
+from collector.config import Configuration
 
 class Redepunkt:
     redner = None
@@ -15,10 +16,9 @@ class Redepunkt:
 class DSEntwurf(Document):
     redner = []
 
-    def __init__(self, session, testing_mode: bool = False):
+    def __init__(self, session, config: Configuration):
         self.redner = []
-        super.__init__(self, models.Doktyp.PLENAR_MINUS_PROTOKOLL, session, testing_mode)
-    
+        super.__init__(self, models.Doktyp.PLENAR_MINUS_PROTOKOLL, session, config)
 
     def semantic_extraction(self):
         prompt = """Extrahiere folgende Daten aus dem nachfolgenden Text:
