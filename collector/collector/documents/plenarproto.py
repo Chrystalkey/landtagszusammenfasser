@@ -16,8 +16,8 @@ class DSEntwurf(Document):
     redner = []
 
     def __init__(self, session, testing_mode: bool = False):
-        super.__init__(self, models.Doktyp.PLENAR_MINUS_PROTOKOLL, session, testing_mode)
         self.redner = []
+        super.__init__(self, models.Doktyp.PLENAR_MINUS_PROTOKOLL, session, testing_mode)
     
 
     def semantic_extraction(self):

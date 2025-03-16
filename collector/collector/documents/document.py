@@ -30,7 +30,7 @@ class Document(ABC):
 
     def __init__(self, typhint: models.Doktyp, session, config : Configuration):
         self.typ=typhint
-        self.fileid = UUID("00000000-0000-0000-0000-000000000000") if testmode else uuid4()
+        self.fileid = UUID("00000000-0000-0000-0000-000000000000") if config.testing_mode else uuid4()
         self.session = session
         self.config = config
 
@@ -73,11 +73,9 @@ class Document(ABC):
     @classmethod
     def from_dict(cls, d: dict):
         assert False, "TODO"
-        pass
 
     def to_dict(self) ->dict:
         assert False, "TODO"
-        pass
 
     @classmethod
     def from_json(cls, string: str):

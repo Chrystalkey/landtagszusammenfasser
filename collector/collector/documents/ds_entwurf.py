@@ -7,10 +7,10 @@ class DSEntwurf(Document):
     betroffene_gesetze = None
 
     def __init__(self, session, testing_mode: bool = False):
-        super.__init__(self, models.Doktyp.ENTWURF, session, testing_mode)
         self.vorwort = None
         self.betroffene_gesetze = None
         self.drucksnr = None
+        super.__init__(self, models.Doktyp.ENTWURF, session, testing_mode)
 
     def semantic_extraction(self):
         prompt = """Extrahiere folgende Daten aus dem nachfolgenden Text:

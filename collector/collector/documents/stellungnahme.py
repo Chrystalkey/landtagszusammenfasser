@@ -6,6 +6,8 @@ class DSEntwurf(Document):
     meinung = None
 
     def __init__(self, session, testing_mode: bool = False):
+        self.organisation = None
+        self.meinung = None
         super.__init__(self, models.Doktyp.STELLUNGNAHME, session, testing_mode)
 
     def semantic_extraction(self):
@@ -14,4 +16,5 @@ class DSEntwurf(Document):
         Nutze dazu eine json Data structure und weiche unter keinen Umständen davon ab. Die Outline der Datenstruktur ist: 
         {autoren: [] ,organisation: \"\",meinung: 0,schlagworte: [],zusammenfassung: \"\"}
         ENDE DES PROMPTS TEXT FOLGT"""
+        
         
