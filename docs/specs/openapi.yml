@@ -443,6 +443,8 @@ components:
         - "preparl-vbegde" # Volksbegehren / Diskussionsentwurf
         - "parl-initiativ" # Gesetzesinitiative
         - "parl-ausschber" # Beratung im Ausschuss
+        - "parl-berabgeschl" # Ausschussberatung abgeschlossen
+        - "parl-verzoegert" # Bericht gemäß § 96 Geschäftsordnung BT bei Verzögerungen
         - "parl-vollvlsgn" # Vollversammlung / Lesung
         - "parl-akzeptanz" # Schlussabstimmung & Akzeptanz des Parlaments
         - "parl-ablehnung" # Schlussabstimmung & Ablehnung des Parlaments
