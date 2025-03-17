@@ -42,14 +42,14 @@ pub async fn vg_get(
 
 pub async fn as_get_by_id(
     server: &LTZFServer,
-    header_params: models::AsGetByIdHeaderParams,
-    path_params: models::AsGetByIdPathParams,
-) -> Result<openapi::apis::default::AsGetByIdResponse> {
-    use openapi::apis::default::AsGetByIdResponse;
+    header_params: models::SGetByIdHeaderParams,
+    path_params: models::SGetByIdPathParams,
+) -> Result<openapi::apis::default::SGetByIdResponse> {
+    use openapi::apis::default::SGetByIdResponse;
     let mut tx = server.sqlx_db.begin().await?;
-    let api_id = path_params.as_id;
+    let api_id = path_params.s_id;
     let id = sqlx::query!("
-    SELECT id FROM ausschusssitzung WHERE api_id = $1
+    SELECT id FROM sitzung WHERE api_id = $1
     AND last_update > COALESCE($2, CAST('1940-01-01T00:00:00' AS TIMESTAMPTZ));", 
     api_id, header_params.if_modified_since)
         .map(|r| r.id)
@@ -58,7 +58,7 @@ pub async fn as_get_by_id(
     if let Some(id) = id{
         let result = retrieve::ausschusssitzung_by_id(id, &mut tx).await?;
         tx.commit().await?;
-        Ok(AsGetByIdResponse::Status200_SuccessfulOperation(result))
+        Ok(SGetByIdResponse::Status200_SuccessfulOperation(result))
     }else{
         Err(crate::error::LTZFError::Validation { source: crate::error::DataValidationError::QueryParametersNotSatisfied })
     }
@@ -66,13 +66,13 @@ pub async fn as_get_by_id(
 
 pub async fn as_get(
     server: &LTZFServer,
-    header_params: models::AsGetHeaderParams,
-    query_params: models::AsGetQueryParams,
-) -> Result<models::AsGet200Response> {
+    header_params: models::SGetHeaderParams,
+    query_params: models::SGetQueryParams,
+) -> Result<models::SGet200Response> {
     let mut tx = server.sqlx_db.begin().await?;
     let result = retrieve::as_by_parameter(query_params, header_params,  &mut tx).await?;
     tx.commit().await?;
-    Ok(models::AsGet200Response {
+    Ok(models::SGet200Response {
         payload: as_option(result),
     })
 }

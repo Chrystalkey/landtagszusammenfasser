@@ -232,52 +232,52 @@ impl openapi::apis::default::Default for LTZFServer {
             }
         }
     }
-    /// AsDelete - DELETE /api/v1/ausschusssitzung/{as_id}
-    async fn as_delete(
+    /// SDelete - DELETE /api/v1/ausschusssitzung/{as_id}
+    async fn s_delete(
         &self,
         method: Method,
         host: Host,
         cookies: CookieJar,
         claims: Self::Claims,
-        path_params: models::AsDeletePathParams,
-    ) -> Result<AsDeleteResponse, ()> {
+        path_params: models::SDeletePathParams,
+    ) -> Result<SDeleteResponse, ()> {
         if claims.0 != auth::APIScope::Admin && claims.0 != auth::APIScope::KeyAdder {
-            return Ok(AsDeleteResponse::Status401_APIKeyIsMissingOrInvalid);
+            return Ok(SDeleteResponse::Status401_APIKeyIsMissingOrInvalid);
         }
-        Ok(delete_ass_by_api_id(path_params.as_id, self)
+        Ok(delete_ass_by_api_id(path_params.s_id, self)
             .await
             .map_err(|e| {
                 tracing::warn!("{}", e);
             })?)
     }
 
-    /// AsGetById - GET /api/v1/ausschusssitzung/{as_id}
-    async fn as_get_by_id(
+    /// SGetById - GET /api/v1/ausschusssitzung/{as_id}
+    async fn s_get_by_id(
         &self,
         method: Method,
         host: Host,
         cookies: CookieJar,
-        header_params: models::AsGetByIdHeaderParams,
-        path_params: models::AsGetByIdPathParams,
-    ) -> Result<AsGetByIdResponse, ()> {
+        header_params: models::SGetByIdHeaderParams,
+        path_params: models::SGetByIdPathParams,
+    ) -> Result<SGetByIdResponse, ()> {
         let ass = get::as_get_by_id(self,header_params, path_params).await.map_err(|e| {
             tracing::warn!("{}", e);
         })?;
         return Ok(ass);
     }
 
-    /// AsIdPut - PUT /api/v1/ausschusssitzung/{as_id}
-    async fn as_id_put(
+    /// SIdPut - PUT /api/v1/ausschusssitzung/{as_id}
+    async fn sid_put(
         &self,
         method: Method,
         host: Host,
         cookies: CookieJar,
         claims: Self::Claims,
-        path_params: models::AsIdPutPathParams,
-        body: models::Ausschusssitzung,
-    ) -> Result<AsIdPutResponse, ()> {
+        path_params: models::SIdPutPathParams,
+        body: models::Sitzung,
+    ) -> Result<SIdPutResponse, ()> {
         if claims.0 != auth::APIScope::Admin && claims.0 != auth::APIScope::KeyAdder {
-            return Ok(AsIdPutResponse::Status401_APIKeyIsMissingOrInvalid);
+            return Ok(SIdPutResponse::Status401_APIKeyIsMissingOrInvalid);
         }
         let out = put::as_id_put(self, path_params, body).await.map_err(|e| {
             tracing::warn!("{}", e);
@@ -285,40 +285,40 @@ impl openapi::apis::default::Default for LTZFServer {
         Ok(out)
     }
 
-    /// AsPut - PUT /api/v1/ausschusssitzung
-    async fn as_put(
+    /// SPut - PUT /api/v1/ausschusssitzung
+    async fn s_put(
         &self,
         method: Method,
         host: Host,
         cookies: CookieJar,
         claims: Self::Claims,
-        query_params: models::AsPutQueryParams,
-        body: models::Ausschusssitzung,
-    ) -> Result<AsPutResponse, ()> {
+        query_params: models::SPutQueryParams,
+        body: models::Sitzung,
+    ) -> Result<SPutResponse, ()> {
         let rval = put::as_put(self, body).await;
         match rval {
-            Ok(_) => Ok(AsPutResponse::Status201_SuccessfullyIntegratedTheObject),
+            Ok(_) => Ok(SPutResponse::Status201_SuccessfullyIntegratedTheObject),
             Err(e) => {
                 tracing::warn!("Error Occurred and Is Returned: {:?}", e.to_string());
                 match e {
                     LTZFError::Validation {
                         source: DataValidationError::AmbiguousMatch { .. },
-                    } => Ok(AsPutResponse::Status409_Konflikt),
+                    } => Ok(SPutResponse::Status409_Konflikt),
                     _ => Err(()),
                 }
             }
         }
     }
 
-    /// AsGet - GET /api/v1/ausschusssitzung
-    async fn as_get(
+    /// SGet - GET /api/v1/ausschusssitzung
+    async fn s_get(
         &self,
         method: Method,
         host: Host,
         cookies: CookieJar,
-        header_params: models::AsGetHeaderParams,
-        query_params: models::AsGetQueryParams,
-    ) -> Result<AsGetResponse, ()> {
+        header_params: models::SGetHeaderParams,
+        query_params: models::SGetQueryParams,
+    ) -> Result<SGetResponse, ()> {
         let now = chrono::Utc::now();
         let lower_bnd = header_params.if_modified_since.map(|el| 
             if query_params.upd_since.is_some() {query_params.upd_since.unwrap().min(el)}else{el}
@@ -327,14 +327,14 @@ impl openapi::apis::default::Default for LTZFServer {
         if  lower_bnd.map(|l|
             l > now || query_params.upd_until.is_some() && query_params.upd_until.unwrap() < l
         ).unwrap_or(false) {
-            return Ok(AsGetResponse::Status416_RequestRangeNotSatisfiable);
+            return Ok(SGetResponse::Status416_RequestRangeNotSatisfiable);
         }
         match get::as_get(self,header_params, query_params).await {
-            Ok(models::AsGet200Response { payload: None }) => {
-                Ok(AsGetResponse::Status204_NoContentFoundForTheSpecifiedParameters)
+            Ok(models::SGet200Response { payload: None }) => {
+                Ok(SGetResponse::Status204_NoContentFoundForTheSpecifiedParameters)
             }
             Ok(x) => {
-                Ok(AsGetResponse::Status200_AntwortAufEineGefilterteAnfrageZuAusschusssitzungen(x))
+                Ok(SGetResponse::Status200_AntwortAufEineGefilterteAnfrageZuSitzungen(x))
             }
             Err(e) => {
                 tracing::warn!("{}", e.to_string());

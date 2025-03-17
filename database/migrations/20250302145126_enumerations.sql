@@ -1,4 +1,3 @@
--- tables that do not require any foreign keys
 CREATE TABLE
     vorgangstyp (
         id SERIAL PRIMARY KEY,
@@ -35,12 +34,6 @@ CREATE TABLE
         value VARCHAR NOT NULL
     );
 
-CREATE TABLE experte(
-    id SERIAL PRIMARY KEY,
-    name VARCHAR NOT NULL,
-    fachgebiet VARCHAR NOT NULL
-);
-
 INSERT INTO
     vorgangstyp (value)
 VALUES
@@ -48,6 +41,8 @@ VALUES
     ('gg-zustimmung'),
     ('gg-land-parl'),
     ('gg-land-volk'),
+    ('antrag'),
+    ('anfrage'),
     ('sonstig');
 
 INSERT INTO
@@ -61,8 +56,8 @@ VALUES
 INSERT INTO
     stationstyp (value)
 VALUES
-    ('preparl-regent'),
     ('preparl-eckpup'),
+    ('preparl-regent'),
     ('preparl-regbsl'),
     ('preparl-vbegde'),
     ('parl-initiativ'),
@@ -88,12 +83,15 @@ INSERT INTO parlament(value) VALUES
 INSERT INTO
     dokumententyp (value)
 VALUES
+    ('preparl-eckpnkt'),
     ('preparl-entwurf'),
+    ('antrag'),
+    ('anfrage'),
     ('entwurf'),
     ('mitteilung'),
+    ('beschlussempf'),
     ('stellungnahme'),
     ('gutachten'),
-    ('beschlussempf'),
     ('plenar-protokoll'),
     ('plenar-tops'),
     ('as-tops'),

@@ -1,4 +1,3 @@
--- Add migration script here
 CREATE TABLE dokument_versions(
     dok_id INTEGER REFERENCES dokument(id) ON DELETE CASCADE,
     previous_id INTEGER REFERENCES dokument(id)  ON DELETE CASCADE,

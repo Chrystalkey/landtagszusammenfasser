@@ -1,4 +1,3 @@
--- Add migration script here
 CREATE TABLE gremium(
     id SERIAL PRIMARY KEY,
     parl INTEGER NOT NULL REFERENCES parlament(id),
@@ -8,6 +7,15 @@ CREATE TABLE gremium(
     link_kalender VARCHAR,
 
     CONSTRAINT unique_combo UNIQUE (parl, name, wp)
+);
+
+CREATE TABLE autor(
+    id SERIAL PRIMARY KEY,
+    person VARCHAR,
+    organisation VARCHAR NOT NULL,
+    fachgebiet VARCHAR,
+    lobbyreg_link VARCHAR,
+    CONSTRAINT unique_lines UNIQUE(person, organisation,fachgebiet,lobbyreg_link)
 );
 
 CREATE TABLE dokument (
@@ -22,20 +30,19 @@ CREATE TABLE dokument (
     volltext VARCHAR NOT NULL,
     zusammenfassung VARCHAR,
 
+    referenzdatum TIMESTAMP WITH TIME ZONE,
+    erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL,
     last_mod TIMESTAMP WITH TIME ZONE NOT NULL,
+
     link VARCHAR NOT NULL,
-    hash VARCHAR NOT NULL
+    hash VARCHAR NOT NULL,
+
+    meinung INTEGER NOT NULL
 );
 
 CREATE TABLE rel_dok_autor(
     dok_id INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE,
-    autor VARCHAR NOT NULL,
-    PRIMARY KEY (dok_id, autor)
-);
-
-CREATE TABLE rel_dok_autorperson(
-    dok_id INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE,
-    autor VARCHAR NOT NULL,
+    autor INTEGER NOT NULL REFERENCES autor(id) ON DELETE CASCADE,
     PRIMARY KEY (dok_id, autor)
 );
 
@@ -43,6 +50,12 @@ CREATE TABLE rel_dok_schlagwort(
     dok_id INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE,
     sw_id INTEGER NOT NULL REFERENCES schlagwort(id) ON DELETE CASCADE,
     PRIMARY KEY (dok_id, sw_id)
+);
+CREATE TABLE rel_dok_redepunkt(
+    id SERIAL PRIMARY KEY,
+    dok_id INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE,
+    redner INTEGER NOT NULL REFERENCES autor(id) ON DELETE SET NULL,
+    redezeit INTEGER -- redezeit in Sekunden
 );
 
 CREATE TABLE vorgang (
@@ -56,7 +69,7 @@ CREATE TABLE vorgang (
 );
 CREATE TABLE rel_vorgang_init(
     vg_id INTEGER NOT NULL REFERENCES vorgang(id) ON DELETE CASCADE,
-    initiator VARCHAR NOT NULL,
+    initiator INTEGER NOT NULL REFERENCES autor(id) ON DELETE CASCADE,
     PRIMARY KEY (vg_id, initiator)
 );
 
@@ -116,10 +129,8 @@ CREATE TABLE rel_station_link (
     PRIMARY KEY (stat_id, link)
 );
 
-CREATE TABLE stellungnahme (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE rel_station_stln (
     stat_id INTEGER NOT NULL REFERENCES station(id) ON DELETE CASCADE, -- this is whatever this relates to
     dok_id INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE, -- this is the content
-    meinung INTEGER NOT NULL,
-    lobbyreg_link VARCHAR
+    PRIMARY KEY (stat_id, dok_id)
 );
