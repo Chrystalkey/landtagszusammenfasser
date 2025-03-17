@@ -20,6 +20,7 @@ def create_scraper(session):
     config.oapiconfig = Configuration(host="http://localhost")
     scraper = BYLTScraper(config, session)
     return scraper
+
 async def inner_bylt_listing_extract():
     async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit_per_host=1)) as session:
         scraper = create_scraper(session)

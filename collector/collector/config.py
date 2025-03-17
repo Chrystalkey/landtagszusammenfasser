@@ -19,7 +19,7 @@ class CollectorConfiguration:
     api_key : str = None
     trojan_threshold : int = None
     cache : ScraperCache = None
-    testing_mode: int = None
+    testing_mode: bool = None
 
     def __init__(self, api_key, openai_api_key, testing_mode=False):
         global logger

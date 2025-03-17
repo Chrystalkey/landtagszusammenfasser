@@ -359,6 +359,13 @@ class BYLTScraper(Scraper):
     async def create_document(self, url: str, type_hint: models.Doktyp) -> Document:
         global logger
         logger.debug(f"Creating document from url: {url}")
+        ## download
+        ## hash document
+        ## falls hash in cache
+        ##     skip
+        ## falls nicht
+        ## extract
+        ## store hash in cache
         document = self.config.cache.get_dokument(url)
         if document is None:
             logger.debug("Cached version not found, fetching from source")
