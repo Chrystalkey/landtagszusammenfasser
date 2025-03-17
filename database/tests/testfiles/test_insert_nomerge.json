@@ -30,7 +30,8 @@
           "letztes_update": "2025-03-03T14:39:36.022Z",
           "gremium": {
             "parlament": "BT",
-            "name": "Ausschuss für Inneres und Gemüseauflauf"
+            "name": "Ausschuss für Inneres und Gemüseauflauf",
+            "wahlperiode": 10
           },
           "dokumente": [
             {
@@ -68,7 +69,7 @@
             {
               "dokument": {
                 "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa4",
-                "drucksnr": "string",
+                "drucksnr": null,
                 "typ": "entwurf",
                 "titel": "string",
                 "kurztitel": "string",
@@ -127,7 +128,8 @@
           "letztes_update": "2025-03-03T14:39:36.022Z",
           "gremium": {
             "parlament": "BT",
-            "name": "Ausschuss für Inneres und Gemüseauflauf"
+            "name": "Ausschuss für Inneres und Gemüseauflauf",
+            "wahlperiode": 10
           },
           "dokumente": [
             {
@@ -165,7 +167,7 @@
             {
               "dokument": {
                 "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa4",
-                "drucksnr": "string",
+                "drucksnr": null,
                 "typ": "entwurf",
                 "titel": "string",
                 "kurztitel": "string",

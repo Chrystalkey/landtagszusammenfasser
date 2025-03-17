@@ -2,7 +2,7 @@
 name = "collector"
 version = "0.1.1"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = ["Benedikt Schäfer", "Noah Lokocz", "Liv Märtens"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -17,6 +17,7 @@ litellm = "^1.57.4"
 pytest-asyncio = "^0.25.2"
 pypdf = "^5.1.0"
 openapi-client = {path = "oapicode"}
+jsondiff = "^2.2.1"
 
 [build-system]
 requires = ["poetry-core"]

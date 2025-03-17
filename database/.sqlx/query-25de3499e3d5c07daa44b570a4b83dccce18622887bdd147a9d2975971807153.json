@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT a.id FROM ausschusssitzung a\n        INNER JOIN gremium g on g.id = a.gr_id\n        INNER JOIN parlament p ON g.parl = p.id\n        WHERE a.api_id = $1 OR\n        (p.value = $2 AND g.name = $3 AND g.wp = $4 AND a.termin = $5)\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Int4",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "25de3499e3d5c07daa44b570a4b83dccce18622887bdd147a9d2975971807153"
+}

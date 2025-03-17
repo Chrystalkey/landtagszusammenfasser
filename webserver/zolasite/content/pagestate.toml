@@ -1,3 +1,3 @@
-beratung = []
-nachbereitung = []
+beratung = [ "5d6f7a11-e80f-46c6-9cb8-e994b62f0b86", "0f6e3d7f-f8bc-459f-a37d-927feaa0edaa", "b1c12e02-d393-44eb-995b-20270db1cdbd", "7438b88a-7817-45d6-8370-b22ac58ac5d4",]
+nachbereitung = [ "70e004da-bf6b-4d46-81c6-7327ff1e4dfd", "78b1a876-7c25-4868-937f-8ccb0636625b", "bd0624db-031b-4e2c-bb03-18900d89a515",]
 vorbereitung = []

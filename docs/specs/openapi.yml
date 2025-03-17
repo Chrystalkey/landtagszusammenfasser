@@ -2,9 +2,7 @@ openapi: 3.0.0
 info:
   title: "Specification for the Landtagszusammenfasser Project"
   version: "0.1.0"
-  description: "Beschreibung der API des LTZF Projekts. Alle Listen, die vom Server kommen sind sortiert in\n\
-  1. datum der letzten modifikation, absteigend\n\
-  2. lexikographisch des titels falls nicht vorhanden"
+  description: "Beschreibung der API des LTZF Projekts. Alle Listen, die vom Server kommen sind sortiert in\n  1. datum der letzten modifikation, absteigend\n  2. lexikographisch des titels falls nicht vorhanden"
 paths:
   /api/v1/vorgang/{vorgang_id}:
     get:
@@ -17,12 +15,7 @@ paths:
           schema:
             type: "string"
             format: "uuid"
-        - name: "If-Modified-Since"
-          in: "header"
-          required: false
-          schema:
-            type: "string"
-            format: "date-time"
+        - $ref: "#/components/parameters/if-mod-since"
       responses:
         "200":
           description: "successful operation"
@@ -96,44 +89,16 @@ paths:
           description: "Bad Request"
 
       parameters:
-        - name: "If-Modified-Since"
-          in: "header"
-          required: false
-          schema:
-            type: "string"
-            format: "date-time"
-        - name: "wp"
-          in: "query"
-          required: false
-          schema:
-            type: "integer"
-            minimum: 0
-        - name: "limit"
-          in: "query"
-          required: false
-          schema:
-            type: "integer"
-            minimum: 1
-        - name: "offset"
-          in: "query"
-          required: false
-          schema:
-            type: "integer"
-            minimum: 1
-        - name: "initiator-contains-any"
-          in: query
-          required: false
-          description: "If any of the listed Initiators matches the Initiator, it is filtered out"
-          schema:
-            type: array
-            items:
-              type: string
-        - name: "vgtyp"
-          in: query
-          required: false
-          description: Vorgangstyp"
-          schema:
-            $ref: "#/components/schemas/vorgangstyp"
+        - $ref: "#/components/parameters/if-mod-since"
+        - $ref: "#/components/parameters/updated-since"
+        - $ref: "#/components/parameters/updated-until"
+        - $ref: "#/components/parameters/parlament"
+        - $ref: "#/components/parameters/wahlperiode"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+        - $ref: "#/components/parameters/initiator-contains"
+        - $ref: "#/components/parameters/initiator-person-contains"
+        - $ref: "#/components/parameters/vgtyp"
     put:
       operationId: "vorgang_put"
       description: "Pushing a new vorgang"
@@ -202,36 +167,15 @@ paths:
       operationId: "as_get"
       description: "Gibt eine Liste gefilterter Ausschusssitzungen zurück"
       parameters:
-        - name: "If-Modified-Since"
-          in: "header"
-          required: false
-          schema:
-            type: "string"
-            format: "date-time"
-        - name: "wp"
-          in: query
-          schema:
-            type: "integer"
-            minimum: 0
-        - name: "limit"
-          in: "query"
-          required: false
-          schema:
-            type: "integer"
-            minimum: 1
-        - name: "offset"
-          in: "query"
-          required: false
-          schema:
-            type: "integer"
-            minimum: 1
-        - name: "vorgang_id"
-          in: query
-          required: false
-          description: "API ID eines Vorgangs. Liefert Ausschusssitzungen, deren TOPs diesen Vorgang referenzieren"
-          schema:
-            type: "string"
-            format: "uuid"
+        - $ref: "#/components/parameters/if-mod-since"
+        - $ref: "#/components/parameters/updated-since"
+        - $ref: "#/components/parameters/updated-until"
+        - $ref: "#/components/parameters/parlament"
+        - $ref: "#/components/parameters/wahlperiode"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+        - $ref: "#/components/parameters/vorgang-id"
+        - $ref: "#/components/parameters/vgtyp"
 
       responses:
         "200":
@@ -269,7 +213,7 @@ paths:
         "401":
           $ref: "#/components/responses/UnauthorizedError"
         "409":
-          description: "Conflict. This Ausschusssitzungs-ID already exists"
+          description: "Konflikt: Datensätze nicht Vereinbar"
       security:
         - apiKey: []
   /api/v1/ausschusssitzung/{as_id}:
@@ -283,12 +227,7 @@ paths:
           schema:
             type: "string"
             format: "uuid"
-        - name: "If-Modified-Since"
-          in: "header"
-          required: false
-          schema:
-            type: "string"
-            format: "date-time"
+        - $ref: "#/components/parameters/if-mod-since"
       responses:
         "200":
           description: "successful operation"
@@ -296,8 +235,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ausschusssitzung"
-        "304":
-          description: "No new changes"
         "404":
           description: "Content not found"
     put:
@@ -346,12 +283,91 @@ paths:
       security:
         - apiKey: [] 
 components:
+  parameters:
+    if-mod-since:
+      name: "If-Modified-Since"
+      in: "header"
+      description: "Returns all elements that were updated after the specified time stamp"
+      required: false
+      schema:
+        type: string
+        format: date-time
+    updated-since:
+      name: "upd-since"
+      in: "query"
+      description: "inclusive range"
+      required: false
+      schema:
+        type: string
+        format: date-time
+    updated-until:
+      name: "upd-until"
+      in: "query"
+      description: "inclusive range"
+      required: false
+      schema:
+        type: string
+        format: date-time
+    wahlperiode:
+      name: "wp"
+      in: "query"
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+    limit:
+      name: "limit"
+      in: "query"
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        maximum: 64
+    offset:
+      name: "offset"
+      in: "query"
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+    vgtyp:
+      name: "vgtyp"
+      in: "query"
+      required: false
+      schema:
+        $ref: "#/components/schemas/vorgangstyp"
+    parlament:
+      name: "parlament"
+      in: "query"
+      required: false
+      schema:
+        $ref: "#/components/schemas/parlament"
+    initiator-contains:
+      name: "init-contains"
+      in: "query"
+      required: false
+      schema:
+        type: string
+    initiator-person-contains:
+      name: "init-prsn-contains"
+      in: "query"
+      required: false
+      schema:
+        type: string
+    vorgang-id:
+      name: "vgid"
+      in: "query"
+      required: false
+      description: "Assoziierter Vorgang"
+      schema:
+        type: string
+        format: uuid
   securitySchemes:
-      apiKey:
-        description: API key of the Collector
-        type: apiKey
-        name: X-API-Key
-        in: header
+    apiKey:
+      description: API key of the Collector
+      type: apiKey
+      name: X-API-Key
+      in: header
   responses:
     UnauthorizedError:
       description: API key is missing or invalid
@@ -448,6 +464,7 @@ components:
         - "parl-vollvlsgn" # Vollversammlung / Lesung
         - "parl-akzeptanz" # Schlussabstimmung & Akzeptanz des Parlaments
         - "parl-ablehnung" # Schlussabstimmung & Ablehnung des Parlaments
+        - "parl-zurueckgz" # "Plenarsitzung & Rückzug des Vorhabens"
         - "parl-ggentwurf" # Gegenentwurf des Parlaments auf abgel. Volksbegehren
         - "postparl-vesja" # Volksentscheid nach Parlamentsbeschluss & Akzeptanz
         - "postparl-vesne" # Volksentscheid nach Parlamentsbeschluss & Ablehnung
@@ -461,15 +478,37 @@ components:
     doktyp:
       description: "Dokumententyp"
       type: "string"
-      enum: ["entwurf", "drucksache", "protokoll", "topliste", "stellungnahme", "sonstig"]
+      enum: 
+        - "preparl-entwurf"  # Vorparlamentarischer Entwurf
+        - "entwurf"          # Gesetzesentwurf auf einer Drucksache
+        - "mitteilung"       # Mitteilung über z.B. Rücknahme
+        - "beschlussempf"    # Beschlussempfehlung von Ausschüssen
+        - "stellungnahme"    # Stellungnahme von Personen oder Organisationen
+        - "gutachten"        # Gutachten die im Auftrag des Parlaments erstellt werden
+        - "plenar-protokoll" # Plenarprotokoll
+        - "plenar-tops"      # Plenarprotokoll TOPs
+        - "as-tops"          # Ausschuss TOPs
+        - "as-tops-aend"     # Ausschuss TOPs Änderung
+        - "as-tops-ergz"     # Ausschuss TOPs Ergänzung
+        - "sonstig"          # Sonstiges
     gremium:
       type: "object"
       required:
         - "parlament"
         - "name"
+        - "wahlperiode"
       properties:
         parlament:
           $ref: "#/components/schemas/parlament"
+        wahlperiode:
+          type: integer
+          minimum: 0
+        link:
+          type: "string"
+          format: "url"
+        link_kalender:
+          type: "string"
+          format: "url"
         name:
           description: "Name des betreffenden Gremiums. 'plenum', 'regierung', 'volk' sind reservierte namen"
           example: "Ausschuss für Inneres und Gemüseauflauf"
@@ -556,7 +595,7 @@ components:
     station:
       type: "object"
       description: "Station ist in vielerlei hinsicht das Kernstück der API der Vorgänge. Jeder Vorgang besteht aus Stationen und die Stationen haben nur wenige verpflichtende Datenfelder.\
-                    Je nach `typ` sind andere Felder nicht-optional. Für weitere Details, siehe die docs"
+                    Für weitere Details, siehe die docs"
       required:
         - "typ"
         - "datum"
@@ -574,11 +613,18 @@ components:
         start_zeitpunkt:
           type: "string"
           format: "date-time"
+          description: "Datum an dem die erste Aktion dieser Station erstellt wurde"
+          example: "Erstes Sitzungsdatum des Ausschusses"
         letztes_update:
           type: "string"
           format: "date-time"
+          description: "Letztes relevantes Datum an dem die Station angefasst wurde"
+          example: "letzte Ausschusssitzung oder nächste geplante Ausschusssitzung"
         gremium:
           $ref: "#/components/schemas/gremium"
+        gremium_federf:
+          type: boolean
+          description: "Ist die Station eine Ausschussberatung gibt dieses Feld an ob es im Federführenden Ausschuss ist"
         dokumente:
           type: "array"
           items:
@@ -593,6 +639,13 @@ components:
           type: "string"
           format: "uri"
           description: "Link zu einer Übersichtsseite zu dieser Station. _NICHT_ zu einem Dokument (PDF)"
+        additional_links:
+          type: "array"
+          items:
+            type: "string"
+            format: "uri"
+            description: "Weitere Links zu interessanten Infos für diese Station"
+            example: "Link zu einem Videomitschnitt der Plenarsitzung"
         parlament:
           $ref: "#/components/schemas/parlament"
         schlagworte:
@@ -689,9 +742,11 @@ components:
         titel:
           type: "string"
         vorgang_id:
-          description: "Die Nummer eines Vorgangs. Wird beim Upload ignoriert, aber beim Download mitgegeben zusammen mit den konkreten Drucksachen"
-          type: "string"
-          format: "uuid"
+          description: "Die Nummer assoziierter Vorgänge. Wird beim Upload ignoriert, aber beim Download mitgegeben zusammen mit den konkreten Drucksachen"
+          type: "array"
+          items:
+            type: "string"
+            format: "uuid"
         drucksachen:
           type: "array"
           description: "Die Drucksachen, die in diesem TOP besprochen werden sollen"
@@ -713,6 +768,7 @@ components:
       required:
         - "termin"
         - "ausschuss"
+        - "nummer"
         - "tops"
         - "public"
       properties:
@@ -725,6 +781,15 @@ components:
         termin:
           type: "string"
           format: "date-time"
+        link:
+          type: "string"
+          format: "url"
+        nummer:
+          type: integer
+          minimum: 0
+        titel:
+          type: "string"
+          description: "Titel wenn anwendbar. In den Ländern sind Themenüberschriften für AS üblich"
         ausschuss:
           $ref: "#/components/schemas/gremium"
         tops:
@@ -733,6 +798,6 @@ components:
             $ref: "#/components/schemas/top"
         experten:
           type: "array"
-          description: "Optional: Liste von geladenen Experten. (Anhörung)"
+          description: "Optional: Liste von geladenen Experten. (macht aus der Sitzung eine Anhörung)"
           items:
             $ref: "#/components/schemas/experte"

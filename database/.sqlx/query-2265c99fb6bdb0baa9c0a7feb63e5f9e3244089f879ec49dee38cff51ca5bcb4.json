@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT DISTINCT value \n        FROM rel_dok_schlagwort r\n        LEFT JOIN schlagwort sw ON sw.id = r.sw_id\n        WHERE dok_id = $1\n        ORDER BY value ASC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "value",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "2265c99fb6bdb0baa9c0a7feb63e5f9e3244089f879ec49dee38cff51ca5bcb4"
+}

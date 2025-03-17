@@ -70,6 +70,7 @@ VALUES
     ('parl-vollvlsgn'),
     ('parl-akzeptanz'),
     ('parl-ablehnung'),
+    ('parl-zurueckgz'),
     ('parl-ggentwurf'),
     ('postparl-vesja'),
     ('postparl-vesne'),
@@ -87,11 +88,17 @@ INSERT INTO parlament(value) VALUES
 INSERT INTO
     dokumententyp (value)
 VALUES
+    ('preparl-entwurf'),
     ('entwurf'),
-    ('drucksache'),
-    ('protokoll'),
-    ('topliste'),
+    ('mitteilung'),
     ('stellungnahme'),
+    ('gutachten'),
+    ('beschlussempf'),
+    ('plenar-protokoll'),
+    ('plenar-tops'),
+    ('as-tops'),
+    ('as-tops-aend'),
+    ('as-tops-ergz'),
     ('sonstig');
 
 CREATE EXTENSION pg_trgm;

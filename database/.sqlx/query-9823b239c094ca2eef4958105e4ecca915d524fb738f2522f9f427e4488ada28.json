@@ -1,0 +1,36 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH pre_table AS (\n        SELECT vorgang.id, MAX(station.start_zeitpunkt) as lastmod FROM vorgang\n            INNER JOIN vorgangstyp vt ON vt.id = vorgang.typ\n            LEFT JOIN station ON station.vg_id = vorgang.id\n\t\t\tINNER JOIN parlament on parlament.id = station.p_id\n            WHERE TRUE\n            AND vorgang.wahlperiode = COALESCE($1, vorgang.wahlperiode)\n            AND vt.value = COALESCE($2, vt.value)\n\t\t\tAND parlament.value= COALESCE($3, parlament.value)\n\t\t\tAND (CAST($4 as text) IS NULL OR EXISTS(SELECT 1 FROM rel_vorgang_init rvi WHERE rvi.initiator = $4))\n\t\t\tAND (CAST($5 as text) IS NULL OR EXISTS(SELECT 1 FROM rel_vorgang_init_person rvi WHERE rvi.initiator = $5))\n        GROUP BY vorgang.id\n        ORDER BY lastmod\n        )\nSELECT * FROM pre_table WHERE\nlastmod > COALESCE($6, CAST('1940-01-01T20:20:20Z' as TIMESTAMPTZ)) \nAND lastmod < COALESCE($7, NOW())\nORDER BY pre_table.lastmod ASC\nOFFSET COALESCE($8, 0) LIMIT COALESCE($9, 64)\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "lastmod",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Varchar",
+        "Varchar",
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Timestamptz",
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      null
+    ]
+  },
+  "hash": "9823b239c094ca2eef4958105e4ecca915d524fb738f2522f9f427e4488ada28"
+}

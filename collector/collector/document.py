@@ -41,9 +41,26 @@ class DocumentMeta:
             "hash": self.hash,
             "typ": self.typ
         }
+    @classmethod
+    def testinit(cls):
+        instance = cls()
+        instance.link = "https://www.example.com"
+        instance.title = "Testtitel"
+        instance.last_mod = datetime.datetime.fromisoformat("1940-01-01T00:00:00+00:00")
+        instance.full_text = ["test"]
+        instance.typ = "entwurf"
+        instance.hash = "testhash"
+        return instance
         
 class Document:
+    testing_mode = False
     def __init__(self, session, url, typehint: str, config):
+        self.config = config
+        if config.testing_mode:
+            self.testing_mode = True
+            self.set_testing_values()
+            return
+        self.testing_mode = False
         self.session = session
         self.url = url
         self.typehint = typehint
@@ -58,24 +75,41 @@ class Document:
         self.meinung: Optional[int] = None # only relevant for stellungnahmen
         self.drucksnr : Optional[str] = None
 
-        self.config = config
         self.fileid = str(uuid.uuid4())
         self.download_success = False
         self.extraction_success = False
+
+    def set_testing_values(self):
+        self.meta = DocumentMeta.testinit()
+        self.authoren = ["autoren"]
+        self.autorpersonen = ["autorpersonen"]
+        self.schlagworte = ["test"]
+        self.trojanergefahr = 0
+        self.texte = ["test"]
+        self.zusammenfassung = "test"
+        self.meinung = 1
+        self.download_success = True
+        self.extraction_success = True
+        self.fileid = str(uuid.UUID("00000000-0000-0000-0000-000000000000"))
+        self.url = "https://www.example.com"
+        self.typehint = "entwurf"
+        self.drucksnr = "example"
         
-    def to_json(self):
+        
+    def to_json(self) -> str:
         return json.dumps(self.to_dict())
     
     @classmethod
-    def from_json(cls, json_str):
-        return cls.from_dict(json.loads(json_str))
+    def from_json(cls, json_str: str):
+        inst = cls.from_dict(json.loads(json_str))
+        inst.testing_mode = False
 
     def __del__(self):
         self._cleanup_tempfiles()
             
     def _cleanup_tempfiles(self):
         """Clean up any temporary files created during document processing"""
-        if os.path.exists(f"{self.fileid}.pdf"):
+        if self.fileid and os.path.exists(f"{self.fileid}.pdf"):
             try:
                 os.remove(f"{self.fileid}.pdf")
             except Exception as e:
@@ -85,6 +119,7 @@ class Document:
     def from_dict(cls, dic):
         instance = cls(None, dic["url"], dic["typehint"], None)  # Create new instance
         instance.meta = DocumentMeta.from_dict(dic["meta"])
+        instance.testing_mode = dic.get("testing_mode", False)
         instance.authoren = dic["autoren"]
         instance.autorpersonen = dic["autorpersonen"]
         instance.schlagworte = dic.get("schlagworte")
@@ -100,7 +135,7 @@ class Document:
         return {
             "meta": self.meta.to_dict(),
             "url": self.url,
-            "typehint": self.typehint,
+            "typehint": self.typehint+"",
             "autoren": self.authoren,
             "autorpersonen": self.autorpersonen,
             "schlagworte": self.schlagworte,
@@ -112,6 +147,8 @@ class Document:
     
     async def run_extraction(self):
         """Main method to download and extract information from a document"""
+        if self.testing_mode:
+            return True
         try:
             await self.download()
             self.download_success = True
@@ -132,6 +169,8 @@ class Document:
 
     async def download(self):
         """Download the document from the URL"""
+        if self.testing_mode:
+            return True
         logger.info(f"Downloading document from {self.url}")
         try:
             async with self.session.get(self.url) as response:
@@ -149,6 +188,8 @@ class Document:
     
     async def extract_metadata(self) -> DocumentMeta:
         """Extract metadata from the PDF file"""
+        if self.testing_mode:
+            return True
         logger.debug(f"Extracting PDF Metadata for Url {self.url}, using file {self.fileid}.pdf")
         
         try:
@@ -187,7 +228,7 @@ class Document:
                     "title": meta.title if hasattr(meta, 'title') and meta.title else None,
                     "link": self.url,
                     "hash": doc_hash,
-                    "typ": self.typehint,
+                    "typ": self.typehint+"",
                     "last_mod": dtime.astimezone(datetime.timezone.utc).isoformat(),
                     "full_text": full_text
                 })
@@ -200,13 +241,15 @@ class Document:
 
     async def extract_semantics(self):
         """Extract semantic information using the LLM"""
+        if self.testing_mode:
+            return True
         if not self.meta.full_text or all(not text for text in self.meta.full_text):
             logger.warning(f"No text to analyze in document {self.url}")
             self.meta.title = self._get_default_title()
             return
         
         # Different prompts for different document types
-        if self.typehint == "drucksache":
+        if self.typehint == "entwurf":
             await self._extract_drucksache_semantics()
         elif self.typehint == "stellungnahme":
             await self._extract_stellungnahme_semantics()
@@ -218,7 +261,7 @@ class Document:
     def _get_default_title(self):
         """Get a default title based on document type"""
         type_titles = {
-            "drucksache": "Drucksache",
+            "entwurf": "Gesetzesentwurf",
             "stellungnahme": "Stellungnahme",
             "protokoll": "Protokoll",
             "sonstig": "Dokument"
@@ -268,11 +311,11 @@ END PROMPT"""
                 self.zusammenfassung = parts[6].strip() if parts[6] != 'None' else ""
             else:
                 logger.error(f"Invalid response format from LLM: {response}")
-                self._set_default_values("drucksache")
+                self._set_default_values("entwurf")
                 
         except Exception as e:
             logger.error(f"Error extracting drucksache semantics: {e}")
-            self._set_default_values("drucksache")
+            self._set_default_values("entwurf")
     
     async def _extract_stellungnahme_semantics(self):
         """Extract semantics for a 'stellungnahme' document"""
@@ -341,7 +384,7 @@ END PROMPT"""
     
     def _extract_default_semantics(self):
         """Set default values for an unknown document type"""
-        self.meta.title = f"Dokument ({self.typehint})"
+        self.meta.title = f"Dokument ("+self.typehint+")"
         self.authoren = None
         self.autorpersonen = None
         self.schlagworte = None
@@ -352,10 +395,10 @@ END PROMPT"""
     def _set_default_values(self, doc_type=None):
         """Set default values for a document when extraction fails"""
         if not doc_type:
-            doc_type = self.typehint
+            doc_type = self.typehint + ""
             
         defaults = {
-            "drucksache": {
+            "entwurf": {
                 "title": "Drucksache ohne Titel",
                 "trojanergefahr": 0,
                 "texte": []
@@ -368,7 +411,7 @@ END PROMPT"""
                 "title": "Protokoll"
             },
             "default": {
-                "title": f"Dokument ({self.typehint})"
+                "title": f"Dokument ("+self.typehint+")"
             }
         }
         
@@ -379,7 +422,7 @@ END PROMPT"""
         self.meta.title = type_defaults.get("title")
         
         # Set other defaults
-        if doc_type == "drucksache":
+        if doc_type == "entwurf":
             self.trojanergefahr = type_defaults.get("trojanergefahr", 0)
             self.texte = type_defaults.get("texte", [])
         elif doc_type == "stellungnahme":
@@ -392,12 +435,17 @@ END PROMPT"""
             "titel": self.meta.title or "Ohne Titel",
             "drucksnr" : self.drucksnr,
             "volltext": " ".join(self.meta.full_text).strip() if self.meta.full_text else "",
-            "autoren": self.authoren,
-            "autorpersonen": self.autorpersonen,
-            "schlagworte": self.schlagworte,
+            "autoren": deduplicate(self.authoren if self.authoren else []),
+            "autorpersonen": deduplicate(self.autorpersonen if self.autorpersonen else []),
+            "schlagworte": deduplicate(self.schlagworte if self.schlagworte else []),
             "hash": self.meta.hash,
             "letzte_modifikation": self.meta.last_mod,
             "link": self.url,
-            "typ": self.typehint,
+            "typ": self.typehint+"",
+            "texte": deduplicate(self.texte if self.texte else []),
             "zusammenfassung": self.zusammenfassung.strip() if self.zusammenfassung else None
         })
+
+def deduplicate(ls: list) -> list:
+    x = set(ls)
+    return list(x)

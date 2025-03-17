@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT autor FROM rel_dok_autorperson WHERE dok_id = $1 ORDER BY autor ASC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "autor",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "2b192dbae57f911821efb143a7f957e1bee6589fde9a354be948b11ef5c46ea1"
+}

@@ -1,0 +1,33 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH db_id_table AS (\n            SELECT rel_vg_ident.vg_id as vg_id, identifikator as ident, vg_ident_typ.value as idt_str\n            FROM vg_ident_typ, rel_vg_ident \n            WHERE vg_ident_typ.id = rel_vg_ident.typ),\n\tinitds_vwtable AS ( --vorworte von initiativdrucksachen von stationen\n\t\t\tSELECT s.vg_id, d.vorwort, d.volltext FROM dokument d\n\t\t\t\tINNER JOIN rel_station_dokument rsd ON rsd.dok_id=d.id\n\t\t\t\tINNER JOIN dokumententyp dt ON dt.id=d.typ\n\t\t\t\tINNER JOIN station s ON s.id = rsd.stat_id\n\t\t\t\tWHERE rsd.stat_id=s.id\n\t\t\t\tAND dt.value='entwurf'\n\t\t)\n\nSELECT DISTINCT(vorgang.id), vorgang.api_id FROM vorgang -- gib vorgänge, bei denen\n\tINNER JOIN vorgangstyp vt ON vt.id = vorgang.typ\n\tWHERE\n\tvorgang.api_id = $1 OR -- entweder die API ID genau übereinstimmt (trivialer Fall) ODER\n\t(\n\tvorgang.wahlperiode = $4 AND -- wahlperiode und \n\tvt.value = $5 AND            -- typ übereinstimmen und \n\t\t(EXISTS (SELECT * FROM UNNEST($2::text[], $3::text[]) as eingabe(ident, typ), db_id_table WHERE  -- eine übereinstimmende ID existiert\n\t\t\tdb_id_table.vg_id = vorgang.id AND\n\t\t\teingabe.ident = db_id_table.ident AND\n\t\t\teingabe.typ = db_id_table.idt_str)\n\t\tOR -- oder \n\t\tEXISTS (SELECT * FROM UNNEST($6::text[]) eingabe(vw), initds_vwtable ids\n\t\tWHERE ids.vg_id = vorgang.id\n\t\tAND SIMILARITY(vw, ids.vorwort) > 0.8\n\t\t)\n\t\t)\n\t);",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "api_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "TextArray",
+        "TextArray",
+        "Int4",
+        "Text",
+        "TextArray"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "80d230d78f0f665ca243a554efe599b61123c0a87cd3b980be8b5a0c79d1fa7c"
+}

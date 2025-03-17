@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import os
+import re
 import uuid
 import datetime  # required because of the eval() call later down the line
 from datetime import date as dt_date
@@ -14,7 +15,8 @@ from collector.interface import Scraper
 from collector.document import Document
 
 logger = logging.getLogger(__name__)
-
+NULL_UUID = uuid.UUID("00000000-0000-0000-0000-000000000000")
+TEST_DATE = dt_datetime.fromisoformat("1940-01-01T00:00:00+00:00")
 
 class BYLTScraper(Scraper):
     def __init__(self, config, session: aiohttp.ClientSession):
@@ -49,11 +51,11 @@ class BYLTScraper(Scraper):
             return vgpage_urls
 
     async def item_extractor(self, listing_item) -> models.Vorgang:
-        global logger
+        global logger, NULL_UUID, TEST_DATE
         async with self.session.get(listing_item) as get_result:
             soup = BeautifulSoup(await get_result.text(), "html.parser")
             vorgangs_table = soup.find("tbody", id="vorgangsanzeigedokumente_data")
-            rows = vorgangs_table.findAll("tr")
+            rows = vorgangs_table.find_all("tr")
 
             btext_soup = soup.find("span", id="basistext")
             assert (
@@ -67,7 +69,7 @@ class BYLTScraper(Scraper):
                     .strip()
             vg = models.Vorgang.from_dict(
                 {
-                    "api_id": str(uuid.uuid4()),
+                    "api_id": str(uuid.uuid4()) if not self.config.testing_mode else str(NULL_UUID),
                     "titel": titel,
                     "kurztitel": titel,
                     "wahlperiode":  19,
@@ -84,13 +86,13 @@ class BYLTScraper(Scraper):
                     "stationen": [],
                 }
             )
-            logger.info(
+            logger.debug(
                 f"New vg mit Initiativdrucksache: {inds}, ApiID: {vg.api_id}"
             )
 
             # Initiatoren
             init_ptr = soup.find(string="Initiatoren")
-            initiat_lis = init_ptr.find_next("ul").findAll("li")
+            initiat_lis = init_ptr.find_next("ul").find_all("li")
             init_dings = []
             init_persn = []
             for ini in initiat_lis:
@@ -130,13 +132,13 @@ class BYLTScraper(Scraper):
 
             # station extraction
             for row in rows:
-                cells = row.findAll("td")
+                cells = row.find_all("td")
 
                 assert (
                     len(cells) == 2
                 ), f"Warning: Unexpectedly found more or less than exactly two gridcells in: `{row}` of url `{listing_item}`"
 
-                # date is in the first cell
+                # date is in the first cell. If its just an announcement, just skip it
                 if cells[0].text == "Beratung / Ergebnis folgt":
                     continue
                 timestamp = cells[0].text.split(".")
@@ -148,6 +150,10 @@ class BYLTScraper(Scraper):
                     hour=0, minute=0, second=0
                 ).astimezone(datetime.timezone.utc)
                 # content is in the second cell
+                if self.config.testing_mode:
+                    timestamp = TEST_DATE
+
+                ### Initialize Station scaffold
                 stat = models.Station.from_dict(
                     {
                         "start_zeitpunkt": timestamp,
@@ -159,33 +165,51 @@ class BYLTScraper(Scraper):
                         "typ": "postparl-kraft",
                         "trojaner": False,
                         "betroffene_texte": [],
+                        "additional_links": [],
                     }
                 )
+
                 cellclass = self.classify_cell(cells[1])
-                # print(f"Timestamp: {timestamp} Cellclass: {cellclass}")
-                if cellclass == "initiativdrucksache":
+                
+                ## initiativ
+                ## has: one doklink, drucksnr, new station
+                if cellclass == "initiativ":
                     link = extract_singlelink(cells[1])
                     vg.links.append(link)
                     stat.typ = "parl-initiativ"
                     stat.gremium = models.Gremium.from_dict({
                         "name": "plenum",
-                        "parlament": "BY"
+                        "parlament": "BY",
+                        "wahlperiode": 19
                     })
 
-                    dok = await self.create_document(link, models.Doktyp.DRUCKSACHE)
+                    dok = await self.create_document(link, models.Doktyp.ENTWURF)
                     dok.drucksnr = str(inds)
                     stat.dokumente = [models.DokRef(dok.package())]
                     stat.trojanergefahr = max(dok.trojanergefahr, 1)
-                    stat.betroffene_texte = dok.texte
+                    stat.betroffene_texte = list(set(dok.texte))
+                elif cellclass == "unknown":
+                    logger.warning(f"Unknown Cell class for VG {listing_item}\nContents: {cells[1].text}")
+                    continue
+                elif cellclass == "ignored":
+                    continue
+                ## stellungnahme
+                ## is added to the exactly preceding station
+                ## has: one doklink, name des/der stellungnehmenden (=autor)
                 elif cellclass == "stellungnahme":
                     assert (
                         len(vg.stationen) > 0
                     ), "Error: Stellungnahme ohne Vorhergehenden Gesetzestext"
                     stln_urls = extract_schrstellung(cells[1])
                     dok = await self.create_document(stln_urls["stellungnahme"], models.Doktyp.STELLUNGNAHME)
+                    if stln_urls["autor"]:
+                        if dok.authoren is None:
+                            dok.authoren = stln_urls["autor"]
+                        else:
+                            dok.authoren.append(stln_urls["autor"])
                     stln = models.Stellungnahme.from_dict(
                         {
-                            "meinung": dok.meinung or 0,
+                            "meinung": max(dok.meinung or 1, 1),
                             "dokument": dok.package(),
                             "lobbyregister_url": stln_urls["lobbyregister"],
                         }
@@ -195,51 +219,90 @@ class BYLTScraper(Scraper):
                     ), "Error: Stellungnahme ohne Vorhergehenden Gesetzestext"
                     vg.stationen[-1].stellungnahmen.append(stln)
                     continue
-                elif cellclass == "plenumsdiskussion-uebrw":
-                    stat.typ = "parl-vollvlsgn"
-                    stat.gremium = models.Gremium.from_dict({"name": "plenum", "parlament": "BY"})
-                    dok = await self.create_document(extract_plenproto(cells[1]), models.Doktyp.PROTOKOLL)
-                    stat.betroffene_texte = dok.texte
-                    stat.dokumente = [models.DokRef(dok.package())]
-                elif cellclass == "plenumsdiskussion-zustm":
-                    dok = await self.create_document(extract_plenproto(cells[1]), models.Doktyp.PROTOKOLL)
-                    
-                    if len(vg.stationen) > 0 and vg.stationen[-1].typ == "parl-akzeptanz":
+                ## Zelle mit Plenarprotokoll
+                ## has: link(plenarprotokoll), link(Auszug-plenarprotokoll), link(Videoausschnitt)
+                ## neue station oder merge
+                elif cellclass.startswith("plenum-proto"):
+                    pproto = extract_plenproto(cells[1])
+                    gremium = models.Gremium.from_dict({"name": "plenum", "parlament": "BY","wahlperiode": 19})
+                    dok = await self.create_document(pproto["pprotoaz"], models.Doktyp.PLENAR_MINUS_PROTOKOLL)
+                    betroffene_texte = list(set(dok.texte))
+                    typ = None
+                    video_link = pproto.get("video")
+                    if cellclass == "plenum-proto-uebrw":
+                        typ = "parl-vollvlsgn"
+                    elif cellclass == "plenum-proto-zustm":
+                        typ = "parl-akzeptanz"
+                    elif cellclass == "plenum-proto-ablng":
+                        typ = "parl-ablehnung"
+                    elif cellclass == "plenum-proto-rueckzug":
+                        typ = "parl-zurueckgz"
+                    if len(vg.stationen) > 0 and vg.stationen[-1].typ == typ:
+                        vg.stationen[-1].typ = typ
                         vg.stationen[-1].dokumente.append(models.DokRef(dok.package()))
+                        vg.stationen[-1].gremium = gremium
+                        vg.stationen[-1].betroffene_texte = betroffene_texte
+                        vg.stationen[-1].additional_links.append(video_link)
                         continue
                     else:
-                        stat.typ = "parl-akzeptanz"
-                        stat.gremium = models.Gremium.from_dict({"name": "plenum", "parlament": "BY"})
-                        
+                        stat.typ = typ
                         stat.dokumente = [models.DokRef(dok.package())]
-                elif cellclass == "plenumsdiskussion-ablng":
-                    if len(vg.stationen) > 0 and vg.stationen[-1].typ in ["parl-akzeptanz", "parl-ablehnung"]:
-                        vg.stationen[-1].typ = "parl-ablehnung"
-                        continue
-                    else:
-                        stat.typ = "parl-ablehnung"
-                        stat.gremium = models.Gremium.from_dict({
-                            "name": "plenum", 
-                            "parlament": "BY"
-                        })
-                elif cellclass == "plenumsbeschluss":
-                    dok = await self.create_document(extract_singlelink(cells[1]), models.Doktyp.DRUCKSACHE)
-                    if len(vg.stationen) > 0 and vg.stationen[-1].typ in ["parl-akzeptanz", "parl-ablehnung"]:
+                        stat.gremium = gremium
+                        stat.betroffene_texte = betroffene_texte
+                        stat.additional_links.append(video_link)
+
+                ## Rückzugsmitteilung
+                ## Ein Link
+                elif cellclass == "rueckzug":
+                    dok = await self.create_document(extract_singlelink(cells[1]), models.Doktyp.MITTEILUNG)
+                    dok.drucksnr = extract_drucksnr(cells[1])
+                    typ = models.Stationstyp.PARL_MINUS_ZURUECKGZ
+                    betroffene_texte = list(set(dok.texte))
+                    gremium = models.Gremium.from_dict({"name": "plenum", "parlament": "BY","wahlperiode": 19})
+                    if len(vg.stationen) > 0 and vg.stationen[-1].typ == typ:
+                        vg.stationen[-1].typ = typ
                         vg.stationen[-1].dokumente.append(models.DokRef(dok.package()))
-                        vg.stationen[-1].trojanergefahr = max(dok.trojanergefahr, 1)
-                        vg.stationen[-1].betroffene_texte = dok.texte
+                        vg.stationen[-1].gremium = gremium
+                        vg.stationen[-1].betroffene_texte = betroffene_texte
                         continue
                     else:
-                        stat.typ = "parl-akzeptanz" 
-                        stat.gremium = models.Gremium.from_dict({
-                            "name": "plenum", 
-                            "parlament": "BY"
-                        })
-                        stat.trojanergefahr = max(dok.trojanergefahr, 1)
-                        stat.betroffene_texte = dok.texte
+                        stat.typ = typ
                         stat.dokumente = [models.DokRef(dok.package())]
-                elif cellclass == "ausschussbericht":
-                    dok = await self.create_document(extract_singlelink(cells[1]), models.Doktyp.DRUCKSACHE)
+                        stat.gremium = gremium
+                        stat.betroffene_texte = betroffene_texte
+
+                ## Plenumsentscheidung
+                ## hat einen Dokumentenlink
+                elif cellclass.startswith("plenum-beschluss"):
+                    dok = await self.create_document(extract_singlelink(cells[1]), models.Doktyp.ENTWURF)
+                    dok.drucksnr = extract_drucksnr(cells[1])
+                    typ = None
+                    trojanergefahr = max(dok.trojanergefahr, 1)
+                    gremium = models.Gremium.from_dict({"name": "plenum", "parlament": "BY","wahlperiode": 19})
+                    betroffene_texte = list(set(dok.texte))
+                    if cellclass.endswith("zustm"):
+                        typ = "parl-akzeptanz"
+                    elif cellclass.endswith("ablng"):
+                        typ = "parl-ablehnung"
+                    if len(vg.stationen) > 0 and vg.stationen[-1].typ ==  typ:
+                        vg.stationen[-1].typ = typ
+                        vg.stationen[-1].dokumente.append(models.DokRef(dok.package()))
+                        vg.stationen[-1].gremium = gremium
+                        vg.stationen[-1].betroffene_texte = betroffene_texte
+                        vg.stationen[-1].trojanergefahr = trojanergefahr
+                        continue
+                    else:
+                        stat.typ = typ      
+                        stat.dokumente = [models.DokRef(dok.package())]
+                        stat.gremium = gremium
+                        stat.betroffene_texte = betroffene_texte
+                        stat.trojanergefahr = trojanergefahr
+                ## Ausschussberichterstattung
+                ## hat 1 Link: Beschlussempfehlung
+                ## doppelt sich manchmal aus unbekannten Gründen
+                elif cellclass == "ausschuss-bse":
+                    dok = await self.create_document(extract_singlelink(cells[1]), models.Doktyp.BESCHLUSSEMPF)
+                    dok.drucksnr = extract_drucksnr(cells[1])
                     soup: BeautifulSoup = cells[1]
                     ausschuss_name = soup.text.split("\n")[1]
                     
@@ -248,8 +311,9 @@ class BYLTScraper(Scraper):
                     
                     if existing_idx >= 0:
                         # Merge with existing committee station
-                        logger.info(f"Merging ausschussbericht for committee '{ausschuss_name}'")
+                        logger.debug(f"Merging ausschussbericht for committee '{ausschuss_name}'")
                         existing_station = vg.stationen[existing_idx]
+                        
                         existing_station.dokumente.append(dok.package())
                         
                         # Update trojaner flag if necessary
@@ -260,6 +324,7 @@ class BYLTScraper(Scraper):
                             if not existing_station.betroffene_texte:
                                 existing_station.betroffene_texte = []
                             existing_station.betroffene_texte.extend(dok.texte)
+                            existing_station.betroffene_texte = list(set(existing_station.betroffene_texte))
                         
                         continue
                     else:
@@ -267,28 +332,26 @@ class BYLTScraper(Scraper):
                         stat.typ = "parl-ausschber"
                         stat.gremium = models.Gremium.from_dict({
                             "name": ausschuss_name,
-                            "parlament": "BY"
+                            "parlament": "BY","wahlperiode": 19
                         })
                         stat.dokumente = [models.DokRef(dok.package())]
                         stat.trojanergefahr = max(dok.trojanergefahr, 1)
-                        stat.betroffene_texte = dok.texte
-
-                elif cellclass == "gesetzesblatt":
+                        stat.betroffene_texte = list(set(dok.texte))
+                ## Gesetzblatt. Zwei Links, einer davon 
+                elif cellclass == "gsblatt":
                     stat.gremium = models.Gremium.from_dict({
-                        "name": "Gesetzesblatt",
-                        "parlament": "BY"
+                        "name": "gesetzesblatt",
+                        "parlament": "BY","wahlperiode": 19
                     })
                     stat.typ = "postparl-gsblt"
                     dok = await self.create_document(extract_singlelink(cells[1]), models.Doktyp.SONSTIG)
                     stat.dokumente = [models.DokRef(dok.package())]
-                elif cellclass == "unclassified":
-                    logger.warning("Warning: Unclassified cell. Discarded.")
-                    continue
                 else:
-                    logger.error("Reached an unreachable state. Discarded.")
+                    logger.error(f"Reached an unreachable state with cellclass: {cellclass}. Discarded.")
                     continue
-                logger.info(
-                    f"Adding New Station of class `{""+stat.typ}` to GSVH `{vg.api_id}`"
+                stat.dokumente = dedup_drucks(stat.dokumente)
+                logger.debug(
+                    f"Adding New Station of class `{""+stat.typ}` to Vorgang `{vg.api_id}`"
                 )
                 vg.stationen.append(stat)
             return vg
@@ -298,70 +361,116 @@ class BYLTScraper(Scraper):
         logger.debug(f"Creating document from url: {url}")
         document = self.config.cache.get_dokument(url)
         if document is None:
-            logger.info("Cached version not found, fetching from source")
+            logger.debug("Cached version not found, fetching from source")
             document = Document(self.session, url, type_hint, self.config)
             await document.run_extraction()
             self.config.cache.store_dokument(url, document)
             return document
         else:
-            logger.info("Cached version found, used")
+            logger.debug("Cached version found, used")
             return self.config.cache.get_dokument(url)
 
-    def classify_cell(self, context) -> str:
+    """Cellclasses:
+    - initiativ                 # has Gesetzentwurf(Drucksache)
+    - stellungnahme             # has Stellungnahme
+    - ausschuss-bse             # has Beschlussempf(Drucksache)
+    - plenum-proto-uebrw        # has Plenarprotokoll(Protokoll), Link zu Videoausschnitt
+    - plenum-proto-zustm        # has Plenarprotokoll(Protokoll), Link zu Videoausschnitt
+    - plenum-proto-ablng        # has Plenarprotokoll(Protokoll), Link zu Videoausschnitt
+    - plenum-proto-keineentsch  # has Plenarprotokoll(Protokoll), Link zu Videoausschnitt
+    - plenum-beschluss-zustm    # has Beschluss(Drucksache)
+    - plenum-beschluss-ablng    # has Beschluss(Drucksache)
+    - rueckzug                  # has Mitteilung(Drucksache)
+    - gsblatt                   # has GVBL-Auszug(Gesetzblatt)
+    - ignored                   # beratung oder ergebnis-folgt-dinge
+    - unknown                   # unknown cell type
+    Links die In summe alle typen enthalten:
+    # https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157296
+    # https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157725
+    """
+    def classify_cell(self, context: BeautifulSoup) -> str:
         cellsoup = context
-        if cellsoup.text.find("Initiativdrucksache") != -1:
-            return "initiativdrucksache"
-        elif (
+        if cellsoup.text.find("Initiativdrucksache") != -1:       
+            return "initiativ"
+        elif (                                                    # 
             cellsoup.text.find("Schriftliche Stellungnahmen im Gesetzgebungsverfahren")
             != -1
         ):
             return "stellungnahme"
         elif (
-            cellsoup.text.find("Plenum") != -1
-            and cellsoup.text.find("Plenarprotokoll") != -1
-        ):
-            if cellsoup.text.find("Überweisung") != -1:
-                return "plenumsdiskussion-uebrw"
-            elif cellsoup.text.find("Zustimmung") != -1:
-                return "plenumsdiskussion-zustm"
-            elif cellsoup.text.find("Ablehnung") != -1:
-                return "plenumsdiskussion-ablng"
-            else:
-                print(
-                    f"Warning: Plenumsdiskussion without specific classification: `{cellsoup}`"
-                )
-                return "unclassified"
-        elif (
-            cellsoup.text.find("Plenum") != -1
-            and cellsoup.text.find("Plenarprotokoll") == -1
-        ):
-            return "plenumsbeschluss"
+            cellsoup.text.find("Plenum") != -1):
+            if cellsoup.text.find("Plenarprotokoll") != -1:
+                if cellsoup.text.find("Überweisung") != -1:
+                    return "plenum-proto-uebrw"
+                elif cellsoup.text.find("Zustimmung") != -1:
+                    return "plenum-proto-zustm"
+                elif cellsoup.text.find("Ablehnung") != -1:
+                    return "plenum-proto-ablng"
+                elif cellsoup.text.find("Rücknahme") != -1:
+                    return "plenum-proto-rueckzug"
+            else: # plenum aber kein plenarprotokoll == beschluss
+                if cellsoup.text.find("Ablehnung") != -1:
+                    return "plenum-beschluss-ablng"
+                elif cellsoup.text.find("Zustimmung") != -1:
+                    return "plenum-beschluss-zustm"
+                elif cellsoup.text.find("Rücknahme") != -1:
+                    return "rueckzug"
         elif cellsoup.text.find("Ausschuss") != -1:
-            return "ausschussbericht"
+            return "ausschuss-bse"
         elif cellsoup.text.find("Gesetz- und Verordnungsblatt") != -1:
-            return "gesetzesblatt"
-        else:
-            return "unclassified"
+            return "gsblatt"
+        return "unknown"
+
+def dedup_drucks(doks: list[models.DokRef]) -> list[models.Dokument]:
+    unique_doks = []
+    for d in doks:
+        if d.actual_instance.drucksnr:
+            found = False
+            for e in unique_doks:
+                if e.actual_instance.drucksnr and e.actual_instance.drucksnr == d.actual_instance.drucksnr:
+                    found = True
+                    break
+            if found:
+                continue
+        unique_doks.append(d)
+    return unique_doks
+
+def extract_drucksnr(cellsoup: BeautifulSoup) -> str:
+    match = None
+    soupsplit = cellsoup.text.replace("\n", " ").split(" ")
+    for slice in soupsplit:
+        match = re.match(r"\d\d+\/\d+", slice)
+        if match is not None:
+            return match[0]
+    if match is None:
+        logger.error(f"Error: Expected to find DrucksNr in Cellsoup {cellsoup.text}")
+    raise Exception(f"expected to extract drucksnr from {cellsoup.text}")
 
 def extract_singlelink(cellsoup: BeautifulSoup) -> str:
     return cellsoup.find("a")["href"]
 
 # returns: {"typ": link, ...}
 def extract_schrstellung(cellsoup: BeautifulSoup) -> dict:
-    links = cellsoup.findAll("a")
+    links = cellsoup.find_all("a")
     assert (
         len(links) > 0 and len(links) < 3
     ), f"Error: Unexpected number of links in Stellungnahme: {len(links)}, in cellsoup `{cellsoup}`"
     if len(links) == 2:
-        return {"lobbyregister": links[0]["href"], "stellungnahme": links[1]["href"]}
+        return {"lobbyregister": links[0]["href"], "stellungnahme": links[1]["href"], "autor": links[0].text if links[0].text != "Download PDF" else None}
     elif len(links) == 1:
-        return {"stellungnahme": links[0]["href"], "lobbyregister": ""}
+        return {"stellungnahme": links[0]["href"], "lobbyregister": "", "autor": links[0].text if links[0].text != "Download PDF" else None}
 
 
 def extract_plenproto(cellsoup: BeautifulSoup) -> str:
     cellsoup_ptr = cellsoup.find(string="Protokollauszug")
     cellsoup_ptr = cellsoup_ptr.find_previous("br")
-    return cellsoup_ptr.find_next("a")["href"]
+    proto_link = cellsoup_ptr.find_next("a")["href"]
+    video_link = None
+    cellsoup_ptr = cellsoup.find_all("a")
+    for link in cellsoup_ptr:
+        if link.text == "Video zum TOP":
+            video_link = link["href"]
+    return {"pprotoaz": proto_link, "video": video_link}
 
 
 def extract_gbl_ausz(cellsoup: BeautifulSoup) -> str:

@@ -19,9 +19,15 @@ class ScraperCache:
     """
     redis_client: Optional[redis.Redis] = None
     cache_expiry_minutes: int = 60 * 24  # Default 24 hours for document cache
+    disabled: bool = False
 
-    def __init__(self, redis_host: str, redis_port: int, doc_cache_expiry_minutes: int = None):
+    def __init__(self, redis_host: str, redis_port: int, doc_cache_expiry_minutes: int = None, disabled: bool = False):
         global logger
+        self.disabled = disabled
+        if disabled or redis_host is None or redis_port is None:
+            self.disabled = True
+            logger.warning("Cacheing disabled")
+            return
         
         if doc_cache_expiry_minutes:
             self.cache_expiry_minutes = doc_cache_expiry_minutes
@@ -42,8 +48,10 @@ class ScraperCache:
             logger.error(f"Unexpected error connecting to Redis: {e}")
             sys.exit(1)
 
-    def store_gsvh(self, key: str, value: models.Vorgang):
+    def store_vorgang(self, key: str, value: models.Vorgang):
         """Store Vorgang data in Redis cache"""
+        if self.disabled:
+            return True
         try:
             serialized = json.dumps(sanitize_for_serialization(value))
             logger.debug(f"Storing vorgang {key} in redis")
@@ -58,6 +66,8 @@ class ScraperCache:
         
         Only caches documents that were successfully downloaded and processed
         """
+        if self.disabled:
+            return True
         # Skip caching if document wasn't successfully processed
         if not getattr(value, 'download_success', True) or not getattr(value, 'extraction_success', True):
             logger.warning(f"Not caching document {key} due to failed processing")
@@ -76,8 +86,10 @@ class ScraperCache:
             logger.error(f"Error storing document {key} in cache: {e}")
             return False
 
-    def get_gsvh(self, key: str) -> Optional[models.Vorgang]:
+    def get_vorgang(self, key: str) -> Optional[models.Vorgang]:
         """Get Vorgang data from cache"""
+        if self.disabled:
+            return None
         try:
             logger.debug(f"Getting vorgang {key} from cache")
             result = self.redis_client.get(f"vg:{key}")
@@ -93,6 +105,8 @@ class ScraperCache:
 
     def get_dokument(self, key: str) -> Optional[Document]:
         """Get Document data from cache"""
+        if self.disabled:
+            return None
         try:
             logger.debug(f"Getting dokument {key} from cache")
             result = self.redis_client.get(f"dok:{key}")
@@ -108,7 +122,7 @@ class ScraperCache:
                 logger.warning(f"Retrieved document {key} from cache but it was not successfully extracted")
                 return None
                 
-            logger.info(f"Document {key} retrieved from cache")
+            logger.debug(f"Document {key} retrieved from cache")
             return doc
         except json.JSONDecodeError as e:
             logger.error(f"Error decoding cached document {key}: {e}")
@@ -119,6 +133,8 @@ class ScraperCache:
 
     def invalidate_document(self, key: str) -> bool:
         """Remove a specific document from the cache"""
+        if self.disabled:
+            return True
         try:
             return bool(self.redis_client.delete(f"dok:{key}"))
         except Exception as e:
@@ -127,6 +143,8 @@ class ScraperCache:
 
     def invalidate_vorgang(self, key: str) -> bool:
         """Remove a specific vorgang from the cache"""
+        if self.disabled:
+            return True
         try:
             return bool(self.redis_client.delete(f"vg:{key}"))
         except Exception as e:
@@ -135,6 +153,8 @@ class ScraperCache:
 
     def clear(self):
         """Clear all cache data"""
+        if self.disabled:
+            return True
         try:
             self.redis_client.flushall()
             logger.info("Cache cleared")
@@ -145,6 +165,13 @@ class ScraperCache:
             
     def get_cache_stats(self) -> Dict[str, Any]:
         """Get statistics about the cache contents"""
+        if self.disabled:
+            return {
+                'document_count': -1,
+                'vorgang_count': -1,
+                'total_keys': -1,
+                'memory_used': 'unknown'
+            }
         try:
             # Get all keys
             all_keys = self.redis_client.keys('*')

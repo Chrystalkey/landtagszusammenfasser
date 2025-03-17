@@ -47,15 +47,15 @@ def load_scrapers(config, session):
     return scrapers
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO,format="%(asctime)s|%(levelname)s: %(filename)s: %(message)s")
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s: \t%(filename)s: \t\t%(message)s")
     logger.info("Starting collector manager.")
-    config = CollectorConfiguration()
+    config = CollectorConfiguration(None, None, False)
     logger.info("Configuration Complete")
     CYCLE_TIME = 3 * 60 * 60 # 3 hours
     last_run = None
     while True:
-        if last_run is not None and time.time() - last_run > CYCLE_TIME:
-            logger.info("Last scraping cycle finished longer than 3 hours ago, skipping")
+        if last_run is not None and time.time() - last_run < CYCLE_TIME:
+            logger.info("Last scraping cycle finished, running again in 3 hours. Bye!")
             time.sleep(CYCLE_TIME-(time.time() - last_run))
             continue
         try:

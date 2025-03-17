@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n    WITH \n    existing_ids AS (SELECT DISTINCT id FROM schlagwort WHERE value = ANY($1::text[])),\n    inserted AS (\n        INSERT INTO schlagwort(value) \n        SELECT DISTINCT(key) FROM UNNEST($1::text[]) as key\n        ON CONFLICT DO NOTHING\n        RETURNING id\n    ),\n    allofthem AS(\n        SELECT id FROM inserted UNION SELECT id FROM existing_ids\n    )\n\n    INSERT INTO rel_station_schlagwort(stat_id, sw_id)\n    SELECT $2, allofthem.id FROM allofthem\n    ON CONFLICT DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "TextArray",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "73acaf155ce7d71a68b9f07d307612bbc38658227ad92f2561da229fca9bf068"
+}

@@ -43,8 +43,11 @@ services:
       - ltzf-network
     environment:
       DATABASE_URL: "postgres://ltzf-user:ltzf-pass@database:5432/ltzf" # required
-      RUST_LOG: "trace"                                                 # optional
+      RUST_LOG: "info"                                                 # optional
       LTZF_KEYADDER_KEY: "tegernsee-apfelsaft-co2grenzwert"             # required
+      MAIL_SERVER: "smtp.web.de"
+      MAIL_USER: "tophatinkling@web.de"
+
 
   collector:
     build:
