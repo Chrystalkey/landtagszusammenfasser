@@ -808,8 +808,9 @@ components:
           type: "array"
           items:
             $ref: "#/components/schemas/top"
-        ankuendigungen:
+        dokumente:
           type: array
+          description: "Assoziierte Dokumente, also z.B.: TOP Ankündigungen, Änderungen & Ergänzungen, Mitteilungen, Beschwerden, Petitionen, ..."
           items:
             $ref: "#/components/schemas/dokument"
         experten:

@@ -30,10 +30,8 @@ CREATE TABLE rel_s_tops(
     top_id INTEGER NOT NULL REFERENCES top(id) ON DELETE CASCADE,
     PRIMARY KEY (s_id, top_id)
 );
-CREATE TABLE rel_s_ankuendigung(
+CREATE TABLE rel_s_doks(
     s_id INTEGER NOT NULL REFERENCES sitzung(id) ON DELETE CASCADE,
     dok_id INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE,
-    reihenfolge INTEGER NOT NULL DEFAULT 0,
-    PRIMARY KEY (s_id, dok_id),
-    CONSTRAINT unique_order_per_session UNIQUE(s_id, reihenfolge)-- this one enforces a specific order per session
+    PRIMARY KEY (s_id, dok_id)
 );

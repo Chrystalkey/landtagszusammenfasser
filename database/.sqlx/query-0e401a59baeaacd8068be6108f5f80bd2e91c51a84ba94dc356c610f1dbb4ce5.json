@@ -6,7 +6,7 @@
       {
         "ordinal": 0,
         "name": "initiator",
-        "type_info": "Varchar"
+        "type_info": "Int4"
       }
     ],
     "parameters": {

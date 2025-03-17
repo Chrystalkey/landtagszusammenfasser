@@ -50,21 +50,36 @@
       },
       {
         "ordinal": 9,
-        "name": "last_mod",
+        "name": "referenzdatum",
         "type_info": "Timestamptz"
       },
       {
         "ordinal": 10,
+        "name": "erstellt_am",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "last_mod",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 12,
         "name": "link",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 11,
+        "ordinal": 13,
         "name": "hash",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 12,
+        "ordinal": 14,
+        "name": "meinung",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 15,
         "name": "typ_value",
         "type_info": "Varchar"
       }
@@ -84,6 +99,9 @@
       true,
       false,
       true,
+      true,
+      false,
+      false,
       false,
       false,
       false,
