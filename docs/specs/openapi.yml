@@ -163,7 +163,7 @@ paths:
         - apiKey: [] 
   /api/v1/sitzung:
     get:
-      operationId: "as_get"
+      operationId: "s_get"
       description: "Gibt eine Liste gefilterter sitzungen zurück"
       parameters:
         - $ref: "#/components/parameters/if-mod-since"
@@ -301,6 +301,7 @@ paths:
         - apiKey: [] 
   /api/v1/kalender:
     get:
+      operationId: kal_get
       responses:
         "200":
           $ref: "#/components/responses/SGetResponse"

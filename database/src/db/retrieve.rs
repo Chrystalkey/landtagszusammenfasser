@@ -364,12 +364,12 @@ pub async fn ausschusssitzung_by_id(
 }
 
 pub async fn as_by_parameter(
-    qparams: models::AsGetQueryParams,
-    header_params: models::AsGetHeaderParams,
+    qparams: &models::SGetQueryParams,
+    header_params: &models::SGetHeaderParams,
     tx: &mut sqlx::PgTransaction<'_>,
-) -> Result<Vec<models::Ausschusssitzung>> {
+) -> Result<Vec<models::Sitzung>> {
     let lower_bnd = header_params.if_modified_since.map(|el| 
-        if qparams.upd_since.is_some() {qparams.upd_since.unwrap().min(el)}else{el}
+        if qparams.since.is_some() {qparams.since.unwrap().min(el)}else{el}
     );
 
     let as_list = sqlx::query!(
@@ -394,7 +394,7 @@ LIMIT COALESCE($6, 64)
         qparams.parlament.map(|p| p.to_string()),
         qparams.wp,
         lower_bnd,
-        qparams.upd_until,
+        qparams.until,
         qparams.offset,
         qparams.limit
     )
@@ -409,12 +409,12 @@ LIMIT COALESCE($6, 64)
 }
 
 pub async fn vorgang_by_parameter(
-    params: models::VorgangGetQueryParams,
-    header_params: models::VorgangGetHeaderParams,
+    params: &models::VorgangGetQueryParams,
+    header_params: &models::VorgangGetHeaderParams,
     executor: &mut sqlx::PgTransaction<'_>,
 ) -> Result<Vec<models::Vorgang>> {
     let lower_bnd = header_params.if_modified_since.map(|el| 
-        if params.upd_since.is_some() {params.upd_since.unwrap().min(el)}else{el}
+        if params.since.is_some() {params.since.unwrap().min(el)}else{el}
     );
     let vg_list = sqlx::query!(
         "WITH pre_table AS (
@@ -439,7 +439,7 @@ OFFSET COALESCE($8, 0) LIMIT COALESCE($9, 64)
 ",params.wp, params.vgtyp.map(|x|x.to_string()),
 params.parlament.map(|p|p.to_string()),
 params.init_contains, params.init_prsn_contains,
-lower_bnd, params.upd_until, params.offset,
+lower_bnd, params.until, params.offset,
     params.limit)
     .map(|r|r.id)
     .fetch_all(&mut **executor).await?;

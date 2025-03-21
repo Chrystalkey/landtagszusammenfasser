@@ -227,7 +227,7 @@ pub async fn insert_dokument(
     return Ok(did);
 }
 
-pub async fn insert_ausschusssitzung(
+pub async fn insert_sitzung(
     ass: &models::Ausschusssitzung,
     tx: &mut PgTransaction<'_>,
     srv: &LTZFServer,

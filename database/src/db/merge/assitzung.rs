@@ -101,7 +101,7 @@ pub async fn run_integration(model: &models::Ausschusssitzung, server: &LTZFServ
                 model.api_id
             );
             let model = model.clone();
-            insert::insert_ausschusssitzung(&model, &mut tx, server).await?;
+            insert::insert_sitzung(&model, &mut tx, server).await?;
         }
         MergeState::OneMatch(one) => {
             let api_id = sqlx::query!("SELECT api_id FROM ausschusssitzung WHERE id = $1", one)

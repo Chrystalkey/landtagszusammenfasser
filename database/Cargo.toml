@@ -8,6 +8,7 @@ authors = ["Benedikt Schäfer"]
 [dependencies]
 
 axum = { version = "0.7", features = ["macros"] }
+axum-extra = {version = "0.9", features= ["cookie"]}
 axum-macros = "0.4"
 chrono = { version = "0.4", features = ["serde"] }
 dotenvy = "0.15"
@@ -22,7 +23,6 @@ clap = { version = "4.5.16", features = ["derive", "env"] }
 lettre = "0.11.7"
 
 strum = { version = "0.26.3", features = ["derive"] }
-axum-extra = {version = "0.9.6", features= ["cookie"]}
 dotenv = "0.15.0"
 snafu = "0.8.5"
 sha256 = "1.5.0"
