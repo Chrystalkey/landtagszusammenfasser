@@ -48,6 +48,7 @@ VALUES
     ('gg-zustimmung'),
     ('gg-land-parl'),
     ('gg-land-volk'),
+    ('bundeswehreinsatz'),
     ('sonstig');
 
 INSERT INTO
@@ -91,6 +92,9 @@ VALUES
     ('preparl-entwurf'),
     ('entwurf'),
     ('mitteilung'),
+    ('antrag'),
+    ('anfrage'),
+    ('antwort'),
     ('stellungnahme'),
     ('gutachten'),
     ('beschlussempf'),
