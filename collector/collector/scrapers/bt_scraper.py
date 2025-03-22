@@ -228,13 +228,13 @@ class BundestagAPIScraper(Scraper):
 
         #Ermittle die korrekten Typen
         if typ == models.Stationstyp.PARL_MINUS_INITIATIV:
-            dokument_typ = "entwurf"  # Gesetzesentwurf auf einer Drucksache
+            dokument_typ = models.Doktyp.ENTWURF  # Gesetzesentwurf auf einer Drucksache
         elif typ == models.Stationstyp.PARL_MINUS_BERABGESCHL:
-            dokument_typ = "beschlussempf"  # Beschlussempfehlung von Ausschüssen
+            dokument_typ = models.Doktyp.BESCHLUSSEMPF  # Beschlussempfehlung von Ausschüssen
         else:
             return []
 
-        doctyp = position.get("fundstelle", {}).get("drucksachetyp", "")
+        btapi_doctyp = position.get("fundstelle", {}).get("drucksachetyp", "")
         drsnr = position.get("fundstelle", {}).get("dokumentnummer", "")
 
         #Hole Volltext aus API
@@ -243,7 +243,7 @@ class BundestagAPIScraper(Scraper):
             "apikey": self.BT_API_KEY,
             "f.dokumentnummer" : drsnr,
             "f.wahlperiode" : self.CURRENT_WP,
-            "f.drucksachetyp" : doctyp
+            "f.drucksachetyp" : btapi_doctyp
         }
 
         async with self.session.get(endpoint, params=params) as response:
@@ -257,7 +257,7 @@ class BundestagAPIScraper(Scraper):
             zusammenfassung = ""
             volltext = ""
         
-        logger.info(f"Dokument: {drsnr}, {doctyp}, Zusammenfassung: {zusammenfassung}")  
+        logger.info(f"Dokument: {drsnr}, {btapi_doctyp}, Zusammenfassung: {zusammenfassung}")  
 
         # Erzeuge ein serialisierbares Dictionary für das Dokument
         return [{
