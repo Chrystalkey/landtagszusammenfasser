@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO rel_dok_autor(dok_id, aut_id) \n    SELECT $1, blub FROM UNNEST($2::int4[]) as blub",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4Array"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "68eff5b1ac94bdbb1e41c253be83823c90fd1642913c9d244753718527a0caff"
+}

@@ -25,13 +25,13 @@
       },
       {
         "ordinal": 4,
-        "name": "verfaend",
-        "type_info": "Bool"
+        "name": "wahlperiode",
+        "type_info": "Int4"
       },
       {
         "ordinal": 5,
-        "name": "wahlperiode",
-        "type_info": "Int4"
+        "name": "verfaend",
+        "type_info": "Bool"
       },
       {
         "ordinal": 6,

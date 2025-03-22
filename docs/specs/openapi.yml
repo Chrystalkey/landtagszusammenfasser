@@ -84,7 +84,7 @@ paths:
         "304":
           description: "No new changes"
         "416":
-          description: "Request Range not satisfiable. Dates before the existence of the BRP or in the future are excluded for example"
+          description: "Request Range not satisfiable. Dates before the existence of the BRD or in the future are excluded for example"
         "400":
           description: "Bad Request"
 
@@ -96,7 +96,9 @@ paths:
         - $ref: "#/components/parameters/wahlperiode"
         - $ref: "#/components/parameters/limit"
         - $ref: "#/components/parameters/offset"
-        - $ref: "#/components/parameters/initiator-contains"
+        - $ref: "#/components/parameters/autor-contains"     # für initiatoren
+        - $ref: "#/components/parameters/autor-fachgebiet"   # für initiatoren
+        - $ref: "#/components/parameters/autor-organisation" # für initiatoren
         - $ref: "#/components/parameters/vgtyp"
     put:
       operationId: "vorgang_put"
@@ -390,9 +392,21 @@ components:
       required: false
       schema:
         $ref: "#/components/schemas/parlament"
-    initiator-contains:
-      name: "inttr"
+    autor-contains:
+      name: "inipsn"
       in: "query"
+      required: false
+      schema:
+        type: string
+    autor-organisation:
+      name: iniorg
+      in: query
+      required: false
+      schema:
+        type: string
+    autor-fachgebiet:
+      name: inifch
+      in: query
       required: false
       schema:
         type: string
@@ -561,8 +575,10 @@ components:
         - "volltext"
         - "hash"
         - "typ"
-        - "letzte-modifikation"
+        - "zp_modifiziert"
+        - "zp_referenz"
         - "link"
+        - "autoren"
       properties:
         api_id:
           type: "string"
@@ -629,7 +645,7 @@ components:
         - "typ"
         - "datum"
         - "dokumente"
-        - "start_zeitpunkt"
+        - "zp_start"
         - "parlament"
       properties:
         api_id:
@@ -786,7 +802,7 @@ components:
       description: "Sitzung oder Anhörung. Eine Anhörung wird es, wenn Experten geladen werden"
       required:
         - "termin"
-        - "ausschuss"
+        - "gremium"
         - "nummer"
         - "tops"
         - "public"

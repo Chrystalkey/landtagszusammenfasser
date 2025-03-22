@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO rel_sitzung_tops(sid, tid) \n    SELECT $1, tids FROM UNNEST($2::int4[]) as tids",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4Array"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ccc0cc3c9306491608b9543c2ac2f242bc5635cf87148a85b2b32f799ed7b6cd"
+}

@@ -1,6 +1,6 @@
 #![allow(unused)]
 use super::MergeState;
-use crate::db::insert;
+use crate::db::insert::{self, insert_or_retrieve_autor};
 use crate::error::DataValidationError;
 use crate::utils::notify::notify_ambiguous_match;
 /// Handles merging of two datasets.
@@ -66,9 +66,9 @@ pub async fn vorgang_merge_candidates(
         .collect();
     let result = sqlx::query!(
         "WITH db_id_table AS (
-            SELECT rel_vg_ident.vg_id as vg_id, identifikator as ident, vg_ident_typ.value as idt_str
-            FROM vg_ident_typ, rel_vg_ident 
-            WHERE vg_ident_typ.id = rel_vg_ident.typ),
+            SELECT rel_vorgang_ident.vg_id as vg_id, identifikator as ident, vg_ident_typ.value as idt_str
+            FROM vg_ident_typ, rel_vorgang_ident 
+            WHERE vg_ident_typ.id = rel_vorgang_ident.typ),
 	initds_vwtable AS ( --vorworte von initiativdrucksachen von stationen
 			SELECT s.vg_id, d.vorwort, d.volltext FROM dokument d
 				INNER JOIN rel_station_dokument rsd ON rsd.dok_id=d.id
@@ -231,7 +231,7 @@ pub async fn execute_merge_dokument(
         drucksnr = $2, titel =$3,
         kurztitel = COALESCE($4, kurztitel), vorwort=COALESCE($5, vorwort),
         volltext=COALESCE($6, volltext), zusammenfassung=COALESCE($7, zusammenfassung),
-        last_mod=$8, link=$9, hash=$10
+        zp_lastmod=$8, link=$9, hash=$10, meinung=$11
         WHERE dokument.id = $1
         ",
         db_id,
@@ -241,31 +241,28 @@ pub async fn execute_merge_dokument(
         model.vorwort,
         model.volltext,
         model.zusammenfassung,
-        model.letzte_modifikation,
+        model.zp_modifiziert,
         model.link,
-        model.hash
+        model.hash,
+        model.meinung.map(|x|x as i32)
     )
     .execute(&mut **tx)
     .await?;
-    // schlagworte
+    // schlagworte::UNION
     insert::insert_dok_sw(db_id, model.schlagworte.clone().unwrap_or(vec![]), tx).await?;
-    // autoren
+    // autoren::UNION
+    let mut aids = vec![];
+    for a in &model.autoren{
+        aids.push(insert_or_retrieve_autor(a, tx, srv).await?);
+    }
     sqlx::query!(
-        "INSERT INTO rel_dok_autor(dok_id, autor)
-    SELECT $1, blub FROM UNNEST($2::text[]) as blub ON CONFLICT DO NOTHING",
-        db_id,
-        model.autoren.as_ref().map(|x| &x[..])
-    )
+        "INSERT INTO rel_dok_autor(dok_id, aut_id)
+    SELECT $1, blub FROM UNNEST($2::int4[]) as blub 
+    ON CONFLICT DO NOTHING",
+        db_id, &aids[..])
     .execute(&mut **tx)
     .await?;
-    sqlx::query!(
-        "INSERT INTO rel_dok_autorperson(dok_id, autor)
-    SELECT $1, blub FROM UNNEST($2::text[]) as blub ON CONFLICT DO NOTHING",
-        db_id,
-        model.autorpersonen.as_ref().map(|x| &x[..])
-    )
-    .execute(&mut **tx)
-    .await?;
+
     tracing::info!("Merging Dokument into Database successful");
     return Ok(());
 }
@@ -296,7 +293,7 @@ pub async fn execute_merge_station(
         p_id = (SELECT id FROM parlament WHERE value = $3),
         typ = (SELECT id FROM stationstyp WHERE value = $4),
         titel = COALESCE($5, titel),
-        start_zeitpunkt = $6, letztes_update = COALESCE($7, NOW()),
+        zp_start = $6, zp_modifiziert = COALESCE($7, NOW()),
         trojanergefahr = COALESCE($8, trojanergefahr),
         link = COALESCE($9, link),
         gremium_isff = $10
@@ -306,25 +303,16 @@ pub async fn execute_merge_station(
         model.parlament.to_string(),
         srv.guard_ts(model.typ, sapi, obj)?,
         model.titel,
-        model.start_zeitpunkt,
-        model.letztes_update,
+        model.zp_start,
+        model.zp_modifiziert,
         model.trojanergefahr.map(|x| x as i32),
         model.link,
         model.gremium_federf
     )
     .execute(&mut **tx)
     .await?;
-    // betroffene Texte
-    sqlx::query!(
-        "INSERT INTO rel_station_gesetz(stat_id, gesetz)
-        SELECT $1, blub FROM UNNEST($2::text[]) as blub
-        ON CONFLICT DO NOTHING",
-        db_id,
-        model.betroffene_texte.as_ref().map(|x| &x[..])
-    )
-    .execute(&mut **tx)
-    .await?;
-    // links
+
+    // links::UNION
     sqlx::query!(
         "INSERT INTO rel_station_link(stat_id, link)
         SELECT $1, blub FROM UNNEST($2::text[]) as blub
@@ -335,10 +323,10 @@ pub async fn execute_merge_station(
     .execute(&mut **tx)
     .await?;
 
-    // schlagworte
+    // schlagworte::UNION
     insert::insert_station_sw(db_id, model.schlagworte.clone().unwrap_or(vec![]), tx).await?;
     
-    // dokumente
+    // dokumente::UNION
     let mut insert_ids = vec![];
     for dok in model.dokumente.iter() {
         // if id & not in database: fail.
@@ -404,32 +392,22 @@ pub async fn execute_merge_station(
         .execute(&mut **tx)
         .await?;
     }
+    
     // stellungnahmen
     for stln in model.stellungnahmen.as_ref().unwrap_or(&vec![]) {
-        match dokument_merge_candidates(&stln.dokument, &mut **tx, srv).await? {
+        match dokument_merge_candidates(stln, &mut **tx, srv).await? {
             MergeState::NoMatch => {
-                let did = insert::insert_dokument(stln.dokument.clone(), tx, srv).await?;
+                let did = insert::insert_dokument(stln.clone(), tx, srv).await?;
                 sqlx::query!(
-                    "INSERT INTO stellungnahme(stat_id, dok_id, meinung, lobbyreg_link)
-                VALUES($1, $2, $3, $4);",
+                    "INSERT INTO reL_station_stln(stat_id, dok_id) VALUES($1, $2);",
                     db_id,
-                    did,
-                    stln.meinung as i32,
-                    stln.lobbyregister_link
+                    did
                 )
                 .execute(&mut **tx)
                 .await?;
             }
             MergeState::OneMatch(did) => {
-                execute_merge_dokument(&stln.dokument, did, tx, srv).await?;
-                sqlx::query!(
-                    "UPDATE stellungnahme SET 
-                meinung=$1, lobbyreg_link=$2",
-                    stln.meinung as i32,
-                    stln.lobbyregister_link
-                )
-                .execute(&mut **tx)
-                .await?;
+                execute_merge_dokument(&stln, did, tx, srv).await?;
             }
             MergeState::AmbiguousMatch(matches) => {
                 let api_ids = sqlx::query!(
@@ -476,23 +454,17 @@ pub async fn execute_merge_vorgang(
     )
     .execute(&mut **tx)
     .await?;
-    /// initiatoren / initpersonen
+    /// initiatoren / initpersonen::UNION
+    let mut aids = vec![];
+    for a in &model.initiatoren{
+        aids.push(insert_or_retrieve_autor(a, tx, srv).await?);
+    }
     sqlx::query!(
-        "INSERT INTO rel_vorgang_init (vg_id, initiator)
-        SELECT $1, blub FROM UNNEST($2::text[]) as blub
+        "INSERT INTO rel_vorgang_init (vg_id, in_id)
+        SELECT $1, blub FROM UNNEST($2::int4[]) as blub
         ON CONFLICT DO NOTHING",
         db_id,
-        &model.initiatoren[..]
-    )
-    .execute(&mut **tx)
-    .await?;
-    let initp = model.initiator_personen.clone().unwrap_or(vec![]);
-    sqlx::query!(
-        "INSERT INTO rel_vorgang_init_person (vg_id, initiator)
-        SELECT $1, blub FROM UNNEST($2::text[]) as blub
-        ON CONFLICT DO NOTHING",
-        db_id,
-        &initp[..]
+        &aids[..]
     )
     .execute(&mut **tx)
     .await?;
@@ -520,7 +492,7 @@ pub async fn execute_merge_vorgang(
     });
 
     sqlx::query!(
-        "INSERT INTO rel_vg_ident (vg_id, typ, identifikator)
+        "INSERT INTO rel_vorgang_ident (vg_id, typ, identifikator)
         SELECT $1, vit.id, ident FROM 
         UNNEST($2::text[], $3::text[]) blub(typ_value, ident)
         INNER JOIN vg_ident_typ vit ON vit.value = typ_value
@@ -699,11 +671,12 @@ mod scenariotest {
             let paramock = VorgangGetQueryParams {
                 vgtyp: None,
                 wp: None,
-                init_contains: None,
-                init_prsn_contains: None,
-                parlament: None,
-                upd_since: None,
-                upd_until: None,
+                inipsn: None,
+                iniorg: None,
+                inifch: None,
+                p: None,
+                since: None,
+                until: None,
                 limit: None,
                 offset: None,
             };
@@ -711,7 +684,7 @@ mod scenariotest {
                 if_modified_since: None
             };
             let mut tx = self.server.sqlx_db.begin().await.unwrap();
-            let db_vorgangs = crate::db::retrieve::vorgang_by_parameter(paramock, hdmock, &mut tx)
+            let db_vorgangs = crate::db::retrieve::vorgang_by_parameter(&paramock, &hdmock, &mut tx)
                 .await
                 .unwrap();
 

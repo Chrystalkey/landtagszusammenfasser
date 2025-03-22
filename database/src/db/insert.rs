@@ -13,7 +13,7 @@ pub async fn insert_vorgang(
     tx: &mut sqlx::PgTransaction<'_>,
     server: &LTZFServer,
 ) -> Result<i32> {
-    tracing::info!("Inserting complete Vorgang into the database");
+    tracing::info!("Inserting Complete Vorgang into the database");
     let obj = "vorgang";
     // master insert
     let vg_id = sqlx::query!(
@@ -44,11 +44,12 @@ pub async fn insert_vorgang(
     .await?;
 
     // insert initiatoren
-    sqlx::query!("INSERT INTO rel_vorgang_init(initiator, vg_id) SELECT val, $2 FROM UNNEST($1::text[])as val;",
-    &vg.initiatoren[..], vg_id)
-    .execute(&mut **tx).await?;
-    sqlx::query!("INSERT INTO rel_vorgang_init_person(initiator, vg_id) SELECT val, $2 FROM UNNEST($1::text[])as val;",
-    vg.initiator_personen.as_ref().map(|x|&x[..]), vg_id)
+    let mut init_ids = vec![];
+    for x in &vg.initiatoren{
+        init_ids.push(insert_or_retrieve_autor(x, tx, server).await?);
+    }
+    sqlx::query!("INSERT INTO rel_vorgang_init(in_id, vg_id) SELECT val, $2 FROM UNNEST($1::int4[])as val;",
+    &init_ids[..], vg_id)
     .execute(&mut **tx).await?;
 
     // insert ids
@@ -64,7 +65,7 @@ pub async fn insert_vorgang(
     });
 
     sqlx::query!(
-        "INSERT INTO rel_vg_ident (vg_id, typ, identifikator) 
+        "INSERT INTO rel_vorgang_ident (vg_id, typ, identifikator) 
     SELECT $1, t.id, ident.ident FROM 
     UNNEST($2::text[], $3::text[]) as ident(ident, typ)
     INNER JOIN vg_ident_typ t ON t.value = ident.typ",
@@ -79,7 +80,7 @@ pub async fn insert_vorgang(
     for stat in &vg.stationen {
         insert_station(stat.clone(), vg_id, tx, server).await?;
     }
-    tracing::info!("Insertion Successful with ID: {}", vg_id);
+    tracing::info!("Vorgang Insertion Successful with ID: {}", vg_id);
     Ok(vg_id)
 }
 
@@ -106,7 +107,8 @@ pub async fn insert_station(
     };
     let stat_id = sqlx::query!(
         "INSERT INTO station 
-        (api_id, gr_id, link, p_id, titel, trojanergefahr, typ, start_zeitpunkt, vg_id, letztes_update, gremium_isff)
+        (api_id, gr_id, link, p_id, titel, trojanergefahr, typ, 
+        zp_start, vg_id, zp_modifiziert, gremium_isff)
         VALUES
         ($1, $2, $3,
         (SELECT id FROM parlament   WHERE value = $4), $5, $6,
@@ -115,19 +117,10 @@ pub async fn insert_station(
         RETURNING station.id",
         sapi, gr_id, stat.link,
         stat.parlament.to_string(), stat.titel, stat.trojanergefahr.map(|x|x as i32), srv.guard_ts(stat.typ, sapi, obj)?,
-        stat.start_zeitpunkt, vg_id, stat.letztes_update, stat.gremium_federf
+        stat.zp_start, vg_id, stat.zp_modifiziert, stat.gremium_federf
     ).map(|r|r.id)
     .fetch_one(&mut **tx).await?;
 
-    // betroffene gesetzestexte
-    sqlx::query!(
-        "INSERT INTO rel_station_gesetz(stat_id, gesetz)
-        SELECT $1, blub FROM UNNEST($2::text[]) as blub ON CONFLICT DO NOTHING",
-        stat_id,
-        stat.betroffene_texte.as_ref().map(|x| &x[..])
-    )
-    .execute(&mut **tx)
-    .await?;
     // links
     sqlx::query!(
         "INSERT INTO rel_station_link(stat_id, link)
@@ -154,17 +147,13 @@ pub async fn insert_station(
 
     // stellungnahmen
     if let Some(stln) = stat.stellungnahmen {
-        let mut mng = Vec::with_capacity(stln.len());
         let mut doks = Vec::with_capacity(stln.len());
-        let mut lobby = Vec::with_capacity(stln.len());
         for stln in stln {
-            mng.push(stln.meinung as i32);
-            lobby.push(stln.lobbyregister_link);
-            doks.push(insert_dokument(stln.dokument, tx, srv).await?);
+            doks.push(insert_dokument(stln, tx, srv).await?);
         }
-        sqlx::query!("INSERT INTO stellungnahme (stat_id, meinung, lobbyreg_link, dok_id)
-        SELECT $1, mn, lobby, did FROM UNNEST($2::int4[], $3::text[], $4::int4[]) as blub(mn, lobby, did)",
-        stat_id, &mng[..], &lobby as &[Option<String>], &doks[..]
+        sqlx::query!("INSERT INTO rel_station_stln (stat_id, dok_id)
+        SELECT $1, did FROM UNNEST($2::int4[]) as did",
+        stat_id, &doks[..]
         ).execute(&mut **tx).await?;
     }
     // schlagworte
@@ -195,50 +184,47 @@ pub async fn insert_dokument(
     }
     let obj = "Dokument";
     let did = sqlx::query!(
-        "INSERT INTO dokument(api_id, drucksnr, typ, titel, kurztitel, vorwort, volltext, zusammenfassung, last_mod, link, hash)
+        "INSERT INTO dokument(api_id, drucksnr, typ, titel, kurztitel, vorwort, 
+        volltext, zusammenfassung, zp_lastmod, link, hash, zp_referenz, zp_created, meinung)
         VALUES(
             $1,$2, (SELECT id FROM dokumententyp WHERE value = $3),
-            $4,$5,$6,$7,$8,$9,$10,$11
+            $4,$5,$6,$7,$8,$9,$10,$11, $12,$13,$14
         )RETURNING id",
         dapi, dok.drucksnr,  srv.guard_ts(dok.typ, dapi, obj)?, dok.titel, dok.kurztitel, dok.vorwort,
-        dok.volltext,dok.zusammenfassung, dok.letzte_modifikation, dok.link, dok.hash
+        dok.volltext,dok.zusammenfassung, dok.zp_modifiziert, dok.link, dok.hash,
+        dok.zp_modifiziert, dok.zp_erstellt, dok.meinung.map(|r|r as i32)
     ).map(|r|r.id).fetch_one(&mut **tx).await?;
 
     // Schlagworte
     insert_dok_sw(did, dok.schlagworte.unwrap_or(vec![]), tx).await?;
 
     // authoren
+    let mut aids = vec![];
+    for a in &dok.autoren{
+        aids.push(insert_or_retrieve_autor(a, tx, srv).await?)
+    }
     sqlx::query!(
-        "INSERT INTO rel_dok_autor(dok_id, autor) 
-    SELECT $1, blub FROM UNNEST($2::text[]) as blub",
-        did,
-        dok.autoren.as_ref().map(|x| &x[..])
-    )
-    .execute(&mut **tx)
-    .await?;
-    sqlx::query!(
-        "INSERT INTO rel_dok_autorperson(dok_id, autor) 
-    SELECT $1, blub FROM UNNEST($2::text[]) as blub",
-        did,
-        dok.autorpersonen.as_ref().map(|x| &x[..])
-    )
+        "INSERT INTO rel_dok_autor(dok_id, aut_id) 
+    SELECT $1, blub FROM UNNEST($2::int4[]) as blub",
+        did, &aids[..])
     .execute(&mut **tx)
     .await?;
     return Ok(did);
 }
 
 pub async fn insert_sitzung(
-    ass: &models::Ausschusssitzung,
+    ass: &models::Sitzung,
     tx: &mut PgTransaction<'_>,
     srv: &LTZFServer,
 ) -> Result<i32> {
     let api_id = ass.api_id.unwrap_or(uuid::Uuid::now_v7());
 
     // gremium insert or fetch
-    let gr_id = insert_or_retrieve_gremium(&ass.ausschuss, tx, srv).await?;
+    let gr_id = insert_or_retrieve_gremium(&ass.gremium, tx, srv).await?;
     // master insert
     let id = sqlx::query!(
-        "INSERT INTO ausschusssitzung (api_id, termin, public, gr_id, link, nummer, titel)
+        "INSERT INTO sitzung 
+        (api_id, termin, public, gr_id, link, nummer, titel)
     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
         api_id,
         ass.termin,
@@ -257,7 +243,7 @@ pub async fn insert_sitzung(
         tids.push(insert_top(&top, tx, srv).await?);
     }
     sqlx::query!(
-        "INSERT INTO rel_ass_tops(ass_id, top_id) 
+        "INSERT INTO rel_sitzung_tops(sid, tid) 
     SELECT $1, tids FROM UNNEST($2::int4[]) as tids",
         id,
         &tids[..]
@@ -268,11 +254,11 @@ pub async fn insert_sitzung(
     // insert experten
     let mut exp_ids = vec![];
     for exp in ass.experten.as_ref().unwrap_or(&vec![]) {
-        let ex_id = insert_or_retrieve_experte(exp, tx, srv).await?;
+        let ex_id = insert_or_retrieve_autor(exp, tx, srv).await?;
         exp_ids.push(ex_id);
     }
     sqlx::query!(
-        "INSERT INTO rel_ass_experten(ass_id, exp_id)
+        "INSERT INTO rel_sitzung_experten(sid, eid)
     SELECT $1, eids FROM UNNEST($2::int4[]) as eids",
         id,
         &exp_ids[..]
@@ -299,7 +285,7 @@ pub async fn insert_top(
 
     // drucksachen
     let mut dids = vec![];
-    for d in top.drucksachen.as_ref().unwrap_or(&vec![]) {
+    for d in top.dokumente.as_ref().unwrap_or(&vec![]) {
         dids.push(insert_or_retrieve_dok(&d, tx, srv).await?);
     }
     sqlx::query!(
@@ -336,7 +322,7 @@ pub async fn insert_or_retrieve_gremium(
     }
 
     let similarity = sqlx::query!(
-        "SELECT g.wp,g.name, SIMILARITY(name, $1) as sim, g.link, g.link_kalender
+        "SELECT g.wp,g.name, SIMILARITY(name, $1) as sim, g.link
     FROM gremium g, parlament p
     WHERE SIMILARITY(name, $1) > 0.66 AND 
     g.parl = p.id AND p.value = $2",
@@ -348,7 +334,6 @@ pub async fn insert_or_retrieve_gremium(
             r.sim.unwrap(),
             models::Gremium {
                 link: r.link,
-                link_kalender: r.link_kalender,
                 parlament: gr.parlament,
                 wahlperiode: r.wp as u32,
                 name: r.name,
@@ -359,14 +344,13 @@ pub async fn insert_or_retrieve_gremium(
     .await?;
     notify_new_enum_entry(gr, similarity, srv)?;
     let id = sqlx::query!(
-        "INSERT INTO gremium(name, parl, wp, link, link_kalender) VALUES 
-    ($1, (SELECT id FROM parlament p WHERE p.value = $2), $3, $4, $5) 
+        "INSERT INTO gremium(name, parl, wp, link) VALUES 
+    ($1, (SELECT id FROM parlament p WHERE p.value = $2), $3, $4) 
     RETURNING gremium.id",
         gr.name,
         gr.parlament.to_string(),
         gr.wahlperiode as i32,
-        gr.link,
-        gr.link_kalender
+        gr.link
     )
     .map(|r| r.id)
     .fetch_one(&mut **tx)
@@ -374,15 +358,19 @@ pub async fn insert_or_retrieve_gremium(
     Ok(id)
 }
 
-pub async fn insert_or_retrieve_experte(
-    ex: &models::Experte,
+pub async fn insert_or_retrieve_autor(
+    at: &models::Autor,
     tx: &mut PgTransaction<'_>,
     srv: &LTZFServer,
 ) -> Result<i32> {
     let eid = sqlx::query!(
-        "SELECT e.id FROM experte e WHERE e.name = $1 AND e.fachgebiet = $2",
-        ex.name,
-        ex.fachgebiet
+        "SELECT a.id FROM autor a WHERE 
+        ((a.person IS NULL AND $1::text IS NULL) OR a.person = $1) AND 
+        ((a.organisation IS NULL AND $2::text IS NULL) OR a.organisation = $2) AND 
+        ((a.fachgebiet IS NULL AND $3::text IS NULL) OR a.fachgebiet = $3)",
+        at.person,
+        at.organisation,
+        at.fachgebiet
     )
     .map(|r| r.id)
     .fetch_optional(&mut **tx)
@@ -392,27 +380,51 @@ pub async fn insert_or_retrieve_experte(
     }
 
     let similarity = sqlx::query!(
-        "SELECT *, SIMILARITY(name, $1) as sim FROM experte e 
-    WHERE SIMILARITY(name, $1) > 0.66 AND SIMILARITY(fachgebiet, $2) > 0.66",
-        ex.name,
-        ex.fachgebiet
+        "
+        WITH similarities AS (
+            SELECT id, 
+            SIMILARITY(person, $1) as p, 
+            SIMILARITY(organisation, $2) as o, 
+            SIMILARITY(fachgebiet, $3) as f
+            FROM autor a
+        )
+        SELECT a.*, 
+        CASE WHEN s.p IS NOT NULL THEN s.p
+        ELSE s.o END AS sim
+        
+        FROM autor a 
+        INNER JOIN similarities s ON s.id = a.id
+        
+        WHERE 
+        
+        (($1 IS NULL AND a.person IS NULL) OR s.p > 0.66) AND 
+        s.o > 0.66 AND
+        (($3 IS NULL AND a.fachgebiet IS NULL) OR s.f > 0.66)",
+        at.person,
+        at.organisation,
+        at.fachgebiet
     )
     .map(|r| {
         (
             r.sim.unwrap(),
-            models::Experte {
+            models::Autor {
                 fachgebiet: r.fachgebiet,
-                name: r.name,
+                person: r.person,
+                organisation: r.organisation,
+                lobbyregister: r.lobbyregister,
             },
         )
     })
     .fetch_all(&mut **tx)
     .await?;
-    notify_new_enum_entry(ex, similarity, srv)?;
+    notify_new_enum_entry(at, similarity, srv)?;
     let id = sqlx::query!(
-        "INSERT INTO experte(name, fachgebiet) VALUES ($1, $2) RETURNING experte.id",
-        ex.name,
-        ex.fachgebiet
+        "INSERT INTO autor(person, organisation, lobbyregister, fachgebiet) 
+        VALUES ($1, $2, $3, $4) RETURNING autor.id",
+        at.person,
+        at.organisation,
+        at.fachgebiet,
+        at.lobbyregister
     )
     .map(|r| r.id)
     .fetch_one(&mut **tx)

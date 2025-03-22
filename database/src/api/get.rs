@@ -56,7 +56,7 @@ pub async fn s_get_by_id(
         .fetch_optional(&mut *tx)
         .await?;
     if let Some(id) = id{
-        let result = retrieve::ausschusssitzung_by_id(id, &mut tx).await?;
+        let result = retrieve::sitzung_by_id(id, &mut tx).await?;
         tx.commit().await?;
         Ok(SGetByIdResponse::Status200_SuccessfulOperation(result))
     }else{
@@ -70,7 +70,7 @@ pub async fn s_get(
     query_params: &models::SGetQueryParams,
 ) -> Result<models::SGet200Response> {
     let mut tx = server.sqlx_db.begin().await?;
-    let result = retrieve::as_by_parameter(query_params, header_params,  &mut tx).await?;
+    let result = retrieve::sitzung_by_param(query_params, header_params,  &mut tx).await?;
     tx.commit().await?;
     Ok(models::SGet200Response {
         payload: as_option(result),

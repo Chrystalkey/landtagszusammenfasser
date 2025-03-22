@@ -13,6 +13,7 @@ CREATE TABLE autor(
     id SERIAL PRIMARY KEY,
     person VARCHAR,
     organisation VARCHAR NOT NULL,
+    fachgebiet VARCHAR,
     lobbyregister VARCHAR,
     CONSTRAINT unq_data UNIQUE(person, organisation)
 );
@@ -31,7 +32,7 @@ CREATE TABLE dokument (
 
     zp_lastmod TIMESTAMP WITH TIME ZONE NOT NULL,
     zp_referenz TIMESTAMP WITH TIME ZONE NOT NULL,
-    zp_created TIMESTAMP WITH TIME ZONE NOT NULL,
+    zp_created TIMESTAMP WITH TIME ZONE,
 
     link VARCHAR NOT NULL,
     hash VARCHAR NOT NULL,
@@ -102,6 +103,11 @@ CREATE TABLE rel_station_schlagwort(
     PRIMARY KEY (stat_id, sw_id)
 );
 CREATE TABLE rel_station_dokument(
+    stat_id INTEGER NOT NULL REFERENCES station(id) ON DELETE CASCADE,
+    dok_id INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE,
+    PRIMARY KEY (stat_id, dok_id)
+);
+CREATE TABLE rel_station_stln(
     stat_id INTEGER NOT NULL REFERENCES station(id) ON DELETE CASCADE,
     dok_id INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE,
     PRIMARY KEY (stat_id, dok_id)

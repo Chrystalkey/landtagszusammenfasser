@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO reL_station_stln(stat_id, dok_id) VALUES($1, $2);",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6111ccd9319b44024fb7f2da54f2b1352e7614ac2c1a0c8eda0611148b24ef30"
+}

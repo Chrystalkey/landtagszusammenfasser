@@ -51,8 +51,8 @@ pub async fn s_id_put(
         .map(|x| x.id)
         .fetch_one(&mut *tx)
         .await?;
-    let db_cmpvg = retrieve::ausschusssitzung_by_id(db_id, &mut tx).await?;
-    if db_cmpvg == body {
+    let db_cmpvg = retrieve::sitzung_by_id(db_id, &mut tx).await?;
+    if db_cmpvg == *body {
         return Ok(SidPutResponse::Status204_NotModified);
     }
     match delete::delete_ass_by_api_id(api_id, server).await? {
