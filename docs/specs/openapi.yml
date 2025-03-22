@@ -294,6 +294,14 @@ paths:
           schema:
             type: string
             format: date
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/sitzung"
       responses:
         201:
           description: "Created"
@@ -439,23 +447,17 @@ components:
       content:
         application/json:
           schema:
-            type: "object"
-            properties:
-              payload: 
-                type: "array"
-                items:
-                  $ref: "#/components/schemas/vorgang"
+            type: "array"
+            items:
+              $ref: "#/components/schemas/vorgang"
     SGetResponse:
       description: "Antwort auf eine gefilterte Anfrage zu sitzungen"
       content:
         application/json:
           schema:
-            type: "object"
-            properties:
-              payload:
-                type: "array"
-                items:
-                  $ref: "#/components/schemas/sitzung"
+            type: "array"
+            items:
+              $ref: "#/components/schemas/sitzung"
   schemas:
     create_api_key:
       type: "object"

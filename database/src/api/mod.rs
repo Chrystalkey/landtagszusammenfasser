@@ -1,3 +1,4 @@
+use auth::APIScope;
 use axum::async_trait;
 use axum::extract::Host;
 use axum::http::Method;
@@ -12,8 +13,8 @@ use openapi::apis::default::*;
 use openapi::models;
 
 mod auth;
-mod get;
-mod put;
+mod kalender;
+mod objects;
 
 #[derive(Clone)]
 pub struct LTZFServer {
@@ -107,7 +108,15 @@ impl openapi::apis::default::Default for LTZFServer {
         cookies: CookieJar,
           header_params: models::KalDateGetHeaderParams,
           path_params: models::KalDateGetPathParams,
-        ) -> Result<KalDateGetResponse, ()>{todo!()}
+        ) -> Result<KalDateGetResponse, ()> {
+            let mut tx = self.sqlx_db.begin().await
+            .map_err(|e| {tracing::error!("{e}");})?;
+            let res = kalender::kal_get_by_date(path_params.datum,
+            path_params.parlament, &mut tx, self).await
+            .map_err(|e| {tracing::error!("{e}")})?;
+            tx.commit().await.map_err(|e|{tracing::error!("{e}");})?;
+            Ok(res)
+        }
     
     /// KalDatePut - PUT /api/v1/kalender/{parlament}/{datum}
     #[must_use]
@@ -119,7 +128,23 @@ impl openapi::apis::default::Default for LTZFServer {
     cookies: CookieJar,
         claims: Self::Claims,
         path_params: models::KalDatePutPathParams,
-    ) -> Result<KalDatePutResponse, ()>{todo!()}
+        body: Vec<models::Sitzung>,
+    ) -> Result<KalDatePutResponse, ()>{    
+        let last_upd_day = chrono::Utc::now().date_naive().checked_sub_days(chrono::Days::new(1)).unwrap();
+        if !(claims.0 == APIScope::Admin || claims.0 == APIScope::Collector ||
+        (claims.0 == APIScope::Collector && path_params.datum > last_upd_day)){
+            return Ok(KalDatePutResponse::Status401_APIKeyIsMissingOrInvalid);
+        }
+        let body = body.iter().filter(|f| f.termin.date_naive() > last_upd_day).cloned().collect();
+
+        let mut tx = self.sqlx_db.begin().await
+        .map_err(|e| {tracing::error!("{e}");})?;
+    
+        let res = kalender::kal_put_by_date(path_params.datum, path_params.parlament,body, &mut tx, self).await
+        .map_err(|e| {tracing::error!("{e}")})?;
+        tx.commit().await.map_err(|e|{tracing::error!("{e}");})?;
+        Ok(res)
+    }
 
     /// KalGet - GET /api/v1/kalender
     #[must_use]
@@ -131,7 +156,14 @@ impl openapi::apis::default::Default for LTZFServer {
     cookies: CookieJar,
         header_params: models::KalGetHeaderParams,
         query_params: models::KalGetQueryParams,
-    ) -> Result<KalGetResponse, ()>{todo!()}
+    ) -> Result<KalGetResponse, ()>{
+        let mut tx = self.sqlx_db.begin().await
+        .map_err(|e| {tracing::error!("{e}");})?;
+        let res = kalender::kal_get_by_param(query_params, header_params, &mut tx, self).await
+        .map_err(|e| {tracing::error!("{e}")})?;
+        tx.commit().await.map_err(|e|{tracing::error!("{e}");})?;
+        Ok(res)
+    }
 
     #[doc = "VorgangGetById - GET /api/v1/vorgang/{vorgang_id}"]
     #[must_use]
@@ -144,7 +176,7 @@ impl openapi::apis::default::Default for LTZFServer {
         header_params: models::VorgangGetByIdHeaderParams,
         path_params: models::VorgangGetByIdPathParams,
     ) -> Result<VorgangGetByIdResponse, ()> {
-        let vorgang = get::vg_id_get(self, &header_params, &path_params).await;
+        let vorgang = objects::vg_id_get(self, &header_params, &path_params).await;
 
         match vorgang {
             Ok(vorgang) => Ok(VorgangGetByIdResponse::Status200_SuccessfulOperation(
@@ -204,7 +236,7 @@ impl openapi::apis::default::Default for LTZFServer {
         if claims.0 != auth::APIScope::Admin && claims.0 != auth::APIScope::KeyAdder {
             return Ok(VorgangIdPutResponse::Status401_APIKeyIsMissingOrInvalid);
         }
-        let out = put::vorgang_id_put(self, &path_params, &body)
+        let out = objects::vorgang_id_put(self, &path_params, &body)
             .await
             .map_err(|e| tracing::warn!("{}", e))?;
         Ok(out)
@@ -231,11 +263,13 @@ impl openapi::apis::default::Default for LTZFServer {
         ).unwrap_or(false) {
             return Ok(VorgangGetResponse::Status416_RequestRangeNotSatisfiable);
         }
-        match get::vg_get(self, &header_params, &query_params).await {
-            Ok(models::VorgangGet200Response { payload: None }) => {
-                Ok(VorgangGetResponse::Status204_NoContentFoundForTheSpecifiedParameters)
-            }
-            Ok(x) => Ok(VorgangGetResponse::Status200_AntwortAufEineGefilterteAnfrageZuVorgang(x)),
+        match objects::vg_get(self, &header_params, &query_params).await {
+            Ok(x) => {
+                if x.is_empty(){
+                    Ok(VorgangGetResponse::Status204_NoContentFoundForTheSpecifiedParameters)
+                }else{
+                    Ok(VorgangGetResponse::Status200_AntwortAufEineGefilterteAnfrageZuVorgang(x))}
+                },
             Err(e) => {
                 tracing::warn!("{}", e.to_string());
                 Err(())
@@ -255,7 +289,7 @@ impl openapi::apis::default::Default for LTZFServer {
         query_params: models::VorgangPutQueryParams,
         body: models::Vorgang,
     ) -> Result<VorgangPutResponse, ()> {
-        let rval = put::vorgang_put(self, &body).await;
+        let rval = objects::vorgang_put(self, &body).await;
         match rval {
             Ok(_) => Ok(VorgangPutResponse::Status201_SuccessfullyIntegratedTheObject),
             Err(e) => {
@@ -297,7 +331,7 @@ impl openapi::apis::default::Default for LTZFServer {
         header_params: models::SGetByIdHeaderParams,
         path_params: models::SGetByIdPathParams,
     ) -> Result<SGetByIdResponse, ()> {
-        let ass = get::s_get_by_id(&self, &header_params, &path_params).await.map_err(|e| {
+        let ass = objects::s_get_by_id(&self, &header_params, &path_params).await.map_err(|e| {
             tracing::warn!("{}", e);
         })?;
         return Ok(ass);
@@ -316,7 +350,7 @@ impl openapi::apis::default::Default for LTZFServer {
         if claims.0 != auth::APIScope::Admin && claims.0 != auth::APIScope::KeyAdder {
             return Ok(SidPutResponse::Status401_APIKeyIsMissingOrInvalid);
         }
-        let out = put::s_id_put(self, &path_params, &body).await.map_err(|e| {
+        let out = objects::s_id_put(self, &path_params, &body).await.map_err(|e| {
             tracing::warn!("{}", e);
         })?;
         Ok(out)
@@ -341,12 +375,13 @@ impl openapi::apis::default::Default for LTZFServer {
         ).unwrap_or(false) {
             return Ok(SGetResponse::Status416_RequestRangeNotSatisfiable);
         }
-        match get::s_get(self, &header_params, &query_params).await {
-            Ok(models::SGet200Response { payload: None }) => {
-                Ok(SGetResponse::Status204_NoContentFoundForTheSpecifiedParameters)
-            }
+        match objects::s_get(self, &header_params, &query_params).await {
             Ok(x) => {
-                Ok(SGetResponse::Status200_AntwortAufEineGefilterteAnfrageZuSitzungen(x))
+                if x.is_empty() {
+                    Ok(SGetResponse::Status204_NoContentFoundForTheSpecifiedParameters)
+                } else {
+                    Ok(SGetResponse::Status200_AntwortAufEineGefilterteAnfrageZuSitzungen(x))
+                }
             }
             Err(e) => {
                 tracing::warn!("{}", e.to_string());
