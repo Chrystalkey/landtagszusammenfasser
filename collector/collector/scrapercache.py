@@ -18,7 +18,7 @@ class ScraperCache:
     Provides methods to read from and write to cache using Redis.
     """
     redis_client: Optional[redis.Redis] = None
-    cache_expiry_minutes: int = 60 * 24  # Default 24 hours for document cache
+    cache_expiry_minutes: int = 60 * 24 * 365 # Default 1 year for document cache
     disabled: bool = False
 
     def __init__(self, redis_host: str, redis_port: int, doc_cache_expiry_minutes: int = None, disabled: bool = False):

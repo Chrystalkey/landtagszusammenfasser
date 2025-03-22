@@ -598,7 +598,6 @@ components:
                     Für weitere Details, siehe die docs"
       required:
         - "typ"
-        - "datum"
         - "dokumente"
         - "start_zeitpunkt"
         - "parlament"

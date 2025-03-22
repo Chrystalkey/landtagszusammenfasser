@@ -91,10 +91,10 @@ class BundestagAPIScraper(Scraper):
                 })
             ],
             "links": [self._create_dip_url(vorgang.get("id"), vorgang.get("titel"))], 
-            "stationen": self._extract_stationen(positionen) #ToDo: Checken und mappen aus beratungsstand
+            "stationen": await self._extract_stationen(positionen) 
         })
         
-        logger.info(f"Daten: {gsvh}")
+        logger.info(f"Titel: {gsvh.titel}") #Kann weg, wenn's läuft
         return gsvh
 
     async def _get_vorgangspositionen(self, vorgang_id: str) -> List[Dict]:
@@ -119,8 +119,7 @@ class BundestagAPIScraper(Scraper):
 
     def _get_initdrucks_nummer(self, positionen: List[Dict]) -> str:
         """
-        Extrahiert die Dokumentennummer aus der Fundstelle für Vorgangspositionen vom Typ 'Gesetzentwurf'
-        
+        Extrahiert die Dokumentennummer aus der Fundstelle für Vorgangspositionen vom Typ 'Gesetzentwurf'        
         """
         for pos in positionen:
             if pos.get("vorgangsposition") == "Gesetzentwurf":
@@ -156,66 +155,134 @@ class BundestagAPIScraper(Scraper):
             initiatoren.extend(vorgang["initiative"])
         return initiatoren
 
-    def _extract_stationen(self, positionen: List[Dict]) -> List[models.Station]:
+    async def _extract_stationen(self, positionen: List[Dict]) -> List[models.Station]:
         """Extrahiert die Station aus den Vorgangsdaten"""
         stationen = []
         
         for position in positionen:
-            station = self._create_station_from_position(position)
+            station = await self._create_station_from_position(position)
             if station:
                 stationen.append(station)
         
         return stationen
 
-    def _create_station_from_position(self, position: Dict) -> Optional[models.Station]:
+    async def _create_station_from_position(self, position: Dict) -> Optional[models.Station]:
         """Erstellt eine Station aus einer Vorgangsaktivität"""
         station_mapping = {
             "Gesetzentwurf": models.Stationstyp.PARL_MINUS_INITIATIV,
             "1. Beratung": models.Stationstyp.PARL_MINUS_AUSSCHBER,
-            "Durchgang": models.Stationstyp.PARL_MINUS_AUSSCHBER,
             "1. Durchgang": models.Stationstyp.PARL_MINUS_AUSSCHBER,
             "Beschlussempfehlung und Bericht": models.Stationstyp.PARL_MINUS_BERABGESCHL,
             "Beschlussempfehlung": models.Stationstyp.PARL_MINUS_BERABGESCHL,
             "Empfehlungen der Ausschüsse": models.Stationstyp.PARL_MINUS_BERABGESCHL,
             "Bericht gemäß § 96 Geschäftsordnung BT": models.Stationstyp.PARL_MINUS_VERZOEGERT,
-            "2. Beratung": models.Stationstyp.PARL_MINUS_AUSSCHBER,
-            "3. Beratung": models.Stationstyp.PARL_MINUS_AUSSCHBER,
-            "2. Durchgang": models.Stationstyp.PARL_MINUS_AUSSCHBER,
-            
-            
+            "2. Beratung": "Abstimmung",
+            "3. Beratung": "Abstimmung",
+            "2. Durchgang": "Abstimmung",
+            "Durchgang": "Abstimmung",       
+        }
+        
+        beschluss_mapping = {
+            "Annahme in Ausschussfassung": models.Stationstyp.PARL_MINUS_AKZEPTANZ,
+            "Annahme der Vorlage": models.Stationstyp.PARL_MINUS_AKZEPTANZ,
+            "Versagung der Zustimmung": models.Stationstyp.PARL_MINUS_ABLEHNUNG,
+            "Ablehnung": models.Stationstyp.PARL_MINUS_ABLEHNUNG,
+            "Zustimmung": models.Stationstyp.PARL_MINUS_AKZEPTANZ,
+            "kein Antrag auf Einberufung des Vermittlungsausschusses": models.Stationstyp.PARL_MINUS_AKZEPTANZ,
+            "Anrufung des Vermittlungsausschusses": models.Stationstyp.PARL_MINUS_ABLEHNUNG,
         }
         
         typ = station_mapping.get(position.get("vorgangsposition"))
+        if typ == "Abstimmung":
+            beschluss = position.get("beschlussfassung", [{}])[0].get("beschlusstenor", "")   
+            # Prüfe zuerst auf exakte Übereinstimmung
+            typ = beschluss_mapping.get(beschluss)
+            # Falls keine exakte Übereinstimmung, prüfe auf gemeinsamen Anfang
+            if not typ and beschluss.startswith("kein Antrag auf Einberufung des Vermittlungsausschusses"):
+                typ = models.Stationstyp.PARL_MINUS_AKZEPTANZ
+            if not typ and beschluss.startswith("Anrufung des Vermittlungsausschusses"):
+                typ = models.Stationstyp.PARL_MINUS_ABLEHNUNG
+        
+        #Wenn gar nichts passt, setze auf Sonstig
         if not typ:
             typ = models.Stationstyp.SONSTIG
             
         datum = self._parse_date(position.get("datum"))
+
+        #Ermittle die zugehörigen Dokumente
+        dokumente = await self._extract_dokumente(position, typ)
+        #Erstelle die Station
         return models.Station.from_dict({
-            "datum": datum,
             "start_zeitpunkt": f"{datum}T00:00:00",  # Startzeitpunkt als Datum mit 00:00:00
-            "dokumente": [],  # Leere Liste als Standardwert, ToDo: siehe Notizen
-            "link": position.get("fundstelle").get("pdf_url"),
+            "dokumente": dokumente,             
             "parlament": position.get("zuordnung"),
             "typ": typ,
         })
+    
+        
 
-    def _extract_dokumente(self, drucksache: Dict) -> List[models.Dokument]:
-        """Extrahiert Dokumente aus einer Drucksache"""
-        if not drucksache:
+    async def _extract_dokumente(self, position: Dict, typ: models.Stationstyp) -> List[Dict]:
+        """Extrahiert Dokumente zu einem Vorgang und gibt sie als serialisierbares Dictionary zurück"""
+        if not position:
             return []
-            
-        return [models.Dokument.from_dict({
-            "titel": drucksache.get("titel", ""),
-            "last_mod": datetime.now().isoformat(),
-            "link": drucksache.get("url", ""),
-            "hash": "",  # Muss noch implementiert werden
-            "typ": models.Dokumententyp.DRUCKSACHE,
-            "zusammenfassung": "",
-            "schlagworte": [],
-            "autorpersonen": [],
-            "autoren": []
-        })]
 
+        #Ermittle die korrekten Typen
+        if typ == models.Stationstyp.PARL_MINUS_INITIATIV:
+            dokument_typ = "entwurf"  # Gesetzesentwurf auf einer Drucksache
+        elif typ == models.Stationstyp.PARL_MINUS_BERABGESCHL:
+            dokument_typ = "beschlussempf"  # Beschlussempfehlung von Ausschüssen
+        else:
+            return []
+
+        doctyp = position.get("fundstelle", {}).get("drucksachetyp", "")
+        drsnr = position.get("fundstelle", {}).get("dokumentnummer", "")
+
+        #Hole Volltext aus API
+        endpoint = f"{self.listing_urls[0]}/drucksache-text"    
+        params = {
+            "apikey": self.BT_API_KEY,
+            "f.dokumentnummer" : drsnr,
+            "f.wahlperiode" : self.CURRENT_WP,
+            "f.drucksachetyp" : doctyp
+        }
+
+        async with self.session.get(endpoint, params=params) as response:
+            if response.status == 200:
+                data = await response.json()
+                volltext = data.get("documents", [{}])[0].get("text", "")
+        
+        if volltext != "":
+            zusammenfassung = await self._get_zusammenfassung(volltext)
+        else:
+            zusammenfassung = ""
+            volltext = ""
+        
+        logger.info(f"Dokument: {drsnr}, {doctyp}, Zusammenfassung: {zusammenfassung}")  
+
+        # Erzeuge ein serialisierbares Dictionary für das Dokument
+        return [{
+            "titel": position.get("titel", ""),
+            "letzte_modifikation": datetime.now().isoformat(),
+            "link": position.get("fundstelle", {}).get("pdf_url", ""),
+            "hash": "",  # Muss noch implementiert werden
+            "typ": dokument_typ,
+            "zusammenfassung": zusammenfassung,
+            "schlagworte": [],
+            "drucksnr": drsnr,
+            "volltext": volltext
+        }]
+    
+
+    async def _get_zusammenfassung(self, volltext: str) -> str:
+        """Holt Zusammenfassung von OpenAI"""
+        if not volltext:
+            return ""
+        
+        #TODO: Zusammenfassung von OpenAI holen
+        
+        
+        return "Zusammenfassung erstellt"
+        
     def _create_dip_url(self, vorgangid, titel):
         #Bildet die URL zum Bundestags DIP aus dem Gesetzestitel
         cleantitle = re.sub(r"[^a-zA-Z0-9]", "-", titel)
