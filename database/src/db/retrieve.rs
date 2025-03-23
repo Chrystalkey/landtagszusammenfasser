@@ -3,6 +3,7 @@ use std::str::FromStr;
 use crate::error::*;
 use crate::utils::as_option;
 use openapi::models;
+use uuid::Uuid;
 
 pub async fn vorgang_by_id(
     id: i32,
@@ -358,15 +359,20 @@ pub async fn sitzung_by_id(
         dokumente: as_option(doks),
     });
 }
-
+pub struct SitzungFilterParameters{
+    pub since: Option<chrono::DateTime<chrono::Utc>>,
+    pub until: Option<chrono::DateTime<chrono::Utc>>,
+    pub parlament: Option<models::Parlament>,
+    pub wp : Option<u32>,
+    pub limit: Option<u32>,
+    pub offset: Option<u32>,
+    pub vgid: Option<Uuid>,
+    pub gremium_like: Option<String>,
+}
 pub async fn sitzung_by_param(
-    qparams: &models::SGetQueryParams,
-    header_params: &models::SGetHeaderParams,
+    params: &SitzungFilterParameters,
     tx: &mut sqlx::PgTransaction<'_>,
 ) -> Result<Vec<models::Sitzung>> {
-    let lower_bnd = header_params.if_modified_since.map(|el| 
-        if qparams.since.is_some() {qparams.since.unwrap().min(el)}else{el}
-    );
 
     let as_list = sqlx::query!(
         "

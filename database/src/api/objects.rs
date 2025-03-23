@@ -1,10 +1,12 @@
 use crate::db::{delete, insert, merge, retrieve};
 use crate::{LTZFServer, Result};
+use openapi::models::SGetQueryParams;
 use openapi::{
     apis::default::{SidPutResponse, VorgangIdPutResponse},
     models,
 };
-use crate::utils::as_option;
+
+use super::kalender::find_applicable_date_range;
 
 pub async fn vg_id_get(
     server: &LTZFServer,
@@ -68,13 +70,34 @@ pub async fn s_get_by_id(
 
 pub async fn s_get(
     server: &LTZFServer,
+    qparams: &SGetQueryParams,
     header_params: &models::SGetHeaderParams,
-    query_params: &models::SGetQueryParams,
-) -> Result<Vec<models::Sitzung>> {
+) -> Result<openapi::apis::default::SGetResponse> {
+    let range = find_applicable_date_range(None, None, None, qparams.since, qparams.until, header_params.if_modified_since);
+    if range.is_none(){
+        return Ok(openapi::apis::default::SGetResponse::Status416_RequestRangeNotSatisfiable)
+    }
+    let params = retrieve::SitzungFilterParameters{
+        gremium_like: None,
+        limit: qparams.limit.map(|x| x as u32),
+        offset: qparams.offset.map(|x| x as u32),
+        parlament: qparams.p,
+        wp : qparams.wp.map(|x| x as u32),
+        since: range.unwrap().0,
+        until: range.unwrap().1,
+        vgid: qparams.vgid,
+    };
+
     let mut tx: sqlx::Transaction<'_, sqlx::Postgres> = server.sqlx_db.begin().await?;
-    let result = retrieve::sitzung_by_param(query_params, header_params,  &mut tx).await?;
+    let result = retrieve::sitzung_by_param(&params,  &mut tx).await?;
     tx.commit().await?;
-    Ok(result)
+    if result.is_empty() && header_params.if_modified_since.is_none() {
+        return Ok(openapi::apis::default::SGetResponse::Status204_NoContentFoundForTheSpecifiedParameters);
+    }else if result.is_empty() && header_params.if_modified_since.is_some(){
+        return Ok(openapi::apis::default::SGetResponse::Status304_NoNewChanges);
+    }
+    Ok(
+        return Ok(openapi::apis::default::SGetResponse::Status200_AntwortAufEineGefilterteAnfrageZuSitzungen(result)))
 }
 
 pub async fn vorgang_id_put(

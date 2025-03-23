@@ -4,6 +4,7 @@ use axum::extract::Host;
 use axum::http::Method;
 use axum_extra::extract::cookie::CookieJar;
 use lettre::SmtpTransport;
+use sqlx::query;
 
 use crate::db::delete::delete_ass_by_api_id;
 use crate::error::{DataValidationError, DatabaseError, LTZFError};
@@ -365,28 +366,8 @@ impl openapi::apis::default::Default for LTZFServer {
         header_params: models::SGetHeaderParams,
         query_params: models::SGetQueryParams,
     ) -> Result<SGetResponse, ()> {
-        let now = chrono::Utc::now();
-        let lower_bnd = header_params.if_modified_since.map(|el| 
-            if query_params.since.is_some() {query_params.since.unwrap().min(el)}else{el}
-        );
-
-        if  lower_bnd.map(|l|
-            l > now || query_params.until.is_some() && query_params.until.unwrap() < l
-        ).unwrap_or(false) {
-            return Ok(SGetResponse::Status416_RequestRangeNotSatisfiable);
-        }
-        match objects::s_get(self, &header_params, &query_params).await {
-            Ok(x) => {
-                if x.is_empty() {
-                    Ok(SGetResponse::Status204_NoContentFoundForTheSpecifiedParameters)
-                } else {
-                    Ok(SGetResponse::Status200_AntwortAufEineGefilterteAnfrageZuSitzungen(x))
-                }
-            }
-            Err(e) => {
-                tracing::warn!("{}", e.to_string());
-                Err(())
-            }
-        }
+        let res = objects::s_get(self, &query_params, &header_params).await
+        .map_err(|e| tracing::error!("{e}"))?;
+        Ok(res)
     }
 }

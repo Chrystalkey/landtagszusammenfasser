@@ -332,9 +332,39 @@ paths:
         - $ref: "#/components/parameters/limit"
         - $ref: "#/components/parameters/offset"
         - $ref: "#/components/parameters/gremium-like"
+        - $ref: "#/components/parameters/year"
+        - $ref: "#/components/parameters/month"
+        - $ref: "#/components/parameters/day-of-month"
 
 components:
   parameters:
+    year: 
+      name: "y"
+      in: query
+      required: false
+      description: "year in question"
+      schema:
+        type: integer
+        minimum: 1945
+    month:
+      name: "m"
+      in: query
+      required: false
+      description: month in question
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 12
+    day-of-month:
+      name: "dom"
+      in: query
+      required: false
+      description: Day of Month in question
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 31
+
     gremium-like:
       name: "gr"
       in: query
