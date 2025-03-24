@@ -1,14 +1,4 @@
 -- Add migration script here
-CREATE TABLE top (
-    id SERIAL PRIMARY KEY,
-    nummer INTEGER NOT NULL,
-    titel VARCHAR NOT NULL
-);
-CREATE TABLE tops_doks(
-    top_id INTEGER NOT NULL REFERENCES top(id) ON DELETE CASCADE,
-    dok_id INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE,
-    PRIMARY KEY (top_id, dok_id)
-);
 
 CREATE TABLE sitzung(
     id SERIAL PRIMARY KEY,
@@ -21,11 +11,6 @@ CREATE TABLE sitzung(
     link VARCHAR,
     last_update TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
-CREATE TABLE rel_sitzung_tops(
-    sid INTEGER NOT NULL REFERENCES sitzung(id) ON DELETE CASCADE,
-    tid INTEGER NOT NULL REFERENCES top(id) ON DELETE CASCADE,
-    PRIMARY KEY (sid, tid)
-);
 CREATE TABLE rel_sitzung_doks(
     sid INTEGER NOT NULL REFERENCES sitzung(id) ON DELETE CASCADE,
     did INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE,
@@ -35,4 +20,16 @@ CREATE TABLE rel_sitzung_experten(
     sid INTEGER NOT NULL REFERENCES sitzung(id) ON DELETE CASCADE,
     eid INTEGER NOT NULL REFERENCES autor(id) ON DELETE CASCADE,
     PRIMARY KEY (sid, eid)
+);
+
+CREATE TABLE top (
+    id SERIAL PRIMARY KEY,
+    sid INTEGER NOT NULL REFERENCES sitzung ON DELETE CASCADE,
+    nummer INTEGER NOT NULL,
+    titel VARCHAR NOT NULL
+);
+CREATE TABLE tops_doks(
+    top_id INTEGER NOT NULL REFERENCES top(id) ON DELETE CASCADE,
+    dok_id INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE,
+    PRIMARY KEY (top_id, dok_id)
 );

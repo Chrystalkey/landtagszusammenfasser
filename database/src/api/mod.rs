@@ -4,7 +4,6 @@ use axum::extract::Host;
 use axum::http::Method;
 use axum_extra::extract::cookie::CookieJar;
 use lettre::SmtpTransport;
-use sqlx::query;
 
 use crate::db::delete::delete_ass_by_api_id;
 use crate::error::{DataValidationError, DatabaseError, LTZFError};

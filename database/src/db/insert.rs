@@ -238,18 +238,9 @@ pub async fn insert_sitzung(
     .fetch_one(&mut **tx)
     .await?;
     // insert tops
-    let mut tids = vec![];
     for top in &ass.tops {
-        tids.push(insert_top(&top, tx, srv).await?);
+        insert_top(id, &top, tx, srv).await?;
     }
-    sqlx::query!(
-        "INSERT INTO rel_sitzung_tops(sid, tid) 
-    SELECT $1, tids FROM UNNEST($2::int4[]) as tids",
-        id,
-        &tids[..]
-    )
-    .execute(&mut **tx)
-    .await?;
 
     // insert experten
     let mut exp_ids = vec![];
@@ -269,15 +260,17 @@ pub async fn insert_sitzung(
 }
 
 pub async fn insert_top(
+    sid: i32,
     top: &models::Top,
     tx: &mut PgTransaction<'_>,
     srv: &LTZFServer,
 ) -> Result<i32> {
     // master insert
     let tid = sqlx::query!(
-        "INSERT INTO top(titel, nummer) VALUES($1, $2)RETURNING id;",
+        "INSERT INTO top(titel, nummer, sid) VALUES($1, $2, $3) RETURNING id;",
         top.titel,
-        top.nummer as i32
+        top.nummer as i32,
+        sid
     )
     .map(|r| r.id)
     .fetch_one(&mut **tx)

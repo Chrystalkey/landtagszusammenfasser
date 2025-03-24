@@ -1,0 +1,35 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n      WITH pre_table AS (\n        SELECT a.id, MAX(a.termin) as lastmod FROM  sitzung a\n\t\tINNER JOIN gremium g ON g.id = a.gr_id\n\t\tINNER JOIN parlament p ON p.id = g.parl\n\t\tWHERE p.value = COALESCE($1, p.value)\n\t\tAND g.wp = \t\tCOALESCE($2, g.wp)\n        AND SIMILARITY(g.name, $7) > 0.66\n        GROUP BY a.id\n        ORDER BY lastmod\n        ),\n\tvgref AS   (\n\t\tSELECT p.id, v.api_id FROM pre_table p\n\t\tINNER JOIN top on top.sid = p.id\n\t\tINNER JOIN tops_doks ON tops_doks.top_id = top.id\n\t\tLEFT JOIN rel_station_dokument rsd ON rsd.dok_id = tops_doks.dok_id\n\t\tLEFT JOIN rel_station_stln rss ON rss.dok_id = tops_doks.dok_id\n\t\tINNER JOIN station s ON s.id = rsd.stat_id OR s.id = rss.stat_id\n\t\tINNER JOIN vorgang v ON s.vg_id = v.id\n\t)\n\nSELECT * FROM pre_table WHERE\nlastmod > COALESCE($3, CAST('1940-01-01T20:20:20Z' as TIMESTAMPTZ)) AND\nlastmod < COALESCE($4, NOW()) AND\nEXISTS (SELECT 1 FROM vgref WHERE pre_table.id = vgref.id AND vgref.api_id = COALESCE($8, vgref.api_id))\nORDER BY pre_table.lastmod ASC\nOFFSET COALESCE($5, 0) \nLIMIT COALESCE($6, 64)\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "lastmod",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Int4",
+        "Timestamptz",
+        "Timestamptz",
+        "Int4",
+        "Int4",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      null
+    ]
+  },
+  "hash": "8104926cb41f084ccadf1cf31aa49d0a01eaa3af1397c23366882c1c1dcb757f"
+}

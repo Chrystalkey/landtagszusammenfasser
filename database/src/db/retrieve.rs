@@ -268,12 +268,15 @@ pub async fn top_by_id(id: i32, tx: &mut sqlx::PgTransaction<'_>) -> Result<mode
     let vgs = sqlx::query!(
         "
     SELECT DISTINCT(v.api_id) FROM station s    -- alle vorgänge von stationen,
-INNER JOIN stationstyp st ON st.id = s.typ
 INNER JOIN vorgang v ON v.id = s.vg_id
 WHERE
 EXISTS ( 									-- mit denen mindestens ein dokument assoziiert ist, dass hier auftaucht
 	SELECT 1 FROM rel_station_dokument rsd 
 	INNER JOIN tops_doks td ON td.dok_id = rsd.dok_id
+	WHERE td.top_id = $1
+) OR EXISTS(			             		-- mit denen mindestens ein dokument assoziiert ist, dass hier auftaucht
+	SELECT 1 FROM rel_station_stln rss
+	INNER JOIN tops_doks td ON td.dok_id = rss.dok_id
 	WHERE td.top_id = $1
 )
     ORDER BY api_id ASC",
@@ -306,16 +309,15 @@ pub async fn sitzung_by_id(
     .fetch_one(&mut **tx)
     .await?;
     // tops
-    let topids = sqlx::query!("
-    SELECT top.id FROM rel_sitzung_tops rat 
-    INNER JOIN top ON top.id = rat.tid
-    WHERE rat.sid = $1", id)
-    .map(|r|r.id).fetch_all(&mut **tx).await?;
+    let topids = sqlx::query!("SELECT * FROM top t WHERE t.sid = $1 ORDER BY titel ASC", id)
+    .map(|r|
+        r.id
+    )
+    .fetch_all(&mut **tx).await?;
     let mut tops = vec![];
-    for tid in topids {
-        tops.push(top_by_id(tid, tx).await?);
+    for top in &topids {
+        tops.push(top_by_id(*top, tx).await?);
     }
-    tops.sort_by(|a, b| a.titel.cmp(&b.titel));
     // experten
     let experten = sqlx::query!(
         "SELECT a.* FROM rel_sitzung_experten rae 
@@ -359,6 +361,7 @@ pub async fn sitzung_by_id(
         dokumente: as_option(doks),
     });
 }
+
 pub struct SitzungFilterParameters{
     pub since: Option<chrono::DateTime<chrono::Utc>>,
     pub until: Option<chrono::DateTime<chrono::Utc>>,
@@ -376,29 +379,42 @@ pub async fn sitzung_by_param(
 
     let as_list = sqlx::query!(
         "
-    WITH pre_table AS (
+      WITH pre_table AS (
         SELECT a.id, MAX(a.termin) as lastmod FROM  sitzung a
 		INNER JOIN gremium g ON g.id = a.gr_id
 		INNER JOIN parlament p ON p.id = g.parl
 		WHERE p.value = COALESCE($1, p.value)
 		AND g.wp = 		COALESCE($2, g.wp)
+        AND SIMILARITY(g.name, $7) > 0.66
         GROUP BY a.id
         ORDER BY lastmod
-        )
+        ),
+	vgref AS   (
+		SELECT p.id, v.api_id FROM pre_table p
+		INNER JOIN top on top.sid = p.id
+		INNER JOIN tops_doks ON tops_doks.top_id = top.id
+		LEFT JOIN rel_station_dokument rsd ON rsd.dok_id = tops_doks.dok_id
+		LEFT JOIN rel_station_stln rss ON rss.dok_id = tops_doks.dok_id
+		INNER JOIN station s ON s.id = rsd.stat_id OR s.id = rss.stat_id
+		INNER JOIN vorgang v ON s.vg_id = v.id
+	)
 
 SELECT * FROM pre_table WHERE
 lastmod > COALESCE($3, CAST('1940-01-01T20:20:20Z' as TIMESTAMPTZ)) AND
-lastmod < COALESCE($4, NOW())
+lastmod < COALESCE($4, NOW()) AND
+EXISTS (SELECT 1 FROM vgref WHERE pre_table.id = vgref.id AND vgref.api_id = COALESCE($8, vgref.api_id))
 ORDER BY pre_table.lastmod ASC
 OFFSET COALESCE($5, 0) 
 LIMIT COALESCE($6, 64)
     ",
-        qparams.p.map(|p| p.to_string()),
-        qparams.wp,
-        lower_bnd,
-        qparams.until,
-        qparams.offset,
-        qparams.limit
+        params.parlament.map(|p| p.to_string()),
+        params.wp.map(|x|x as i32),
+        params.since,
+        params.until,
+        params.offset.map(|x|x as i32),
+        params.limit.map(|x|x as i32),
+        params.gremium_like,
+        params.vgid
     )
     .map(|r| r.id)
     .fetch_all(&mut **tx)

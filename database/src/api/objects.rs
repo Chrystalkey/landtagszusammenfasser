@@ -96,8 +96,7 @@ pub async fn s_get(
     }else if result.is_empty() && header_params.if_modified_since.is_some(){
         return Ok(openapi::apis::default::SGetResponse::Status304_NoNewChanges);
     }
-    Ok(
-        return Ok(openapi::apis::default::SGetResponse::Status200_AntwortAufEineGefilterteAnfrageZuSitzungen(result)))
+    return Ok(openapi::apis::default::SGetResponse::Status200_AntwortAufEineGefilterteAnfrageZuSitzungen(result));
 }
 
 pub async fn vorgang_id_put(

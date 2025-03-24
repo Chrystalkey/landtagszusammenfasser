@@ -4,13 +4,11 @@ use sqlx::PgTransaction;
 use crate::{Result, LTZFServer};
 use crate::db::*;
 
-use super::objects;
-
 pub async fn kal_get_by_date(
     date: chrono::NaiveDate,
     parlament: Parlament,
     tx: &mut PgTransaction<'_>,
-    srv: &LTZFServer,
+    _srv: &LTZFServer,
 ) -> Result<KalDateGetResponse> {
     let dt_begin = date.and_time(chrono::NaiveTime::from_hms_micro_opt(0, 0, 0, 0).unwrap()).and_utc();
     let dt_end = date.checked_add_days(chrono::Days::new(1)).unwrap()
@@ -114,7 +112,6 @@ pub fn find_applicable_date_range(
             return None;
         }
         if let Some(um) = until {
-            if let Some((ysince, yuntil)) = ymd_date_range {}
             if sm >= um {
                 return None;
             }
@@ -168,13 +165,14 @@ pub async fn kal_get_by_param(
 #[cfg(test)]
 mod test{
     use super::find_applicable_date_range;
-    use chrono::{DateTime, Utc};
+    use chrono::DateTime;
     
     #[test]
     fn test_date_range_none(){
         let result = find_applicable_date_range(None, None,None,None,None,None);
         assert!(result.is_some() && result.unwrap().0.is_none() && result.unwrap().1.is_none(), "None dates should not fail but produce (None, None)");
     }
+    #[test]
     fn test_date_range_untilsince(){
         let since = DateTime::parse_from_rfc3339("1960-01-01T00:00:00+00:00").unwrap().to_utc();
         let until = DateTime::parse_from_rfc3339("1960-01-02T00:00:00+00:00").unwrap().to_utc();
@@ -183,6 +181,7 @@ mod test{
             None);
         assert!(result.is_some() && result.unwrap().0 == Some(since) && result.unwrap().1 == Some(until), "Since and until should yield (since, until)")
     }
+    #[test]
     fn test_date_range_ymd(){
         let y = 2012u32;
         let m = 5u32;
@@ -193,7 +192,7 @@ mod test{
         let expected_since = chrono::NaiveDate::from_ymd_opt(y as i32,m,d).unwrap()
         .and_hms_opt(0,0,0).unwrap().and_utc();
         let expected_until = chrono::NaiveDate::from_ymd_opt(y as i32,m,d).unwrap()
-        .and_hms_opt(59,59,59).unwrap().and_utc();
+        .and_hms_opt(23,59,59).unwrap().and_utc();
         assert!(result.is_some());
         let result = result.unwrap();
         assert!(result.0 == Some(expected_since) && result.1 == Some(expected_until), "ymd should start and end at the date range");
@@ -202,7 +201,7 @@ mod test{
         let expected_since = chrono::NaiveDate::from_ymd_opt(y as i32,m,1).unwrap()
         .and_hms_opt(0,0,0).unwrap().and_utc();
         let expected_until = chrono::NaiveDate::from_ymd_opt(y as i32,m,31).unwrap()
-        .and_hms_opt(59,59,59).unwrap().and_utc();
+        .and_hms_opt(23,59,59).unwrap().and_utc();
         assert!(result.is_some());
         let result = result.unwrap();
         assert!(result.0 == Some(expected_since) && result.1 == Some(expected_until), "ymd should start and end at the date range");
@@ -211,9 +210,30 @@ mod test{
         let expected_since = chrono::NaiveDate::from_ymd_opt(y as i32,1,1).unwrap()
         .and_hms_opt(0,0,0).unwrap().and_utc();
         let expected_until = chrono::NaiveDate::from_ymd_opt(y as i32,12,31).unwrap()
-        .and_hms_opt(59,59,59).unwrap().and_utc();
+        .and_hms_opt(23,59,59).unwrap().and_utc();
         assert!(result.is_some());
         let result = result.unwrap();
         assert!(result.0 == Some(expected_since) && result.1 == Some(expected_until), "ymd should start and end at the date range");
+    }
+
+    #[test]
+    fn test_minmax(){
+        let y = 2012u32;
+        
+        let since = chrono::NaiveDate::from_ymd_opt(2000,3,1).unwrap()
+        .and_hms_opt(0,0,0).unwrap().and_utc();
+        let until = chrono::NaiveDate::from_ymd_opt(2012,7,31).unwrap()
+        .and_hms_opt(15,59,59).unwrap().and_utc();
+
+        let expected_since = chrono::NaiveDate::from_ymd_opt(2012,1,1).unwrap()
+        .and_hms_opt(0,0,0).unwrap().and_utc();
+        let expected_until = chrono::NaiveDate::from_ymd_opt(2012,7,31).unwrap()
+        .and_hms_opt(15,59,59).unwrap().and_utc();
+        
+        let result = find_applicable_date_range(Some(y), None, None, Some(since), Some(until), None);
+        assert!(result.is_some());
+        let result =result.unwrap();
+        assert!(result.0.is_some() && result.0.unwrap() == expected_since);
+        assert!(result.1.is_some() && result.1.unwrap() == expected_until);
     }
 }
