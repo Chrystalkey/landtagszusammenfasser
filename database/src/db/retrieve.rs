@@ -110,8 +110,8 @@ pub async fn station_by_id(
             unreachable!("If this is the case document extraction failed")
         }
     });
-    let stlid = sqlx::query!("SELECT id FROM dokument WHERE id = $1", id)
-        .map(|r| r.id)
+    let stlid = sqlx::query!("SELECT dok_id FROM rel_station_stln WHERE stat_id = $1", id)
+        .map(|r| r.dok_id)
         .fetch_all(&mut **executor)
         .await?;
     let mut stellungnahmen = Vec::with_capacity(stlid.len());

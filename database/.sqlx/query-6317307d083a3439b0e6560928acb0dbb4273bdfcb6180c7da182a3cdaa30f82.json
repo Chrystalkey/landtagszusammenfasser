@@ -1,11 +1,11 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id FROM dokument WHERE id = $1",
+  "query": "SELECT dok_id FROM rel_station_stln WHERE stat_id = $1",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "id",
+        "name": "dok_id",
         "type_info": "Int4"
       }
     ],
@@ -18,5 +18,5 @@
       false
     ]
   },
-  "hash": "67dc6ae4f2e7e2787fac6cffec0fb21fbd4c080da6b4cd4ac7297e56863e8530"
+  "hash": "6317307d083a3439b0e6560928acb0dbb4273bdfcb6180c7da182a3cdaa30f82"
 }

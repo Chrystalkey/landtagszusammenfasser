@@ -75,7 +75,7 @@ pub async fn vorgang_merge_candidates(
 				INNER JOIN dokumententyp dt ON dt.id=d.typ
 				INNER JOIN station s ON s.id = rsd.stat_id
 				WHERE rsd.stat_id=s.id
-				AND dt.value='entwurf'
+				AND (dt.value='entwurf' OR dt.value = 'preparl-entwurf')
 		)
 
 SELECT DISTINCT(vorgang.id), vorgang.api_id FROM vorgang -- gib vorgänge, bei denen
@@ -399,7 +399,7 @@ pub async fn execute_merge_station(
             MergeState::NoMatch => {
                 let did = insert::insert_dokument(stln.clone(), tx, srv).await?;
                 sqlx::query!(
-                    "INSERT INTO reL_station_stln(stat_id, dok_id) VALUES($1, $2);",
+                    "INSERT INTO rel_station_stln(stat_id, dok_id) VALUES($1, $2);",
                     db_id,
                     did
                 )
