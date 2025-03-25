@@ -99,13 +99,25 @@ class BYLTScraper(Scraper):
                     initiatoren.append(
                         models.Autor.from_dict(
                             {
-                                "organisation": ini.text
+                                "organisation": ini.text.strip()
+                            }
+                        )
+                    )
+                elif "(MSc)" not in ini.text and "(BSc)" not in ini.text:
+                    org = ini.text.split("(")[1][:-1].strip()
+                    psn = ini.text.split("(")[0].strip()
+                    initiatoren.append(
+                        models.Autor.from_dict(
+                            {   
+                                "person": psn,
+                                "organisation": org
                             }
                         )
                     )
                 else:
-                    org = ini.text.split("(")[1][:-1]
-                    psn = ini.text.split("(")[0]
+                    textsplit = ini.text.split("(")
+                    org = textsplit[2][:-1].strip()
+                    psn = (textsplit[0]+"("+textsplit[1]).strip()
                     initiatoren.append(
                         models.Autor.from_dict(
                             {   
@@ -253,13 +265,15 @@ class BYLTScraper(Scraper):
                         vg.stationen[-1].typ = typ
                         vg.stationen[-1].dokumente.append(models.DokRef(dok.package()))
                         vg.stationen[-1].gremium = gremium
-                        vg.stationen[-1].additional_links.append(video_link)
+                        if video_link:
+                            vg.stationen[-1].additional_links.append(video_link)
                         continue
                     else:
                         stat.typ = typ
                         stat.dokumente = [models.DokRef(dok.package())]
                         stat.gremium = gremium
-                        stat.additional_links.append(video_link)
+                        if video_link:
+                            stat.additional_links.append(video_link)
 
                 ## Rückzugsmitteilung
                 ## Ein Link

@@ -70,7 +70,6 @@ class Document:
         self.zusammenfassung: Optional[str] = None
         self.schlagworte: Optional[List[str]] = None
         self.trojanergefahr: int = 0 # only relevant for drucksachen
-        self.texte: List[str] = [] # only relevant for drucksachen
         self.meinung: Optional[int] = None # only relevant for stellungnahmen
         self.drucksnr : Optional[str] = None
 
@@ -101,6 +100,7 @@ class Document:
     def from_json(cls, json_str: str):
         inst = cls.from_dict(json.loads(json_str))
         inst.testing_mode = False
+        inst.fileid = None
 
     def __del__(self):
         self._cleanup_tempfiles()
@@ -118,13 +118,14 @@ class Document:
         instance = cls(None, dic["url"], dic["typehint"], None)  # Create new instance
         instance.meta = DocumentMeta.from_dict(dic["meta"])
         instance.testing_mode = dic.get("testing_mode", False)
-        autoren = dic["autoren"]
-        instance.autoren = []
-        for aut in autoren:
-            instance.autoren.append(models.Autor.from_dict(aut))
+        autoren = dic.get("autoren")
+        if autoren:
+            instance.autoren = []
+            for aut in autoren:
+                instance.autoren.append(models.Autor.from_dict(aut))
+        instance.drucksnr = dic.get("drucksnr")
         instance.schlagworte = dic.get("schlagworte")
         instance.trojanergefahr = dic.get("trojanergefahr", 0)
-        instance.texte = dic.get("texte", [])
         instance.zusammenfassung = dic.get("zusammenfassung")
         instance.meinung = dic.get("meinung")
         instance.download_success = True
@@ -133,16 +134,18 @@ class Document:
 
     def to_dict(self):
         autoren = []
-        for aut in self.autoren:
-            autoren.append(aut.to_dict())
+        if self.autoren:
+            for aut in self.autoren:
+                autoren.append(aut.to_dict())
         return {
             "meta": self.meta.to_dict(),
             "url": self.url,
             "typehint": self.typehint+"",
             "autoren": autoren,
+            "typehint": self.typehint,
             "schlagworte": self.schlagworte,
             "trojanergefahr": self.trojanergefahr,
-            "texte": self.texte,
+            "drucksnr": self.drucksnr,
             "zusammenfassung": self.zusammenfassung,
             "meinung": self.meinung
         }
@@ -426,7 +429,6 @@ ENDE DES PROMPTS
             "zp_referenz": self.meta.last_mod,
             "link": self.url,
             "typ": self.typehint+"",
-            "texte": deduplicate(self.texte if self.texte else []),
             "zusammenfassung": self.zusammenfassung.strip() if self.zusammenfassung else None
         })
 
