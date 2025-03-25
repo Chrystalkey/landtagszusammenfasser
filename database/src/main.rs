@@ -12,7 +12,7 @@ use sqlx;
 use error::LTZFError;
 use lettre::{transport::smtp::authentication::Credentials, SmtpTransport};
 use sha256::digest;
-use tokio::net::TcpListener;
+use tokio::{net::TcpListener, sync::Mutex};
 
 pub use api::{LTZFArc, LTZFServer};
 pub use error::Result;
@@ -129,18 +129,6 @@ async fn main() -> Result<()> {
     sqlx::migrate!().run(&sqlx_db).await?;
     tracing::debug!("Executed Migrations");
 
-    let mailer = config.build_mailer().await;
-    let mailer = if let Err(e) = mailer {
-        tracing::warn!(
-            "Failed to create mailer: {}\nMailer will not be available",
-            e
-        );
-        None
-    } else {
-        tracing::debug!("Started Mailer");
-        Some(mailer.unwrap())
-    };
-
     // Run Key Administrative Functions
     let keyadder_hash = digest(config.keyadder_key.as_str());
 
@@ -150,8 +138,9 @@ async fn main() -> Result<()> {
         ($1, (SELECT id FROM api_scope WHERE value = 'keyadder' LIMIT 1), (SELECT last_value FROM api_keys_id_seq))
         ON CONFLICT DO NOTHING;", keyadder_hash)
     .execute(&sqlx_db).await?;
+    let mailbundle = crate::utils::notify::MailBundle::new(&config).await?;
 
-    let state = Arc::new(LTZFServer::new(sqlx_db, mailer, config));
+    let state = Arc::new(LTZFServer::new(sqlx_db, config, mailbundle));
     tracing::debug!("Constructed Server State");
 
     // Init Axum router

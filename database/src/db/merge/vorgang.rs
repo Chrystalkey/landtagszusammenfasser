@@ -637,7 +637,7 @@ mod scenariotest {
                 config: crate::Configuration {
                     ..Default::default()
                 },
-                mailer: None,
+                mailbundle: None,
                 sqlx_db: sqlx::postgres::PgPoolOptions::new()
                     .max_connections(5)
                     .connect(&test_db_url)
@@ -749,7 +749,7 @@ mod scenariotest {
             config: crate::Configuration {
                 ..Default::default()
             },
-            mailer: None,
+            mailbundle: None,
             sqlx_db: sqlx::postgres::PgPoolOptions::new()
                 .max_connections(5)
                 .connect(&test_db_url)

@@ -1,13 +1,15 @@
+use std::sync::Arc;
+
 use auth::APIScope;
 use axum::async_trait;
 use axum::extract::Host;
 use axum::http::Method;
 use axum_extra::extract::cookie::CookieJar;
-use lettre::SmtpTransport;
 
 use crate::db::delete::delete_ass_by_api_id;
 use crate::error::{DataValidationError, DatabaseError, LTZFError};
-use crate::{db, Configuration};
+use crate::utils::notify;
+use crate::{db, utils, Configuration};
 
 use openapi::apis::default::*;
 use openapi::models;
@@ -19,20 +21,20 @@ mod objects;
 #[derive(Clone)]
 pub struct LTZFServer {
     pub sqlx_db: sqlx::PgPool,
-    pub mailer: Option<SmtpTransport>,
+    pub mailbundle : Option<Arc<notify::MailBundle>>,
     pub config: Configuration,
 }
 pub type LTZFArc = std::sync::Arc<LTZFServer>;
 impl LTZFServer {
     pub fn new(
         sqlx_db: sqlx::PgPool,
-        mailer: Option<SmtpTransport>,
         config: Configuration,
+        mailbundle: Option<notify::MailBundle>
     ) -> Self {
         Self {
-            mailer,
             config,
             sqlx_db,
+            mailbundle: mailbundle.map(|mb| Arc::new(mb))
         }
     }
 }

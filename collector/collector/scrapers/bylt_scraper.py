@@ -93,16 +93,28 @@ class BYLTScraper(Scraper):
             # Initiatoren
             init_ptr = soup.find(string="Initiatoren")
             initiat_lis = init_ptr.find_next("ul").find_all("li")
-            init_dings = []
-            init_persn = []
+            initiatoren = []
             for ini in initiat_lis:
                 if "(" not in ini.text:
-                    init_dings.append(ini.text)
+                    initiatoren.append(
+                        models.Autor.from_dict(
+                            {
+                                "organisation": ini.text
+                            }
+                        )
+                    )
                 else:
-                    init_persn.append(ini.text)
-            vg.initiatoren = init_dings
-            if len(init_persn) > 0:
-                vg.initiator_personen = init_persn
+                    org = ini.text.split("(")[1][:-1]
+                    psn = ini.text.split("(")[0]
+                    initiatoren.append(
+                        models.Autor.from_dict(
+                            {   
+                                "person": psn,
+                                "organisation": org
+                            }
+                        )
+                    )
+            vg.initiatoren = initiatoren
             assert (
                 len(vg.initiatoren) > 0
             ), f"Error: Could not find Initiatoren for url {listing_item}"
@@ -156,7 +168,7 @@ class BYLTScraper(Scraper):
                 ### Initialize Station scaffold
                 stat = models.Station.from_dict(
                     {
-                        "start_zeitpunkt": timestamp,
+                        "zp_start": timestamp,
                         "dokumente": [],
                         "link": listing_item,
                         "parlament": "BY",
@@ -164,7 +176,6 @@ class BYLTScraper(Scraper):
                         "stellungnahmen": [],
                         "typ": "postparl-kraft",
                         "trojaner": False,
-                        "betroffene_texte": [],
                         "additional_links": [],
                     }
                 )
@@ -187,7 +198,6 @@ class BYLTScraper(Scraper):
                     dok.drucksnr = str(inds)
                     stat.dokumente = [models.DokRef(dok.package())]
                     stat.trojanergefahr = max(dok.trojanergefahr, 1)
-                    stat.betroffene_texte = list(set(dok.texte))
                 elif cellclass == "unknown":
                     logger.warning(f"Unknown Cell class for VG {listing_item}\nContents: {cells[1].text}")
                     continue
@@ -202,18 +212,21 @@ class BYLTScraper(Scraper):
                     ), "Error: Stellungnahme ohne Vorhergehenden Gesetzestext"
                     stln_urls = extract_schrstellung(cells[1])
                     dok = await self.create_document(stln_urls["stellungnahme"], models.Doktyp.STELLUNGNAHME)
-                    if stln_urls["autor"]:
-                        if dok.authoren is None:
-                            dok.authoren = stln_urls["autor"]
+                    if stln_urls["autor"] is not None:
+                        if dok.autoren is None:
+                            dok.autoren = [models.Autor.from_dict({
+                                "organisation": stln_urls["autor"]
+                            })]
                         else:
-                            dok.authoren.append(stln_urls["autor"])
-                    stln = models.Stellungnahme.from_dict(
-                        {
-                            "meinung": max(dok.meinung or 1, 1),
-                            "dokument": dok.package(),
-                            "lobbyregister_url": stln_urls["lobbyregister"],
-                        }
-                    )
+                            dok.autoren.append(
+                                models.Autor.from_dict({
+                                "person": stln_urls["autor"]
+                            })
+                            )
+                        if stln_urls["lobbyregister"] is not None:
+                            dok.autoren[-1].lobbyregister = stln_urls["lobbyregister"]
+                            
+                    stln = dok.package()
                     assert (
                         len(vg.stationen) > 0
                     ), "Error: Stellungnahme ohne Vorhergehenden Gesetzestext"
@@ -226,7 +239,6 @@ class BYLTScraper(Scraper):
                     pproto = extract_plenproto(cells[1])
                     gremium = models.Gremium.from_dict({"name": "plenum", "parlament": "BY","wahlperiode": 19})
                     dok = await self.create_document(pproto["pprotoaz"], models.Doktyp.PLENAR_MINUS_PROTOKOLL)
-                    betroffene_texte = list(set(dok.texte))
                     typ = None
                     video_link = pproto.get("video")
                     if cellclass == "plenum-proto-uebrw":
@@ -241,14 +253,12 @@ class BYLTScraper(Scraper):
                         vg.stationen[-1].typ = typ
                         vg.stationen[-1].dokumente.append(models.DokRef(dok.package()))
                         vg.stationen[-1].gremium = gremium
-                        vg.stationen[-1].betroffene_texte = betroffene_texte
                         vg.stationen[-1].additional_links.append(video_link)
                         continue
                     else:
                         stat.typ = typ
                         stat.dokumente = [models.DokRef(dok.package())]
                         stat.gremium = gremium
-                        stat.betroffene_texte = betroffene_texte
                         stat.additional_links.append(video_link)
 
                 ## Rückzugsmitteilung
@@ -257,19 +267,16 @@ class BYLTScraper(Scraper):
                     dok = await self.create_document(extract_singlelink(cells[1]), models.Doktyp.MITTEILUNG)
                     dok.drucksnr = extract_drucksnr(cells[1])
                     typ = models.Stationstyp.PARL_MINUS_ZURUECKGZ
-                    betroffene_texte = list(set(dok.texte))
                     gremium = models.Gremium.from_dict({"name": "plenum", "parlament": "BY","wahlperiode": 19})
                     if len(vg.stationen) > 0 and vg.stationen[-1].typ == typ:
                         vg.stationen[-1].typ = typ
                         vg.stationen[-1].dokumente.append(models.DokRef(dok.package()))
                         vg.stationen[-1].gremium = gremium
-                        vg.stationen[-1].betroffene_texte = betroffene_texte
                         continue
                     else:
                         stat.typ = typ
                         stat.dokumente = [models.DokRef(dok.package())]
                         stat.gremium = gremium
-                        stat.betroffene_texte = betroffene_texte
 
                 ## Plenumsentscheidung
                 ## hat einen Dokumentenlink
@@ -279,7 +286,6 @@ class BYLTScraper(Scraper):
                     typ = None
                     trojanergefahr = max(dok.trojanergefahr, 1)
                     gremium = models.Gremium.from_dict({"name": "plenum", "parlament": "BY","wahlperiode": 19})
-                    betroffene_texte = list(set(dok.texte))
                     if cellclass.endswith("zustm"):
                         typ = "parl-akzeptanz"
                     elif cellclass.endswith("ablng"):
@@ -288,14 +294,12 @@ class BYLTScraper(Scraper):
                         vg.stationen[-1].typ = typ
                         vg.stationen[-1].dokumente.append(models.DokRef(dok.package()))
                         vg.stationen[-1].gremium = gremium
-                        vg.stationen[-1].betroffene_texte = betroffene_texte
                         vg.stationen[-1].trojanergefahr = trojanergefahr
                         continue
                     else:
                         stat.typ = typ      
                         stat.dokumente = [models.DokRef(dok.package())]
                         stat.gremium = gremium
-                        stat.betroffene_texte = betroffene_texte
                         stat.trojanergefahr = trojanergefahr
                 ## Ausschussberichterstattung
                 ## hat 1 Link: Beschlussempfehlung
@@ -319,13 +323,6 @@ class BYLTScraper(Scraper):
                         # Update trojaner flag if necessary
                         existing_station.trojanergefahr = max(dok.trojanergefahr, 1)
                         
-                        # Merge betroffene_texte lists
-                        if dok.texte:
-                            if not existing_station.betroffene_texte:
-                                existing_station.betroffene_texte = []
-                            existing_station.betroffene_texte.extend(dok.texte)
-                            existing_station.betroffene_texte = list(set(existing_station.betroffene_texte))
-                        
                         continue
                     else:
                         # Create new committee station
@@ -336,7 +333,6 @@ class BYLTScraper(Scraper):
                         })
                         stat.dokumente = [models.DokRef(dok.package())]
                         stat.trojanergefahr = max(dok.trojanergefahr, 1)
-                        stat.betroffene_texte = list(set(dok.texte))
                 ## Gesetzblatt. Zwei Links, einer davon 
                 elif cellclass == "gsblatt":
                     stat.gremium = models.Gremium.from_dict({

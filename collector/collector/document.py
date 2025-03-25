@@ -66,8 +66,7 @@ class Document:
         self.typehint = typehint
 
         self.meta = DocumentMeta()
-        self.authoren: Optional[List[str]] = None
-        self.autorpersonen: Optional[List[str]] = None
+        self.autoren: Optional[List[str]] = None
         self.zusammenfassung: Optional[str] = None
         self.schlagworte: Optional[List[str]] = None
         self.trojanergefahr: int = 0 # only relevant for drucksachen
@@ -81,8 +80,7 @@ class Document:
 
     def set_testing_values(self):
         self.meta = DocumentMeta.testinit()
-        self.authoren = ["autoren"]
-        self.autorpersonen = ["autorpersonen"]
+        self.autoren = []
         self.schlagworte = ["test"]
         self.trojanergefahr = 0
         self.texte = ["test"]
@@ -120,8 +118,10 @@ class Document:
         instance = cls(None, dic["url"], dic["typehint"], None)  # Create new instance
         instance.meta = DocumentMeta.from_dict(dic["meta"])
         instance.testing_mode = dic.get("testing_mode", False)
-        instance.authoren = dic["autoren"]
-        instance.autorpersonen = dic["autorpersonen"]
+        autoren = dic["autoren"]
+        instance.autoren = []
+        for aut in autoren:
+            instance.autoren.append(models.Autor.from_dict(aut))
         instance.schlagworte = dic.get("schlagworte")
         instance.trojanergefahr = dic.get("trojanergefahr", 0)
         instance.texte = dic.get("texte", [])
@@ -132,12 +132,14 @@ class Document:
         return instance
 
     def to_dict(self):
+        autoren = []
+        for aut in self.autoren:
+            autoren.append(aut.to_dict())
         return {
             "meta": self.meta.to_dict(),
             "url": self.url,
             "typehint": self.typehint+"",
-            "autoren": self.authoren,
-            "autorpersonen": self.autorpersonen,
+            "autoren": self.autoren,
             "schlagworte": self.schlagworte,
             "trojanergefahr": self.trojanergefahr,
             "texte": self.texte,
@@ -270,13 +272,11 @@ class Document:
     
     async def _extract_drucksache_semantics(self):
         """Extract semantics for a 'drucksache' document"""
-        prompt = """Extrahiere folgende Metadaten aus dem Nachfolgenden Text:
-
-Titel;Autorengruppen wie z.B. Regierungen/Parteien/Parlamentarische/Nicht-parlamentarische Gruppen als Liste;Autoren als Personen als Liste;Schlagworte als Liste;Zahl zwischen 0 und 10, die die Gefahr einschätzt dass im Gesetzestext Fachfremde Dinge untergeschoben wurden;Betroffene Gesetzestexte als Liste;Kurzzusammenfassung der Intention, dem Fokus, betroffenen Gruppen und anderen wichtigen Informationen aus dem Text in 150-250 Worten
-
-Nutze die CSV Struktur wie oben beschrieben, weiche nicht davon ab. Formatiere Listen mit ',' als Separator. Falls eine Information nicht vorhanden sein sollte, füge stattdessen "None" ohne Anführungszeichen ein. Antworte mit nichts anderem als den gefragten Informationen.
-WEICHE UNTER KEINEN UMSTÄNDEN VON DER CSV-STRUKTUR AB
-END PROMPT"""
+        prompt = """Titel;Autorengruppen wie z.B. Regierungen/Parteien/Parlamentarische/Nicht-parlamentarische Gruppen als Liste;Autoren als Liste aus Tupeln{"psn", "org"};Schlagworte als Liste;Zahl zwischen 0 und 10, die die Gefahr einschätzt dass im Gesetzestext Fachfremde Dinge untergeschoben werden sollen;Kurzzusammenfassung der Intention, dem Fokus, betroffenen Gruppen und anderen wichtigen Informationen aus dem Text in 150-250 Worten
+Anführungszeichen ein. Antworte mit nichts anderem als den gefragten Informationen.
+Gib die Antwort als JSON aus mit den Feldern: {"titel", "gruppen", "personen", "schlagworte", "troja", "summary"}
+WEICHE UNTER KEINEN UMSTÄNDEN VON DER JSON-STRUKTUR AB
+ENDE DES PROMPTS"""
         
         try:
             full_text = " ".join(self.meta.full_text).strip()
@@ -286,47 +286,41 @@ END PROMPT"""
             response = await self.config.llm_connector.generate(prompt, full_text)
             
             # Parse the response, handle potential edge cases
-            lines = response.strip().split("\n")
-            if len(lines) < 2:
-                logger.warning(f"Unexpected response format from LLM: {response}")
+            object = None
+            try:
+                object = json.loads(response[7:-3])
+            except Exception as e:
+                logger.warning(f"Invalid response format from LLM: {response}")
                 self._set_default_values()
                 return
-                
-            body = lines[1]  # Skip the header line
-            reader = csv.reader([body], delimiter=";")
-            parts = next(reader, [])
-            schlagworte = parts[3].lower().split(',') if parts[3] != 'None' else None
-            for sw in schlagworte:
-                sw = sw.strip()
-            aupersonen = parts[2].split(',') if parts[2] != 'None' else None
-            for ap in aupersonen:
-                ap = ap.strip()
-            if len(parts) == 7:
-                self.meta.title = parts[0].strip() if parts[0] != 'None' else "Drucksache ohne Titel"
-                self.authoren = parts[1].split(',') if parts[1] != 'None' else None
-                self.autorpersonen = aupersonen
-                self.schlagworte = schlagworte
-                self.trojanergefahr = int(parts[4]) if parts[4].isdigit() else 0
-                self.texte = parts[5].split(',') if parts[5] != 'None' else []
-                self.zusammenfassung = parts[6].strip() if parts[6] != 'None' else ""
-            else:
-                logger.error(f"Invalid response format from LLM: {response}")
-                self._set_default_values("entwurf")
+            autoren = []
+            for ap in object["personen"]:
+                autoren.append(models.Autor.from_dict({
+                    "person": ap["psn"],
+                    "organisation": ap["org"]
+                }))
+            for ao in object["gruppen"]:
+                autoren.append(models.Autor.from_dict({
+                    "organisation": ao
+                }))
+            self.meta.title = object["titel"]
+            self.autoren = autoren
+            self.schlagworte = object["schlagworte"]
+            self.trojanergefahr = object["troja"]
+            self.zusammenfassung = object["summary"]
                 
         except Exception as e:
             logger.error(f"Error extracting drucksache semantics: {e}")
-            self._set_default_values("entwurf")
+            self._set_default_values(self.typehint)
     
     async def _extract_stellungnahme_semantics(self):
         """Extract semantics for a 'stellungnahme' document"""
-        prompt = """Extrahiere folgende Metadaten aus dem Nachfolgenden Text:
-
-Titel;Autorengruppen wie z.B. Regierungen/Parteien/Parlamentarische/Nicht-parlamentarische Gruppen als Liste;Autoren als Personen als Liste;Schlagworte als Liste;Meinung(-1/0/1);Kurzzusammenfassung Stellungnahme, der Meinung und Kritik, betroffenen Gruppen und anderen wichtigen Informationen aus dem Text in 150-250 Worten
-
-Nutze die CSV Struktur wie oben beschrieben, weiche nicht davon ab. Formatiere Listen mit ',' als Separator. Falls eine Information nicht vorhanden sein sollte, füge stattdessen "None" ohne Anführungszeichen ein. Antworte mit nichts anderem als den gefragten Informationen.
-WEICHE UNTER KEINEN UMSTÄNDEN VON DER CSV-STRUKTUR AB
-END PROMPT"""
-        
+        prompt = """Titel;Autorengruppen wie z.B. Regierungen/Parteien/Parlamentarische/Nicht-parlamentarische Gruppen als Liste;Autoren als Liste aus Tupeln{"psn", "org"};Schlagworte als Liste;Zahl zwischen 0 und 5, die ein Meinungsbild angibt;Kurzzusammenfassung Stellungnahme, der Meinung und Kritik, betroffenen Gruppen und anderen wichtigen Informationen aus dem Text in 150-250 Worten
+Anführungszeichen ein. Antworte mit nichts anderem als den gefragten Informationen.
+Gib die Antwort als JSON aus mit den Feldern: {"titel", "gruppen", "personen", "schlagworte", "meinung", "summary"}
+WEICHE UNTER KEINEN UMSTÄNDEN VON DER JSON-STRUKTUR AB
+ENDE DES PROMPTS
+"""        
         try:
             full_text = " ".join(self.meta.full_text).strip()
             if len(full_text) <= 20:
@@ -335,47 +329,37 @@ END PROMPT"""
             response = await self.config.llm_connector.generate(prompt, full_text)
             
             # Parse the response, handle potential issues
-            lines = response.strip().split("\n")
-            if len(lines) < 2:
-                logger.warning(f"Unexpected stellungnahme response format: {response}")
+            object = None
+            try:
+                object = json.loads(response[7:-3])
+            except Exception as e:
+                logger.warning(f"Invalid response format from LLM: {response}")
                 self._set_default_values("stellungnahme")
                 return
-                
-            body = " ".join(lines[1:])  # Skip header, combine all other lines
-            reader = csv.reader([body], delimiter=";")
-            parts = next(reader, [])
-            
-            if len(parts) == 6:
-                self.meta.title = parts[0] if parts[0] != 'None' else "Stellungnahme"
-                self.authoren = parts[1].split(',') if parts[1] != 'None' else None
-                self.autorpersonen = parts[2].split(',') if parts[2] != 'None' else None
-                self.schlagworte = parts[3].split(',') if parts[3] != 'None' else None
-                
-                # Parse meinung value, with validation
-                try:
-                    meinung_val = int(parts[4]) if parts[4] != 'None' else 0
-                    # Ensure meinung is in expected range
-                    if meinung_val < -1 or meinung_val > 10:
-                        logger.warning(f"Invalid meinung value: {meinung_val}, setting to 0")
-                        meinung_val = 0
-                    self.meinung = meinung_val
-                except (ValueError, TypeError):
-                    logger.warning(f"Could not parse meinung value: {parts[4]}")
-                    self.meinung = 0
-                    
-                self.zusammenfassung = parts[5] if parts[5] != 'None' else ""
-            else:
-                logger.error(f"Invalid stellungnahme response format: {response}")
-                self._set_default_values("stellungnahme")
-                
+            self.meta.title = object["titel"]
+            self.schlagworte = object["schlagworte"]
+            self.meinung = object["meinung"]
+            autoren = []
+            for ap in object["personen"]:
+                autoren.append(models.Autor.from_dict({
+                    "person": ap["psn"],
+                    "organisation": ap["org"]
+                }))
+            for ao in object["gruppen"]:
+                autoren.append(models.Autor.from_dict({
+                    "organisation": ao
+                }))
+            self.autoren = autoren
+
         except Exception as e:
             logger.error(f"Error extracting stellungnahme semantics: {e}")
+            logger.error(f"Output of LLM:\n{response}")
             self._set_default_values("stellungnahme")
     
     def _extract_protokoll_semantics(self):
         """Set default values for a protokoll document"""
         self.meta.title = "Protokoll"
-        self.authoren = None
+        self.autoren = None
         self.autorpersonen = None
         self.schlagworte = None
         self.trojanergefahr = 0
@@ -385,7 +369,7 @@ END PROMPT"""
     def _extract_default_semantics(self):
         """Set default values for an unknown document type"""
         self.meta.title = f"Dokument ("+self.typehint+")"
-        self.authoren = None
+        self.autoren = None
         self.autorpersonen = None
         self.schlagworte = None
         self.trojanergefahr = 0
@@ -435,11 +419,11 @@ END PROMPT"""
             "titel": self.meta.title or "Ohne Titel",
             "drucksnr" : self.drucksnr,
             "volltext": " ".join(self.meta.full_text).strip() if self.meta.full_text else "",
-            "autoren": deduplicate(self.authoren if self.authoren else []),
-            "autorpersonen": deduplicate(self.autorpersonen if self.autorpersonen else []),
+            "autoren": self.autoren if self.autoren else [],
             "schlagworte": deduplicate(self.schlagworte if self.schlagworte else []),
             "hash": self.meta.hash,
-            "letzte_modifikation": self.meta.last_mod,
+            "zp_modifiziert": self.meta.last_mod,
+            "zp_referenz": self.meta.last_mod,
             "link": self.url,
             "typ": self.typehint+"",
             "texte": deduplicate(self.texte if self.texte else []),
