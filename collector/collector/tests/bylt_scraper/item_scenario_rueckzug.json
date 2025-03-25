@@ -1,153 +1,122 @@
 {
   "url": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157725",
   "result": {
-    "api_id": "00000000-0000-0000-0000-000000000000",
-    "titel": "Gesetzentwurf zur Änderung der Bayerischen Bauordnung  hier: Abschaffung des Solardach-Zwangs",
-    "kurztitel": "Gesetzentwurf zur Änderung der Bayerischen Bauordnung  hier: Abschaffung des Solardach-Zwangs",
-    "wahlperiode": 19,
-    "verfassungsaendernd": false,
-    "initiatoren": [
-      "Alternative für Deutschland"
-    ],
-    "initiator_personen": [
-      "Katrin Ebner-Steiner (AfD)",
-      "Christoph Maier (AfD)",
-      "(MSc) Martin Böhm (AfD)",
-      "Richard Graupner (AfD)",
-      "Prof. Dr. Ingo Hahn (AfD)",
-      "Markus Walbrunn (AfD)",
-      "Florian Köhler (AfD)",
-      "Oskar Lipp (AfD)",
-      "Johannes Meier (AfD)",
-      "Dieter Arnold (AfD)",
-      "Oskar Atzinger (AfD)",
-      "Jörg Baumann (AfD)",
-      "Franz Bergmüller (AfD)",
-      "Rene Dierkes (AfD)",
-      "Daniel Halemba (AfD)",
-      "Martin Huber (AfD)",
-      "Andreas Jurca (AfD)",
-      "Stefan Löw (AfD)",
-      "Roland Magerl (AfD)",
-      "Ferdinand Mang (AfD)",
-      "Gerd Mannes (AfD)",
-      "Harald Meußgeier (AfD)",
-      "Johann Müller (AfD)",
-      "Benjamin Nolte (AfD)",
-      "Elena Roon (AfD)",
-      "Franz Schmid (AfD)",
-      "Ulrich Singer (AfD)",
-      "Ralf Stadler (AfD)",
-      "Ramona Storm (AfD)",
-      "Markus Striedl (AfD)",
-      "Matthias Vogler (AfD)",
-      "Andreas Winhart (AfD)"
-    ],
-    "typ": "gg-land-parl",
+    "api_id": "123e4567-e89b-12d3-a456-426614174000",
+    "titel": "string",
+    "kurztitel": "string",
+    "wahlperiode": 0,
+    "verfassungsaendernd": true,
+    "typ": "gg-einspruch",
     "ids": [
       {
-        "id": "19/3998",
+        "id": "123e4567-e",
         "typ": "initdrucks"
       }
     ],
     "links": [
-      "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157725",
-      "https://www.bayern.landtag.de/www/ElanTextAblage_WP19/Drucksachen/Basisdrucksachen/0000003000/0000003064.pdf"
+      "string"
+    ],
+    "initiatoren": [
+      {
+        "person": "string",
+        "organisation": "string",
+        "fachgebiet": "string",
+        "lobbyregister": "string"
+      }
     ],
     "stationen": [
       {
-        "start_zeitpunkt": "1940-01-01T00:00:00+00:00",
+        "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "titel": "string",
+        "zp_start": "2024-01-01T00:00:00+00:00",
+        "zp_modifiziert": "2024-01-01T00:00:00+00:00",
         "gremium": {
-          "parlament": "BY",
-          "wahlperiode": 19,
-          "name": "plenum"
+          "parlament": "BT",
+          "wahlperiode": 0,
+          "link": "string",
+          "name": "Ausschuss für Inneres und Gemüseauflauf"
         },
+        "gremium_federf": true,
+        "link": "string",
+        "parlament": "BT",
+        "typ": "preparl-regent",
+        "trojanergefahr": 10,
+        "schlagworte": [
+          "string", "string"
+        ],
         "dokumente": [
           {
-            "drucksnr": "19/3998",
-            "typ": "entwurf",
-            "titel": "Testtitel",
-            "volltext": "test",
-            "zusammenfassung": "test",
-            "letzte_modifikation": "1940-01-01T00:00:00+00:00",
-            "link": "https://www.example.com",
-            "hash": "testhash",
+            "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "drucksnr": "string",
+            "typ": "preparl-entwurf",
+            "titel": "string",
+            "kurztitel": "string",
+            "vorwort": "string",
+            "volltext": "string",
+            "zusammenfassung": "string",
+            "zp_modifiziert": "2024-03-09T00:00:00+00:00",
+            "zp_referenz": "2024-03-07T00:00:00+00:00",
+            "zp_erstellt": "2024-03-08T00:00:00+00:00",
+            "link": "string",
+            "hash": "string",
+            "meinung": 5,
             "schlagworte": [
-              "test"
-            ],
-            "autorpersonen": [
-              "autorpersonen"
+              "string","string"
             ],
             "autoren": [
-              "autoren"
+              {
+                "person": "string",
+                "organisation": "string",
+                "fachgebiet": "string",
+                "lobbyregister": "string"
+              },
+              {
+                "person": "string",
+                "organisation": "string",
+                "fachgebiet": "string",
+                "lobbyregister": "string"
+              }
             ]
           }
         ],
-        "betroffene_texte": [
-          "test"
+        "additional_links": [
+          "Link zu einem Videomitschnitt der Plenarsitzung"
         ],
-        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157725",
-        "parlament": "BY",
-        "schlagworte": [],
-        "stellungnahmen": [],
-        "typ": "parl-initiativ",
-        "trojanergefahr": 1
-      },
-      {
-        "start_zeitpunkt": "1940-01-01T00:00:00+00:00",
-        "gremium": {
-          "parlament": "BY",
-          "wahlperiode": 19,
-          "name": "plenum"
-        },
-        "dokumente": [
+        "stellungnahmen": [
           {
-            "drucksnr": "19/4166",
-            "typ": "entwurf",
-            "titel": "Testtitel",
-            "volltext": "test",
-            "zusammenfassung": "test",
-            "letzte_modifikation": "1940-01-01T00:00:00+00:00",
-            "link": "https://www.example.com",
-            "hash": "testhash",
+            "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "drucksnr": "string",
+            "typ": "preparl-entwurf",
+            "titel": "string",
+            "kurztitel": "string",
+            "vorwort": "string",
+            "volltext": "string",
+            "zusammenfassung": "string",
+            "zp_modifiziert": "2024-03-09T00:00:00+00:00",
+            "zp_referenz": "2024-03-07T00:00:00+00:00",
+            "zp_erstellt": "2024-03-08T00:00:00+00:00",
+            "link": "string",
+            "hash": "string",
+            "meinung": 5,
             "schlagworte": [
-              "test"
-            ],
-            "autorpersonen": [
-              "autorpersonen"
+              "string", "string"
             ],
             "autoren": [
-              "autoren"
-            ]
-          },
-          {
-            "drucksnr": "example",
-            "typ": "entwurf",
-            "titel": "Testtitel",
-            "volltext": "test",
-            "zusammenfassung": "test",
-            "letzte_modifikation": "1940-01-01T00:00:00+00:00",
-            "link": "https://www.example.com",
-            "hash": "testhash",
-            "schlagworte": [
-              "test"
-            ],
-            "autorpersonen": [
-              "autorpersonen"
-            ],
-            "autoren": [
-              "autoren"
+              {
+                "person": "string",
+                "organisation": "string",
+                "fachgebiet": "string",
+                "lobbyregister": "string"
+              },
+              {
+                "person": "string",
+                "organisation": "string",
+                "fachgebiet": "string",
+                "lobbyregister": "string"
+              }
             ]
           }
-        ],
-        "betroffene_texte": [
-          "test"
-        ],
-        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157725",
-        "parlament": "BY",
-        "schlagworte": [],
-        "stellungnahmen": [],
-        "typ": "parl-zurueckgz"
+        ]
       }
     ]
   }
