@@ -4,6 +4,7 @@ use crate::{error::DataValidationError, LTZFServer, Result};
 use lettre::{message::header::ContentType, Message, Transport};
 use uuid::Uuid;
 
+#[allow(unused)]
 enum MailNotificationType{
     EnumAdded,
     SonstigUnwrapped,
@@ -61,6 +62,7 @@ impl MailBundle {
                     while !*mref.read().unwrap(){
                         std::thread::sleep(Duration::from_secs(1));
                     }
+                    tracing::error!("Starting Mail check");
                     if cclone.read().unwrap().is_empty() {
                         continue;
                     }
@@ -91,6 +93,7 @@ impl MailBundle {
                             .body(ambiguous_match_body)
                             .unwrap();
                         mailer.send(&email).unwrap();
+                        tracing::info!("Sent Mail about {} new ambiguos matches", s_am);
                     }
                     if s_va != 0{
                         let variant_added_body = variant_added.iter().fold("".to_string(), |a,n|{
@@ -104,6 +107,7 @@ impl MailBundle {
                             .body(variant_added_body)
                             .unwrap();
                         mailer.send(&email).unwrap();
+                        tracing::info!("Sent Mail about {} new ambiguos matches", s_va);
                     }
                     if s_su != 0{
                         let sonstig_unwrapped_body = sonstig_unwrapped.iter().fold("".to_string(), |a,n|{
@@ -117,6 +121,7 @@ impl MailBundle {
                             .body(sonstig_unwrapped_body)
                             .unwrap();
                         mailer.send(&email).unwrap();
+                        tracing::info!("Sent Mail about {} new sonstig variants", s_su);
                     }
                     if s_ot != 0{
                         let other_body = other.iter().fold("".to_string(), |a,n|{
@@ -130,6 +135,7 @@ impl MailBundle {
                             .body(other_body)
                             .unwrap();
                         mailer.send(&email).unwrap();
+                        tracing::info!("Sent Mail about {} new other messages", s_ot);
                     }
                 }
             }
@@ -140,7 +146,7 @@ impl MailBundle {
             kill,
         }))
     }
-    async fn send(&self, mail: Mail) -> Result<()>{
+    fn send(&self, mail: Mail) -> Result<()>{
         self.cache.write().unwrap().push(mail);
         Ok(())
     }
@@ -187,7 +193,7 @@ pub fn notify_new_enum_entry<T: std::fmt::Debug + ToString>(
 
     let body = format!("Es gibt {} ähnliche Einträge: {simstr}", similarity.len());
     tracing::warn!("Notify: New Enum Entry: {}\n{}!", subject, body);
-    server.mailbundle.as_ref().unwrap().send(Mail { subject, body, tp: MailNotificationType::EnumAdded });
+    server.mailbundle.as_ref().unwrap().send(Mail { subject, body, tp: MailNotificationType::EnumAdded })?;
 
     Ok(())
 }
@@ -211,7 +217,7 @@ pub fn notify_ambiguous_match<T: std::fmt::Debug + serde::Serialize>(
         .map_err(|e| DataValidationError::InvalidFormat { field: "passed obj for ambiguous match".to_string(), message: e.to_string() })?, api_ids
     );
     tracing::error!("Notify: Ambiguous Match!");
-    server.mailbundle.as_ref().unwrap().send(Mail { subject, body, tp: MailNotificationType::AmbiguousMatch });
+    server.mailbundle.as_ref().unwrap().send(Mail { subject, body, tp: MailNotificationType::AmbiguousMatch })?;
     Ok(())
 }
 
@@ -225,7 +231,7 @@ pub fn notify_unknown_variant<T>(api_id: Uuid, object: &str, server: &LTZFServer
         api_id,
         std::any::type_name::<T>()
     );
-    tracing::error!("Notify: Unknown Variant! Sending mails is not yet supported.");
-    server.mailbundle.as_ref().unwrap().send(Mail { subject, body: "".to_string(), tp: MailNotificationType::SonstigUnwrapped });
+    tracing::warn!("Notify: Unknown Variant in Guarded Enumeration Field");
+    server.mailbundle.as_ref().unwrap().send(Mail { subject, body: "".to_string(), tp: MailNotificationType::SonstigUnwrapped })?;
     Ok(())
 }

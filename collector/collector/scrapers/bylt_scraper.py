@@ -220,7 +220,7 @@ class BYLTScraper(Scraper):
                         else:
                             dok.autoren.append(
                                 models.Autor.from_dict({
-                                "person": stln_urls["autor"]
+                                "organisation": stln_urls["autor"]
                             })
                             )
                         if stln_urls["lobbyregister"] is not None:

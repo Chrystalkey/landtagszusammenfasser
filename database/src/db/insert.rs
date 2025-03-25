@@ -205,7 +205,7 @@ pub async fn insert_dokument(
     }
     sqlx::query!(
         "INSERT INTO rel_dok_autor(dok_id, aut_id) 
-    SELECT $1, blub FROM UNNEST($2::int4[]) as blub",
+    SELECT $1, blub FROM UNNEST($2::int4[]) as blub ON CONFLICT DO NOTHING",
         did, &aids[..])
     .execute(&mut **tx)
     .await?;

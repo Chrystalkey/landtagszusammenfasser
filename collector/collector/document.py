@@ -139,7 +139,7 @@ class Document:
             "meta": self.meta.to_dict(),
             "url": self.url,
             "typehint": self.typehint+"",
-            "autoren": self.autoren,
+            "autoren": autoren,
             "schlagworte": self.schlagworte,
             "trojanergefahr": self.trojanergefahr,
             "texte": self.texte,
@@ -315,12 +315,12 @@ ENDE DES PROMPTS"""
     
     async def _extract_stellungnahme_semantics(self):
         """Extract semantics for a 'stellungnahme' document"""
-        prompt = """Titel;Autorengruppen wie z.B. Regierungen/Parteien/Parlamentarische/Nicht-parlamentarische Gruppen als Liste;Autoren als Liste aus Tupeln{"psn", "org"};Schlagworte als Liste;Zahl zwischen 0 und 5, die ein Meinungsbild angibt;Kurzzusammenfassung Stellungnahme, der Meinung und Kritik, betroffenen Gruppen und anderen wichtigen Informationen aus dem Text in 150-250 Worten
+        prompt = """Titel;Autorengruppen wie z.B. Regierungen/Parteien/Parlamentarische/Nicht-parlamentarische Gruppen als Liste;Autoren als Liste aus Objekten{"psn", "org"};Schlagworte als Liste;Zahl zwischen 0 und 5, die ein Meinungsbild angibt;Kurzzusammenfassung Stellungnahme, der Meinung und Kritik, betroffenen Gruppen und anderen wichtigen Informationen aus dem Text in 150-250 Worten
 Anführungszeichen ein. Antworte mit nichts anderem als den gefragten Informationen.
-Gib die Antwort als JSON aus mit den Feldern: {"titel", "gruppen", "personen", "schlagworte", "meinung", "summary"}
+Gib die Antwort als JSON aus mit den Feldern: {"titel": "", "gruppen" : [], "personen": [{"psn": "", "org": ""}], "schlagworte": [], "meinung": <int>, "summary": ""}
 WEICHE UNTER KEINEN UMSTÄNDEN VON DER JSON-STRUKTUR AB
 ENDE DES PROMPTS
-"""        
+"""
         try:
             full_text = " ".join(self.meta.full_text).strip()
             if len(full_text) <= 20:

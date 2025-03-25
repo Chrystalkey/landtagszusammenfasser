@@ -12,7 +12,7 @@ use sqlx;
 use error::LTZFError;
 use lettre::{transport::smtp::authentication::Credentials, SmtpTransport};
 use sha256::digest;
-use tokio::{net::TcpListener, sync::Mutex};
+use tokio::net::TcpListener;
 
 pub use api::{LTZFArc, LTZFServer};
 pub use error::Result;

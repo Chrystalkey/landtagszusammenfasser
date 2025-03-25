@@ -9,7 +9,7 @@ use axum_extra::extract::cookie::CookieJar;
 use crate::db::delete::delete_ass_by_api_id;
 use crate::error::{DataValidationError, DatabaseError, LTZFError};
 use crate::utils::notify;
-use crate::{db, utils, Configuration};
+use crate::{db, Configuration};
 
 use openapi::apis::default::*;
 use openapi::models;
