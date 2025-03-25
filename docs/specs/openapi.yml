@@ -637,15 +637,18 @@ components:
         zp_modifiziert:
           type: "string"
           format: "date-time"
-          example: "Plenarprotokoll für die Sitzung am 7.3., erstellt am 8.3. modifiziert am 9.3."
+          description: "Plenarprotokoll für die Sitzung am 7.3., erstellt am 8.3. modifiziert am 9.3."
+          example: "2024-03-09T00:00:00+00:00"
         zp_referenz:
           type: "string"
           format: "date-time"
-          example: "Plenarprotokoll für die Sitzung am 7.3., erstellt am 8.3. modifiziert am 9.3."
+          description: "Plenarprotokoll für die Sitzung am 7.3., erstellt am 8.3. modifiziert am 9.3."
+          example: "2024-03-07T00:00:00+00:00"
         zp_erstellt:
           type: "string"
           format: "date-time"
-          example: "Plenarprotokoll für die Sitzung am 7.3., erstellt am 8.3. modifiziert am 9.3."
+          description: "Plenarprotokoll für die Sitzung am 7.3., erstellt am 8.3. modifiziert am 9.3."
+          example: "2024-03-08T00:00:00+00:00"
         link:
           type: "string"
           format: "uri"
@@ -690,13 +693,13 @@ components:
         zp_start:
           type: "string"
           format: "date-time"
-          description: "Datum an dem die erste Aktion dieser Station erstellt wurde"
-          example: "Erstes Sitzungsdatum des Ausschusses"
+          description: "Datum an dem die erste Aktion dieser Station erstellt wurde, z.B. Erstes Sitzungsdatum des Ausschusses"
+          example: "2024-01-01T00:00:00+00:00"
         zp_modifiziert:
           type: "string"
           format: "date-time"
-          description: "Letztes relevantes Datum an dem die Station angefasst wurde"
-          example: "letzte sitzung oder nächste geplante sitzung"
+          description: "Letztes relevantes Datum an dem die Station angefasst wurde z.B.: letzte sitzung oder nächste geplante sitzung"
+          example: "2024-01-01T00:00:00+00:00"
         gremium:
           $ref: "#/components/schemas/gremium"
         gremium_federf:

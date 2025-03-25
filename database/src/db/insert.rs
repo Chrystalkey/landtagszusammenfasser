@@ -192,7 +192,7 @@ pub async fn insert_dokument(
         )RETURNING id",
         dapi, dok.drucksnr,  srv.guard_ts(dok.typ, dapi, obj)?, dok.titel, dok.kurztitel, dok.vorwort,
         dok.volltext,dok.zusammenfassung, dok.zp_modifiziert, dok.link, dok.hash,
-        dok.zp_modifiziert, dok.zp_erstellt, dok.meinung.map(|r|r as i32)
+        dok.zp_referenz, dok.zp_erstellt, dok.meinung.map(|r|r as i32)
     ).map(|r|r.id).fetch_one(&mut **tx).await?;
 
     // Schlagworte
@@ -416,8 +416,8 @@ pub async fn insert_or_retrieve_autor(
         VALUES ($1, $2, $3, $4) RETURNING autor.id",
         at.person,
         at.organisation,
+        at.lobbyregister,
         at.fachgebiet,
-        at.lobbyregister
     )
     .map(|r| r.id)
     .fetch_one(&mut **tx)
