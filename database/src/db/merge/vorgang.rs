@@ -399,7 +399,7 @@ pub async fn execute_merge_station(
             MergeState::NoMatch => {
                 let did = insert::insert_dokument(stln.clone(), tx, srv).await?;
                 sqlx::query!(
-                    "INSERT INTO rel_station_stln(stat_id, dok_id) VALUES($1, $2);",
+                    "INSERT INTO rel_station_stln(stat_id, dok_id) VALUES($1, $2) ON CONFLICT DO NOTHING;",
                     db_id,
                     did
                 )

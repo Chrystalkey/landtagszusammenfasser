@@ -152,7 +152,7 @@ pub async fn insert_station(
             doks.push(insert_dokument(stln, tx, srv).await?);
         }
         sqlx::query!("INSERT INTO rel_station_stln (stat_id, dok_id)
-        SELECT $1, did FROM UNNEST($2::int4[]) as did",
+        SELECT $1, did FROM UNNEST($2::int4[]) as did ON CONFLICT DO NOTHING",
         stat_id, &doks[..]
         ).execute(&mut **tx).await?;
     }
