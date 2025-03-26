@@ -216,18 +216,19 @@ class Document:
                                             )
                                         ))
             full_text = extract.content
-            created = extract.metadata.get("created_at") if extract.metadata.get("created_at") else  datetime.datetime.now().isoformat()
+            created = extract.metadata.get("created_at") if extract.metadata.get("created_at") else  datetime.datetime.now().astimezone(datetime.UTC).isoformat()
             if created.startswith("D:"):
                 if created[17:19] != "":
                     created = f"{created[2:6]}-{created[6:8]}-{created[8:10]}T{created[10:12]}:{created[12:14]}:{created[14:16]}+{created[17:19]}:{created[20:22]}"
                 else:
                     created = f"{created[2:6]}-{created[6:8]}-{created[8:10]}T{created[10:12]}:{created[12:14]}:{created[14:16]}+00:00"
-            modified = extract.metadata.get("modified_at") if extract.metadata.get("modified_at") else  datetime.datetime.now().isoformat()
+            modified = extract.metadata.get("modified_at") if extract.metadata.get("modified_at") else  datetime.datetime.now().astimezone(datetime.UTC).isoformat()
             if modified.startswith("D:"):
-                if modified != "":
+                if modified[17:19] != "":
                     modified = f"{modified[2:6]}-{modified[6:8]}-{modified[8:10]}T{modified[10:12]}:{modified[12:14]}:{modified[14:16]}+{modified[17:19]}:{modified[20:22]}"
                 else:
                     modified = f"{modified[2:6]}-{modified[6:8]}-{modified[8:10]}T{modified[10:12]}:{modified[12:14]}:{modified[14:16]}+00:00"
+            
 
             title = extract.metadata.get("title") or "Ohne Titel"
 
@@ -433,6 +434,8 @@ ENDE DES PROMPTS
                 # reformat the date string
                 rdate = self.zp_referenz.split(".")
                 self.zp_referenz = f"{rdate[2]}-{rdate[1]}-{rdate[0]}"
+        self.meta.modified = self.meta.modified.replace("+:", "+00:00")
+        self.meta.created = self.meta.created.replace("+:", "+00:00")
 
         # Ensure all required fields are present
         return models.Dokument.from_dict({

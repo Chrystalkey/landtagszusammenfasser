@@ -77,10 +77,7 @@ class ScraperCache:
             serialized = value.to_json()
             logger.debug(f"Storing dokument {key} in redis")
             success = self.redis_client.set(
-                f"dok:{key}", 
-                serialized,
-                timedelta(minutes=self.cache_expiry_minutes)
-            )
+                f"dok:{key}", serialized)
             return success
         except Exception as e:
             logger.error(f"Error storing document {key} in cache: {e}")
