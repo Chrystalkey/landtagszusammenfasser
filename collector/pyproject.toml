@@ -18,6 +18,7 @@ pytest-asyncio = "^0.25.2"
 pypdf = "^5.1.0"
 openapi-client = {path = "oapicode"}
 jsondiff = "^2.2.1"
+kreuzberg = "^3.0.1"
 
 [build-system]
 requires = ["poetry-core"]

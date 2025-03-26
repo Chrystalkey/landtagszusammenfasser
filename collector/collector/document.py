@@ -1,13 +1,13 @@
 import hashlib
 import json
 import os
+import re
 import openapi_client.models as models
 import uuid
 import datetime
 import logging
-import pypdf
-import csv
-from typing import List, Optional, Dict, Any, Union
+from kreuzberg import ExtractionConfig, extract_file, TesseractConfig, PSMMode
+from typing import List, Optional
 from .llm_connector import LLMConnector
 
 logger = logging.getLogger(__name__)
@@ -16,17 +16,19 @@ class DocumentMeta:
     def __init__(self):
         self.link = None
         self.title = None
-        self.last_mod = None
+        self.modified = None
         self.full_text = None
         self.hash = None
         self.typ = None
+        self.created = None
     
     @classmethod
     def from_dict(cls, dic):
         instance = cls()
         instance.link = dic["link"]
         instance.title = dic["title"]
-        instance.last_mod = datetime.datetime.fromisoformat(dic["last_mod"])
+        instance.created = dic["created"]
+        instance.modified = dic["modified"]
         instance.full_text = dic["full_text"]
         instance.hash = dic["hash"]
         instance.typ = dic["typ"]
@@ -36,7 +38,8 @@ class DocumentMeta:
         return {
             "link": self.link,
             "title": self.title,
-            "last_mod": self.last_mod.astimezone(datetime.timezone.utc).isoformat(),
+            "modified": self.modified,
+            "created": self.created,
             "full_text": self.full_text,
             "hash": self.hash,
             "typ": self.typ
@@ -46,7 +49,7 @@ class DocumentMeta:
         instance = cls()
         instance.link = "https://www.example.com"
         instance.title = "Testtitel"
-        instance.last_mod = datetime.datetime.fromisoformat("1940-01-01T00:00:00+00:00")
+        instance.modified = "1940-01-01T00:00:00+00:00"
         instance.full_text = ["test"]
         instance.typ = "entwurf"
         instance.hash = "testhash"
@@ -56,14 +59,16 @@ class Document:
     testing_mode = False
     def __init__(self, session, url, typehint: str, config):
         self.config = config
-        if config.testing_mode:
+        if config and config.testing_mode:
             self.testing_mode = True
+            self.fileid = str(uuid.UUID("00000000-0000-0000-0000-000000000000"))
             self.set_testing_values()
             return
         self.testing_mode = False
         self.session = session
         self.url = url
         self.typehint = typehint
+        self.zp_referenz = None
 
         self.meta = DocumentMeta()
         self.autoren: Optional[List[str]] = None
@@ -98,32 +103,30 @@ class Document:
     
     @classmethod
     def from_json(cls, json_str: str):
-        inst = cls.from_dict(json.loads(json_str))
-        inst.testing_mode = False
-        inst.fileid = None
+        return cls.from_dict(json.loads(json_str))
 
     def __del__(self):
         self._cleanup_tempfiles()
-            
+
     def _cleanup_tempfiles(self):
         """Clean up any temporary files created during document processing"""
-        if self.fileid and os.path.exists(f"{self.fileid}.pdf"):
-            try:
+        try:
+            if self.fileid and os.path.exists(f"{self.fileid}.pdf"):
                 os.remove(f"{self.fileid}.pdf")
-            except Exception as e:
-                logger.warning(f"Failed to remove temporary PDF file: {e}")
-    
+        except Exception as e:
+            logger.warning(f"Failed to remove temporary PDF file. Exception ignored: {e}")
+
     @classmethod
     def from_dict(cls, dic):
         instance = cls(None, dic["url"], dic["typehint"], None)  # Create new instance
         instance.meta = DocumentMeta.from_dict(dic["meta"])
-        instance.testing_mode = dic.get("testing_mode", False)
         autoren = dic.get("autoren")
         if autoren:
             instance.autoren = []
             for aut in autoren:
                 instance.autoren.append(models.Autor.from_dict(aut))
         instance.drucksnr = dic.get("drucksnr")
+        instance.zp_referenz = dic.get("zp_referenz")
         instance.schlagworte = dic.get("schlagworte")
         instance.trojanergefahr = dic.get("trojanergefahr", 0)
         instance.zusammenfassung = dic.get("zusammenfassung")
@@ -142,6 +145,7 @@ class Document:
             "url": self.url,
             "typehint": self.typehint+"",
             "autoren": autoren,
+            "zp_referenz": self.zp_referenz,
             "typehint": self.typehint,
             "schlagworte": self.schlagworte,
             "trojanergefahr": self.trojanergefahr,
@@ -198,57 +202,60 @@ class Document:
         logger.debug(f"Extracting PDF Metadata for Url {self.url}, using file {self.fileid}.pdf")
         
         try:
+            doc_hash = None
             with open(f"{self.fileid}.pdf", "rb") as f:
-                reader = pypdf.PdfReader(f)
-                
-                # Extract metadata from PDF
-                meta = reader.metadata
-                dtime: datetime.datetime = datetime.datetime.now()
-                try:
-                    preformed_date = meta.modification_date or meta.creation_date
-                    dtime = preformed_date or datetime.datetime.now()
-                except Exception as e:
-                    logger.warning(
-                        f"Datetime Conversion failed: {e} with DocumentInformation Class {meta}"
-                    )
-                    dtime = datetime.datetime.now()
-                
                 # Calculate file hash for document identification
                 f.seek(0)
                 doc_hash = hashlib.file_digest(f, "sha256").hexdigest()
                 
-                # Extract text from all pages
-                full_text = []
-                for page in reader.pages:
-                    extracted_text = page.extract_text()
-                    if extracted_text:
-                        full_text.append(extracted_text)
-                    
-                # Check if we got any text from the document
-                if not full_text:
-                    logger.warning(f"No text extracted from PDF: {self.url}")
-                
-                # Create metadata object
-                self.meta = DocumentMeta.from_dict({
-                    "title": meta.title if hasattr(meta, 'title') and meta.title else None,
-                    "link": self.url,
-                    "hash": doc_hash,
-                    "typ": self.typehint+"",
-                    "last_mod": dtime.astimezone(datetime.timezone.utc).isoformat(),
-                    "full_text": full_text
-                })
-                
+            # Extract text from all pages
+            extract = await extract_file(f"{self.fileid}.pdf", 
+                                        config=ExtractionConfig(
+                                            ocr_config=TesseractConfig(
+                                                language="deu", psm=PSMMode.SINGLE_BLOCK
+                                            )
+                                        ))
+            full_text = extract.content
+            created = extract.metadata.get("created_at") if extract.metadata.get("created_at") else  datetime.datetime.now().isoformat()
+            if created.startswith("D:"):
+                if created[17:19] != "":
+                    created = f"{created[2:6]}-{created[6:8]}-{created[8:10]}T{created[10:12]}:{created[12:14]}:{created[14:16]}+{created[17:19]}:{created[20:22]}"
+                else:
+                    created = f"{created[2:6]}-{created[6:8]}-{created[8:10]}T{created[10:12]}:{created[12:14]}:{created[14:16]}+00:00"
+            modified = extract.metadata.get("modified_at") if extract.metadata.get("modified_at") else  datetime.datetime.now().isoformat()
+            if modified.startswith("D:"):
+                if modified != "":
+                    modified = f"{modified[2:6]}-{modified[6:8]}-{modified[8:10]}T{modified[10:12]}:{modified[12:14]}:{modified[14:16]}+{modified[17:19]}:{modified[20:22]}"
+                else:
+                    modified = f"{modified[2:6]}-{modified[6:8]}-{modified[8:10]}T{modified[10:12]}:{modified[12:14]}:{modified[14:16]}+00:00"
+
+            title = extract.metadata.get("title") or "Ohne Titel"
+
+            # Check if we got any text from the document
+            if not full_text:
+                logger.warning(f"No text extracted from PDF: {self.url}")
+            
         except Exception as e:
             logger.error(f"Error extracting metadata from PDF: {e}")
             raise
         finally:
             self._cleanup_tempfiles()
+        # Create metadata object
+        self.meta = DocumentMeta.from_dict({
+            "link": self.url,
+            "title": title,
+            "modified": modified,
+            "full_text": full_text,
+            "created": created,
+            "hash": doc_hash,
+            "typ": self.typehint+"",
+        })
 
     async def extract_semantics(self):
         """Extract semantic information using the LLM"""
         if self.testing_mode:
             return True
-        if not self.meta.full_text or all(not text for text in self.meta.full_text):
+        if not self.meta.full_text:
             logger.warning(f"No text to analyze in document {self.url}")
             self.meta.title = self._get_default_title()
             return
@@ -275,14 +282,14 @@ class Document:
     
     async def _extract_drucksache_semantics(self):
         """Extract semantics for a 'drucksache' document"""
-        prompt = """Titel;Autorengruppen wie z.B. Regierungen/Parteien/Parlamentarische/Nicht-parlamentarische Gruppen als Liste;Autoren als Liste aus Tupeln{"psn", "org"};Schlagworte als Liste;Zahl zwischen 0 und 10, die die Gefahr einschätzt dass im Gesetzestext Fachfremde Dinge untergeschoben werden sollen;Kurzzusammenfassung der Intention, dem Fokus, betroffenen Gruppen und anderen wichtigen Informationen aus dem Text in 150-250 Worten
+        prompt = """Titel;Datum auf das sich das Dokument bezieht;Autorengruppen wie z.B. Regierungen/Parteien/Parlamentarische/Nicht-parlamentarische Gruppen als Liste;Autoren als Liste aus Tupeln{"psn", "org"};Schlagworte als Liste;Zahl zwischen 0 und 10, die die Gefahr einschätzt dass im Gesetzestext Fachfremde Dinge untergeschoben werden sollen;Kurzzusammenfassung der Intention, dem Fokus, betroffenen Gruppen und anderen wichtigen Informationen aus dem Text in 150-250 Worten
 Anführungszeichen ein. Antworte mit nichts anderem als den gefragten Informationen.
-Gib die Antwort als JSON aus mit den Feldern: {"titel", "gruppen", "personen", "schlagworte", "troja", "summary"}
+Gib die Antwort als JSON aus mit den Feldern: {"titel", "date": (iso timestamp), "gruppen", "personen", "schlagworte", "troja", "summary"}
 WEICHE UNTER KEINEN UMSTÄNDEN VON DER JSON-STRUKTUR AB
 ENDE DES PROMPTS"""
         
         try:
-            full_text = " ".join(self.meta.full_text).strip()
+            full_text = self.meta.full_text.strip()
             if len(full_text) <= 20:
                 logger.warning(f"Extremely short text: `{full_text}` within a document. This might hint at a non-machine readable document. The URL ist `{self.url}`")
                 
@@ -290,10 +297,11 @@ ENDE DES PROMPTS"""
             
             # Parse the response, handle potential edge cases
             object = None
+            stripped_response = response[8:-3] if "```" in response else response
             try:
-                object = json.loads(response[7:-3])
+                object = json.loads(stripped_response)
             except Exception as e:
-                logger.warning(f"Invalid response format from LLM: {response}")
+                logger.warning(f"Invalid response format from LLM: {stripped_response}")
                 self._set_default_values()
                 return
             autoren = []
@@ -308,6 +316,7 @@ ENDE DES PROMPTS"""
                 }))
             self.meta.title = object["titel"]
             self.autoren = autoren
+            self.zp_referenz = object["date"]
             self.schlagworte = object["schlagworte"]
             self.trojanergefahr = object["troja"]
             self.zusammenfassung = object["summary"]
@@ -318,14 +327,14 @@ ENDE DES PROMPTS"""
     
     async def _extract_stellungnahme_semantics(self):
         """Extract semantics for a 'stellungnahme' document"""
-        prompt = """Titel;Autorengruppen wie z.B. Regierungen/Parteien/Parlamentarische/Nicht-parlamentarische Gruppen als Liste;Autoren als Liste aus Objekten{"psn", "org"};Schlagworte als Liste;Zahl zwischen 0 und 5, die ein Meinungsbild angibt;Kurzzusammenfassung Stellungnahme, der Meinung und Kritik, betroffenen Gruppen und anderen wichtigen Informationen aus dem Text in 150-250 Worten
+        prompt = """Titel;Datum auf das sich das Dokument bezieht;Autorengruppen wie z.B. Regierungen/Parteien/Parlamentarische/Nicht-parlamentarische Gruppen als Liste;Autoren als Liste aus Objekten{"psn", "org"};Schlagworte als Liste;Zahl zwischen 0 und 5, die ein Meinungsbild angibt;Kurzzusammenfassung Stellungnahme, der Meinung und Kritik, betroffenen Gruppen und anderen wichtigen Informationen aus dem Text in 150-250 Worten
 Anführungszeichen ein. Antworte mit nichts anderem als den gefragten Informationen.
-Gib die Antwort als JSON aus mit den Feldern: {"titel": "", "gruppen" : [], "personen": [{"psn": "", "org": ""}], "schlagworte": [], "meinung": <int>, "summary": ""}
+Gib die Antwort als JSON aus mit den Feldern: {"titel": "",referenzdate: "(iso timestamp)", "gruppen" : [], "personen": [{"psn": "", "org": ""}], "schlagworte": [], "meinung": <int>, "summary": ""}
 WEICHE UNTER KEINEN UMSTÄNDEN VON DER JSON-STRUKTUR AB
 ENDE DES PROMPTS
 """
         try:
-            full_text = " ".join(self.meta.full_text).strip()
+            full_text = self.meta.full_text.strip()
             if len(full_text) <= 20:
                 logger.warning(f"Extremely short text in stellungnahme: `{full_text}`. URL: `{self.url}`")
                 
@@ -333,15 +342,17 @@ ENDE DES PROMPTS
             
             # Parse the response, handle potential issues
             object = None
+            stripped_response = response[8:-3] if "```" in response else response
             try:
-                object = json.loads(response[7:-3])
+                object = json.loads(stripped_response)
             except Exception as e:
-                logger.warning(f"Invalid response format from LLM: {response}")
+                logger.warning(f"Invalid response format from LLM: {stripped_response}")
                 self._set_default_values("stellungnahme")
                 return
             self.meta.title = object["titel"]
             self.schlagworte = object["schlagworte"]
             self.meinung = object["meinung"]
+            self.zp_referenz = object["referenzdate"]
             autoren = []
             for ap in object["personen"]:
                 autoren.append(models.Autor.from_dict({
@@ -417,16 +428,23 @@ ENDE DES PROMPTS
 
     def package(self) -> models.Dokument:
         """Package the document information for the API"""
+        if self.zp_referenz:
+            if re.fullmatch("\d{2}.\d{2}.\d{4}", self.zp_referenz):
+                # reformat the date string
+                rdate = self.zp_referenz.split(".")
+                self.zp_referenz = f"{rdate[2]}-{rdate[1]}-{rdate[0]}"
+
         # Ensure all required fields are present
         return models.Dokument.from_dict({
             "titel": self.meta.title or "Ohne Titel",
             "drucksnr" : self.drucksnr,
-            "volltext": " ".join(self.meta.full_text).strip() if self.meta.full_text else "",
+            "volltext": self.meta.full_text.strip(),
             "autoren": self.autoren if self.autoren else [],
             "schlagworte": deduplicate(self.schlagworte if self.schlagworte else []),
             "hash": self.meta.hash,
-            "zp_modifiziert": self.meta.last_mod,
-            "zp_referenz": self.meta.last_mod,
+            "zp_modifiziert": datetime.datetime.fromisoformat(self.meta.modified).astimezone(tz=datetime.UTC),
+            "zp_created": datetime.datetime.fromisoformat(self.meta.created).astimezone(tz=datetime.UTC),
+            "zp_referenz": datetime.datetime.fromisoformat(self.zp_referenz).astimezone(tz=datetime.UTC) if self.zp_referenz else datetime.datetime.fromisoformat(self.meta.created),
             "link": self.url,
             "typ": self.typehint+"",
             "zusammenfassung": self.zusammenfassung.strip() if self.zusammenfassung else None

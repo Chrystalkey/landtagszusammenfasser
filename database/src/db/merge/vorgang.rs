@@ -530,7 +530,7 @@ pub async fn execute_merge_vorgang(
     tracing::info!(
         "Merging of Vg Successful: Merged `{}`(ext) with  `{}`(db)",
         model.api_id,
-        vapi
+        sqlx::query!("SELECT api_id FROM vorgang WHERE id = $1", candidate).map(|r|r.api_id).fetch_one(&mut **tx).await?
     );
     Ok(())
 }

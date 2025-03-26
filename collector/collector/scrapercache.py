@@ -114,8 +114,10 @@ class ScraperCache:
             if not result:
                 logger.debug(f"Document {key} not found in cache")
                 return None
-                
-            doc = Document.from_json(result)
+            try:
+                doc = Document.from_json(result)
+            except Exception as e:
+                logger.error(f"Blub: doc from json failed: {e}")
             
             # Verify the document was successfully processed
             if not getattr(doc, 'extraction_success', True):
