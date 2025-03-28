@@ -7,7 +7,7 @@ paths:
   /api/v1/vorgang/{vorgang_id}:
     get:
       operationId: "vorgang_get_by_id"
-      description: "Returns a vorgang by id"
+      description: "Gibt den Vorgang mit der angegebenen ID zurück"
       parameters:
         - name: "vorgang_id"
           in: "path"
@@ -29,12 +29,12 @@ paths:
           description: "Content not found"
     put:
       operationId: "vorgang_id_put"
-      description: API Access for the Admins without the merge just replacing vorgang
+      description: Adminschnittstelle zum direkten Set/Replace eines Vorgangs ohne Merge oder Matching
       parameters:
         - name: "vorgang_id"
           in: "path"
           required: true
-          description: "The API ID of the vorgang that is to be affected"
+          description: Die ID des betreffenden Vorgangs
           schema:
             type: string
             format: uuid
@@ -55,11 +55,12 @@ paths:
         - apiKey: [] 
     delete:
       operationId: vorgang_delete
+      description: Adminschnittstelle zum Löschen eines Vorgangs
       parameters:
         - name: "vorgang_id"
           in: "path"
           required: true
-          description: "API ID of the thing to be deleted"
+          description: Die ID des zu löschenden Vorgangs
           schema:
             type: "string"
             format: "uuid"
@@ -75,7 +76,7 @@ paths:
   /api/v1/vorgang:
     get:
       operationId: "vorgang_get"
-      description: "Returns a filtered List of vorgang"
+      description: Gibt eine filterbare Liste von Vorgängen zurück, maximal 64 Vorgänge pro Anfrage
       responses:
         "200":
           $ref: "#/components/responses/VorgangGetResponse"
@@ -102,7 +103,7 @@ paths:
         - $ref: "#/components/parameters/vgtyp"
     put:
       operationId: "vorgang_put"
-      description: "Pushing a new vorgang"
+      description: Collector-Schnittstelle zum Einfügen eines neuen Vorgangs. Die Vorgänge werden automatisch mit dem Datensatz dedupliziert und ggf. Vereint
       requestBody:
         required: true
         content:
@@ -118,7 +119,7 @@ paths:
             format: "uuid"
       responses:
         "201":
-          description: "Successfully Integrated the Object"
+          description: "Success"
         "400": 
           description: "Bad Request"
         "401":
@@ -130,17 +131,17 @@ paths:
   /api/v1/auth:
     delete:
       operationId: "auth_delete"
-      description: "Deletes an API Key from the Database"
+      description: Keyadder-Schnittstelle. Löscht eine API-Key aus der Datenbank.
       parameters:
         - name: "api-key-delete"
           in: "header"
           required: true
-          description: "The API Key that is to be deleted"
+          description: Der zu löschende API-Key
           schema:
             type: "string"
       responses:
         "204":
-          description: "API Key was deleted successfully"
+          description: "Success"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
         "404":
@@ -149,7 +150,7 @@ paths:
         - apiKey: [] 
     post:
       operationId: "auth_post"
-      description: "Adds a new API Key to the Database"
+      description: Keyadder-Schnittstelle. Fügt eine neue API-Key zur Datenbank hinzu.
       requestBody:
         required: true
         content:
@@ -166,7 +167,7 @@ paths:
   /api/v1/sitzung:
     get:
       operationId: "s_get"
-      description: "Gibt eine Liste gefilterter sitzungen zurück"
+      description: Gibt eine Liste gefilterter Sitzungen zurück. Maximal 64 Sitzungen pro Anfrage
       parameters:
         - $ref: "#/components/parameters/if-mod-since"
         - $ref: "#/components/parameters/updated-since"
@@ -214,12 +215,12 @@ paths:
           description: "Content not found"
     put:
       operationId: "sid_put"
-      description: API Access for the Admins without the merge just replacing
+      description: Adminschnittstelle zum direkten Set/Replace einer Sitzung ohne Merge oder Matching
       parameters:
         - name: "sid"
           in: "path"
           required: true
-          description: "The API ID of the session that is to be affected"
+          description: Die ID der betreffenden Sitzung
           schema:
             type: string
             format: uuid
@@ -240,11 +241,12 @@ paths:
         - apiKey: [] 
     delete:
       operationId: sitzung_delete
+      description: Adminschnittstelle zum Löschen einer Sitzung
       parameters:
         - name: "sid"
           in: "path"
           required: true
-          description: "API ID of the session to be deleted"
+          description: Die ID der zu löschenden Sitzung
           schema:
             type: "string"
             format: "uuid"
@@ -260,6 +262,7 @@ paths:
   /api/v1/kalender/{parlament}/{datum}:
     get:
       operationId: kal_date_get
+      description: Gibt eine Liste der Sitzungen im gegebenen Tag und Parlament zurück.
       parameters:
         - name: parlament
           in: path
@@ -282,6 +285,7 @@ paths:
           description: Not found
     put:
       operationId: kal_date_put
+      description: Collector-Schnittstelle zum Einfügen neuer Sitzungen in einen bestimmten Tag und Parlament. Die Daten werden vollständig überschrieben, sofern das Datum nicht länger als einen Tag zurückliegt. Diese Beschränkung existiert nicht, falls der verwendete API-Key Admin-Befugnisse hat.
       parameters:
         - name: parlament
           in: path
@@ -312,6 +316,7 @@ paths:
   /api/v1/kalender:
     get:
       operationId: kal_get
+      description: Gibt eine filterbare Liste der Sitzungen zurück. Maximal 64 Sitzungen pro Anfrage.
       responses:
         "200":
           $ref: "#/components/responses/SGetResponse"
@@ -491,6 +496,7 @@ components:
   schemas:
     create_api_key:
       type: "object"
+      description: "Fragt einen neuen API-Key an. Dieser wird gehasht in der Datenbank gespeichert und wird nur einmalig in Klartext ausgegeben"
       required:
         - "scope"
       properties:
@@ -506,6 +512,7 @@ components:
           description: "The expiration date of the API Key"
     parlament:
       type: "string"
+      description: "Enumeration der Parlamentsähnlichen Entscheidungscorpi in Deutschland"
       enum:
         - "BT" # Bundestag
         - "BR" # Bundesrat
@@ -530,6 +537,7 @@ components:
     ### start der guarded enumerations
     vorgangstyp:
       type: "string"
+      description: "Der Gesetzgebungstrack auf dem wir uns befinden. Zum Beispiel: gesetzgebung - Einspruchsgesetz. Legt fest, welche Stationen im Vorgang möglich sind zusammen mit den Parlamenten in den Stationen"
       enum:
         - "gg-einspruch"      # Bundesgesetz Einspruch
         - "gg-zustimmung"     # Bundesgesetz Zustimmungspflich
@@ -537,9 +545,8 @@ components:
         - "gg-land-volk"      # Landesgesetz, Volksgesetzgebung
         - "bundeswehreinsatz" # Bundeswehreinsatz
         - "sonstig"           # other, email me
-      description: "Der Gesetzgebungstrack auf dem wir uns befinden. Zum Beispiel: gesetzgebung - Einspruchsgesetz. Legt fest, welche Stationen hier möglich sind zusammen mit den Parlamenten in den Stationen"
     stationstyp:
-      description: "Stationen, die ein Gesetz in verschiedenen Ausformungen durchlaufen kann. Im Prinzip ist die Festlegung auf Prä / Postparlamentarisch arbiträr."
+      description: "Stationen, die ein Gesetz o.Ä. Vorgang in verschiedenen Ausformungen durchlaufen kann. Im Prinzip ist die Festlegung auf Prä / Postparlamentarisch arbiträr."
       type: "string"
       enum:
         - "preparl-regent" # Referentenentwurf / Regierungsentwurf
@@ -563,7 +570,7 @@ components:
       type: "string"
       enum: ["initdrucks", "vorgnr", "api-id", "sonstig"]
     doktyp:
-      description: "Dokumententyp"
+      description: "Typ eines Dokuments. Beschreibt explizit nicht den Kontext, sondern nur den Typ des Inhalts. (z.B. 'tops' kann sowohl für Plenarsitzungen als auch für Ausschusssitzungen relevant sein)"
       type: "string"
       enum: 
         - "preparl-entwurf"  # Vorparlamentarischer Entwurf
@@ -582,6 +589,7 @@ components:
         - "sonstig"          # Sonstiges
     gremium:
       type: "object"
+      description: "Ein Gremium in dem Entscheidungen getroffen werden können. z.B: Ausschüsse, Plenum, Kabinett, Volk, ..."
       required:
         - "parlament"
         - "name"
@@ -602,6 +610,7 @@ components:
     ### ende der guarded enumerations
     dokument:
       type: "object"
+      description: "Ein Dokument, das in einem Vorgang beteiligt ist. Kann z.B. ein Protokoll, eine Drucksache oder ein anderes Dokument sein. Man beachte, dass für verschiedene Typen verschiedene Felder nur formal optional sind. So ist zum Beispiel für jede Stellungnahme eine Meinung gefragt und für jeden Gesetzesentwurf ein Vorwort"
       required:
         - "titel"
         - "volltext"
@@ -664,10 +673,12 @@ components:
           items:
             type: "string"
         autoren:
+          description: "Liste von Autoren des Dokuments. Kann z.B. eine Person, eine Organisation oder ein Gremium sein."
           type: "array"
           items:
             $ref: "#/components/schemas/autor"
     dok_ref:
+      description: Wrapper um ein Dokument oder eine API-ID von einem zuvor hochgeladenen Dokuments. Optimierung, da hier nicht jedes Mal der Volltext eines Dokuments hochgeladen werden muss.
       oneOf:
         - $ref: "#/components/schemas/dokument"
         - type: "string"
@@ -740,6 +751,7 @@ components:
             $ref: "#/components/schemas/dokument"
     vorgang:
       type: "object"
+      description: "'Master-Objekt' der API. Der Wrapper um Stationen, die den Beratungsverlauf tatsächlich beschreiben. Ein Vorgang kann dabei nicht nur ein Gesetz, sondern auch ein parlamentarischer Antrag sein."
       required:
         - "api_id"
         - "titel"
@@ -776,6 +788,7 @@ components:
             format: "uri"
         initiatoren:
           type: "array"
+          description: "Liste von Personen oder Organisationen, die den Vorgang initiiert haben. Kann z.B. eine Person, eine Organisation oder ein Gremium sein."
           items:
             $ref: "#/components/schemas/autor"
         stationen:
@@ -784,6 +797,7 @@ components:
             $ref: "#/components/schemas/station"
     vg_ident:
       type: "object"
+      description: "Eindeutiger Identifikator für einen Vorgang innerhalb eines Parlaments+Wahlperiode. Kann z.B. eine Initiativdrucksache oder eine Vorgansnummer im Parlament sein."
       required:
         - "id"
         - "typ"
@@ -820,6 +834,7 @@ components:
             $ref: "#/components/schemas/dok_ref"
     autor:
       type: "object"
+      description: "Eine Person oder Organisation, die eine bestimmte Funktion übernommen hat. Z.B: Autor einer Stellungnahme, Experte bei einer Anhörung, Initiator eines Vorgangs."
       required:
         - "organisation"
       properties:
@@ -834,7 +849,7 @@ components:
           format: uri
     sitzung:
       type: "object"
-      description: "Sitzung oder Anhörung. Eine Anhörung wird es, wenn Experten geladen werden"
+      description: "Sitzung oder Anhörung. Eine Anhörung wird es, wenn Experten geladen werden. Abstrahiert und kann daher sowohl Plenarsitzung als auch Ausschusssitzung sein."
       required:
         - "termin"
         - "gremium"

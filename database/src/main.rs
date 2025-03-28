@@ -47,7 +47,7 @@ pub struct Configuration {
     #[arg(
         long,
         env = "LTZF_KEYADDER_KEY",
-        help = "The API Key that is used to add new Keys. This is not saved in the database."
+        help = "The API Key that is used to add new Keys. This is saved in the database."
     )]
     pub keyadder_key: String,
 
