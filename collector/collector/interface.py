@@ -78,8 +78,8 @@ class Scraper(ABC):
             except openapi_client.ApiException as e:
                 logger.error(f"API Exception: {e}")
                 if e.status == 422:
-                    logger.error("Unprocessable Entity, tried to send item(excluding full text):\n")
                     logger.error(sanitize_for_serialization(item))
+                    logger.error("Unprocessable Entity, tried to send item(see above)\n")
                     try:
                         filepath = Path(self.config.api_object_log or "locallogs") / f"{self.collector_id}.json"
                         with filepath.open("a", encoding="utf-8") as file:
@@ -88,8 +88,6 @@ class Scraper(ABC):
                         logger.error(f"Failed to write to API object log: {e}")
                 elif e.status == 401:
                     logger.error("Authentication failed. Check your API key.")
-                elif e.status == 409:
-                    logger.error(f"Conflict: Item with ID {item.api_id} already exists")
                 return None
             except Exception as e:
                 logger.error(f"Unexpected error sending item to API: {e}")
