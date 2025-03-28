@@ -1,0 +1,449 @@
+## this file is indended as a central collection basket to fix different spellings or spelling errors for all things bylt_scraper
+## note that this file expects all strings for matching
+## - to be lowercase
+## - to be unicode
+## - to be stripped of leading and trailing whitespace (first/last character matches '\S')
+## for regex replacement search only the second and third criterium are required
+
+[org]
+[[org.regex]]
+replace_with = "e.V."
+partial = '''e\.\s[Vv]\.'''
+[[org.regex]]
+replace_with = "Baden-Württemberg"
+full = "Baden Württemberg"
+
+[[org.match]]
+replace_with = "Sozialdemokratische Partei Deutschland (SPD)"
+match = [
+    "sozialdemokratische partei deutschland",
+    "fraktion (spd)",
+    "spd"
+]
+[[org.match]]
+replace_with = "Bündnis 90/Die Grünen (Grüne)"
+match = [
+    "bündnis90/ die grünen",
+    "bündnis90/die grünen",
+    "bündnis 90/ die grünen",
+    "fraktion bündnis 90/die grünen",
+    "fraktion bundnis 90/die grünen im bayerischen landtag"
+]
+[[org.match]]
+replace_with = "Christlich Soziale Union (CSU)"
+match = [
+    "csu",
+    "christlich soziale union"
+]
+[[org.match]]
+replace_with = "Alternative für Deutschland (AfD)"
+match = [
+    "fraktion (afd)",
+    "afd",
+    "alternative für deutschland",
+]
+[[org.match]]
+replace_with = "Freie Wähler (FW)"
+match = [
+    "freie wähler"
+]
+[[org.match]]
+replace_with = "Staatsregierung Bayern"
+match = [
+    "staatsregierung",
+    "bayerische staatsregierung",
+    "staatsregierung bayern",
+    "bayerische staatskanzlei",
+    "regierung"
+]
+[[org.match]]
+replace_with = "Bayerischer Philologenverband (bpv) e.V."
+match = ["bayerischer philologenverband"]
+
+[[org.match]]
+replace_with = "Psychotherapeuthenkammer Bayern (PTK)"
+match = [
+    "psychotherapeuthenkammer bayern",
+    "psychotherapeuthenkammer bayern (ptk bayern)"
+]
+[[org.match]]
+replace_with = "Bayerischer Handwerkstag e.V."
+match = [
+    "bayerischer handwerkstag"
+]
+[[org.match]]
+replace_with = "Bayerischer Landespflegerat (BLPR)"
+match = ["Bayerischer Landespflegerat"]
+
+[[org.match]]
+replace_with = "Bayerischer Bauernverband"
+match = ["bayerischer bauernverband körperschaft des öffentlichen rechts"]
+
+[[org.match]]
+replace_with = "Bayerische Landesärztekammer"
+match= ["bayerische landesärztekammer (bläk)"]
+[[org.match]]
+replace_with = "Bayerisches Rotes Kreuz"
+match = ["bayerisches rotes kreuz, kdör"]
+[[org.match]]
+replace_with = "BHB Bauträger GmbH Bayern"
+match = ["bhb unternehmensgruppe bayern"]
+[[org.match]]
+replace_with = "Deutsche Gesellschaft für Sprachheilpädagogik e.V."
+match = [
+    "deutsche gesellschaft für sprachheilpädagogik",
+    "deutsche gesellschaft für sprachheilpädagogik e.v.",
+    "deutsche gesellschaft für sprachheilpädagogik e.v. (dgs)"
+]
+[[org.match]]
+replace_with = "Deutscher Bundesverband für Logopädie e.V."
+match = [
+"deutscher bundesverband für logopädie e.v. (dbl)"
+]
+[[org.match]]
+replace_with = "Deutscher Gewerkschaftsbund Bezirk Bayern"
+match = [
+    "deutscher gewerkschaftsbund dgb bezirk bayern"
+]
+[[org.match]]
+replace_with = "Bundesland Baden-Württemberg"
+match =["baden württemberg", "baden-württemberg", "land baden-württemberg"]
+[[org.match]]
+replace_with = "Bundesland Berlin"
+match = ["berlin", "land berlin", "stadt berlin"]
+[[org.match]]
+replace_with = "Freistaat Bayern"
+match = ["bayern", "land bayern", "freistaat bayern"]
+[[org.match]]
+replace_with = "Freistaat Brandenburg"
+match = ["brandenburg", "land brandenburg"]
+[[org.match]]
+replace_with = "Freistaat Thüringen"
+match = ["thüringen", "freistaat thüringen"]
+[[org.match]]
+replace_with = "Bundesland Rheinland-Pfalz"
+match = ["rheinland-pfalz", "land rheinland-pfalz"]
+[[org.match]]
+replace_with = "Freistaat Sachsen"
+match = ["sachsen", "freistaat sachsen"]
+[[org.match]]
+replace_with = "Bundesland Sachsen-Anhalt"
+match = ["sachsen-anhalt", "land sachsen-anhalt"]
+[[org.match]]
+replace_with = "Bundesland Saarland"
+match = ["saarland", "land saarland"]
+[[org.match]]
+replace_with = "Bundesland Nordrhein-Wesfahlen"
+match = ["nordrhein-wesfahlen", "land nordrhein-westfahlen", "nrw"]
+[[org.match]]
+replace_with = "Bundesland Niedersachsen"
+match = ["niedersachsen", "land niedersachsen"]
+[[org.match]]
+replace_with = "Bundesland Hessen"
+match = ["hessen", "land hessen"]
+[[org.match]]
+replace_with = "Bundesland Mecklenburg-Vorpommern"
+match = ["mecklenburg-vorpommern", "land mecklenburg-vorpommern"]
+[[org.match]]
+replace_with = "Bundesland Mecklenburg-Vorpommern"
+match = ["mecklenburg-vorpommern", "land mecklenburg-vorpommern"]
+
+
+[[org.match]]
+replace_with = "Freie Hansestadt Bremen"
+match = ["bremen", "hansestadt bremen", "freie stadt bremen", "freie und hansestadt bremen"]
+[[org.match]]
+replace_with = "Freie Hansestadt Hamburg"
+match = ["hamburg", "hansestadt hamburg", "freie stadt hamburg", "freie und hansestadt hamburg"]
+[[org.match]]
+replace_with = "Bayerisches Staatsministerium für Gesundheit, Pflege und Prävention"
+match = ["stmgp", "Bayerisches Staatsministerium für Gesundheit"]
+
+[org.tests]
+input = [
+"ABB"
+,"AfD"
+,"AISB e.V."
+,"Alternative für Deutschland"
+,"Anwaltskanzlei Dr. Wente"
+,"APS Verwaltungs GmbH & Co. KG"
+,"Arbeiter-Samariter-Bund Landesverband Bayern e.V."
+,"Arbeitsgemeinschaft Bewährungshilfe Bayern"
+,"Arbeitsgemeinschaft Internationaler Schulen in Bayern e.V."
+,"Arbeitsgemeinschaft Privater Rundfunk"
+,"Baden-Württemberg"
+,"Bayerische Architektenkammer"
+,"Bayerische Chemieverbände"
+,"Bayerische Hausbau GmbH & Co. KG"
+,"Bayerische Heilberufekammern"
+,"Bayerische Ingenieurekammer-Bau"
+,"Bayerische Krankenhausgesellschaft e.V."
+,"Bayerische Landesärztekammer"
+,"Bayerische Landesärztekammer (BLÄK)"
+,"Bayerische Landestierärztekammer"
+,"Bayerische Landestierärztekammer K.d.ö.R."
+,"Bayerische Landeszahnärztekammer"
+,"Bayerischer Bauernverband"
+,"Bayerischer Bauernverband Körperschaft des Öffentlichen Rechts"
+,"Bayerischer Bauindustrieverband e.V."
+,"Bayerischer Blinden- und Sehbehindertenbund e. V."
+,"Bayerischer Elternverband e.V."
+,"Bayerischer Handwerkstag"
+,"Bayerischer Handwerkstag e.V."
+,"Bayerischer Landespflegerat"
+,"Bayerischer Landespflegerat (BLPR)"
+,"Bayerischer Landesverein für Heimatpflege e.V."
+,"Bayerischer Landtag"
+,"Bayerischer Philologenverband"
+,"Bayerischer Philologenverband (bpv) e.V."
+,"Bayerischer Schulaufsichtsverband e.V."
+,"Bayerischer Sportschützenbund e. V."
+,"Bayerischer Unternehmensverband Metall und Elektro e. V."
+,"Bayerischer Verwaltungsgerichtshof"
+,"Bayerischer Waldbesitzerverband e.V."
+,"Bayerischer Ziegelindustrie-Verband e.V."
+,"Bayerisches Ministerium"
+,"Bayerisches Rotes Kreuz"
+,"Bayerisches Rotes Kreuz Erlangen-Höchstadt"
+,"Bayerisches Rotes Kreuz, KdöR"
+,"Bayerisches Staatsministerium der Finanzen und für Heimat"
+,"Bayerisches Staatsministerium der Justiz"
+,"Bayerisches Staatsministerium des Innern, für Sport und Integration"
+,"Bayerisches Staatsministerium für Familie, Arbeit und Soziales"
+,"Bayerisches Staatsministerium für Gesundheit, Pflege und Prävention"
+,"Bayerisches Staatsministerium für Gesundheit und Pflege"
+,"Bayerisches Staatsministerium für Umwelt und Verbraucherschutz"
+,"Bayerisches Staatsministerium für Unterricht und Kultus"
+,"Bayerisches Staatsministerium für Wirtschaft, Landesentwicklung und Energie"
+,"Bayerisches Staatsministerium für Wohnen, Bau und Verkehr"
+,"Bayerische Staatskanzlei"
+,"Bayerische Staatsregierung"
+,"Bayern"
+,"Bayernwerk AG"
+,"Baywobau Immobilien AG"
+,"BBIV"
+,"BBSB e.V."
+,"bdla Landesverband Bayern"
+,"Beispielorganisation"
+,"Berlin"
+,"BFW Landesverband Bayern e. V."
+,"BFW Landesverband Bayern e.V."
+,"BHB Bauträger GmbH Bayern"
+,"BHB Unternehmensgruppe Bayern"
+,"BKK Landesverband Bayern"
+,"BLLV"
+,"Brandenburg"
+,"Bremen"
+,"Bund Deutscher Kriminalbeamter e.V."
+,"Bund Deutscher Kriminalbeamter e.V. Landesverband Bayern"
+,"Bund Deutscher Landschaftsarchitekten, Landesverband Bayern e. V."
+,"Bund Deutscher Landschaftsarchitekt:innen (bdla), Landesverband Bayern"
+,"Bundesrepublik Deutschland"
+,"Bundesverband WindEnergie e. V."
+,"Bundesverband WindEnergie e.V."
+,"BUND Naturschutz in Bayern e. V."
+,"BUND Naturschutz in Bayern e.V."
+,"BÜNDNIS 90/ DIE GRÜNEN"
+,"BÜNDNIS 90/DIE GRÜNEN"
+,"Bürgerallianz Bayern"
+,"Bürgerenergiegenossenschaft BENG eG"
+,"Bürgerenergiegenossenschaften"
+,"BWE Bayern"
+,"Christlich Soziale Union"
+,"Convergent Media Consulting"
+,"CSU"
+,"DBfK Südost e.V."
+,"Deutsche Gesellschaft für Sprachheilpädagogik"
+,"Deutsche Gesellschaft für Sprachheilpädagogik e.V."
+,"Deutsche Gesellschaft für Sprachheilpädagogik e.V. (dgs)"
+,"Deutscher Berufsverband für Pflegeberufe, DBfK Südost e.V."
+,"Deutscher Bundesverband für akademische Sprachtherapie und Logopädie e.V. (dbs)"
+,"Deutscher Bundesverband für Logopädie e.V."
+,"Deutscher Bundesverband für Logopädie e.V. (dbl)"
+,"Deutscher Caritasverband Landesverband Bayern e.V."
+,"Deutscher Gewerkschaftsbund"
+,"Deutscher Gewerkschaftsbund (DGB) Bezirk Bayern"
+,"Deutscher Gewerkschaftsbund DGB Bezirk Bayern"
+,"Deutscher Hochschulverband (DHV)"
+,"DGB Bayern"
+,"Diakonisches Werk Bayern"
+,"Dr. Vielberth Verwaltungsgesellschaft mbH"
+,"ECKPFEILER Immobilien Nürnberg GmbH"
+,"ECO Office GmbH & Co KG"
+,"Eisele Real Estate GmbH"
+,"Evangelischer KITA-Verband Bayern e.V."
+,"Fachagentur Wind und Solar e. V."
+,"Fachagentur Wind und Solar e.V."
+,"FH) Alfred Grob"
+,"FH) Claudia Köhler"
+,"FH) Wolfgang Hauber"
+,"Forstwirtschaftliche Vereinigung Oberpfalz"
+,"Fraktion (AfD)"
+,"Fraktion Bündnis 90/Die Grünen"
+,"Fraktion BUNDNIS 90/DIE GRÜNEN im Bayerischen Landtag"
+,"Fränkischer Weinbauverband"
+,"Fränkischer Weinbauverband e.V."
+,"Freie Hansestadt Bremen"
+,"Freie und Hansestadt Hamburg"
+,"Freie Wähler"
+,"FREIE WÄHLER"
+,"Freie Wohlfahrtspflege Bayern"
+,"Freie Wohlfahrtspflege Bayern GbR"
+,"Freistaat Bayern"
+,"Freistaat Sachsen"
+,"Freistaat Thüringen"
+,"Genossenschaftsverband Bayern"
+,"Genossenschaftsverband Bayern e. V."
+,"Gerl & Vilsmeier Bauträger & Immobilien GmbH"
+,"Geschäftsstelle"
+,"Gesellschaft für Interdisziplinäre Spracherwerbsforschung"
+,"Gesellschaft für Interdisziplinäre Spracherwerbsforschung und kindliche Sprachstörungen im deutschsprachigen Raum e.V. (GISKID)"
+,"GEW Bayern"
+,"Gewerkschaft Erziehung und Wissenschaft"
+,"Gewerkschaft Erziehung und Wissenschaft (GEW), Landesverband Bayern"
+,"Grundschulverband"
+,"Grüne Fraktion Bayern"
+,"Hamburg"
+,"Haus & Grund Bayern"
+,"Heimbau Bayern Bau- und Verwaltungsgesellschaft mbH"
+,"Hessen"
+,"Johanniter-Unfall-Hilfe e. V."
+,"Katholisches Schulwerk in Bayern"
+,"Katholisches Schulwerk in Bayern Körperschaft des öffentlichen Rechts"
+,"KNDS Deutschland GmbH & Co. KG"
+,"LAGE in Bayern e.V."
+,"Land Baden-Württemberg"
+,"Land Berlin"
+,"Land Brandenburg"
+,"Länder"
+,"Landesarbeitsgemeinschaft der Freien Waldorfschulen in Bayern e.V."
+,"Landesarbeitsgemeinschaft der Sozialdienste im Bayerischen Justizvollzug"
+,"Landesarbeitsgemeinschaft Elterninitiativen"
+,"Landesbund für Vogelschutz in Bayern (LBV) e. V."
+,"Landesbund für Vogel- und Naturschutz in Bayern e.V."
+,"Landeselternverband Bayerischer Realschulen e.V."
+,"Landeselternverband Bayerischer Realschulen e.V. (LEV-RS)"
+,"Landes-Eltern-Vereinigung der Gymnasien in Bayern e.V."
+,"Landesfeuerwehrverband Bayern"
+,"Landesfeuerwehrverband Bayern e.V."
+,"Landesfischereiverband Bayern e.V."
+,"Landesnetzwerk Bürgerschaftliches Engagement Bayern e.V."
+,"Landesregierungen"
+,"Landesseniorenrat"
+,"Landesseniorenrat Bayern"
+,"Landesseniorenvertretung Bayern e.V."
+,"LandesSeniorenVertretung Bayern e.V."
+,"Landesverband Bayerischer Bauinnungen"
+,"Landesverband Bayerischer Imker e.V."
+,"Landesverband Bayern des Bundesverband WindEnergie e.V. (BWE)"
+,"Landesverband der Bayerischen Justizvollzugsbediensteten e.V."
+,"Landesverband der Bayer. Justizvollzugsbediensteten e.V."
+,"Landesverband der beamteten Tierärzte Bayerns"
+,"Landesverband der beamteten Tierärzte Bayerns e.V."
+,"Landesverband Erneuerbare Energien e.V. (LEE Bayern)"
+,"Land Hessen"
+,"Land Mecklenburg-Vorpommern"
+,"Land Niedersachsen"
+,"Land Nordrhein-Westfalen"
+,"Land Rheinland-Pfalz"
+,"Land Sachsen-Anhalt"
+,"Land Schleswig-Holstein"
+,"LBE e.V."
+,"LbT Bayern e.V."
+,"Lechwerke AG"
+,"LEE Bayern"
+,"Lehrstuhl für Sprachheilpädagogik (JMU)"
+,"Lehrstuhl für Sprachheilpädagogik (LMU)"
+,"Mecklenburg-Vorpommern"
+,"Montessori Landesverband Bayern"
+,"Montessori Landesverband Bayern e.V."
+,"MTP Wohn- und Gewerbebau GmbH"
+,"Munich International School e.V."
+,"N-ERGIE Aktiengesellschaft"
+,"Niedersachsen"
+,"Nordrhein-Westfalen"
+,"Opes Immobilien GmbH"
+,"Organisation X"
+,"Organisation Y"
+,"Paritätischer Wohlfahrtsverband - Landesverband Bayern e. V."
+,"Paritätischer Wohlfahrtsverband, Landesverband Bayern e.V."
+,"Parlamentarische Gruppe B"
+,"Partei"
+,"Partei A"
+,"Parteien"
+,"ProSiebenSat.1 Media SE"
+,"Psychotherapeutenkammer Bayern"
+,"Psychotherapeutenkammer Bayern (PTK Bayern)"
+,"Regierung"
+,"Regierungen"
+,"Rheinland-Pfalz"
+,"Saarland"
+,"Sachsen"
+,"Sachsen-Anhalt"
+,"Schleswig-Holstein"
+,"Senior Consultant Städtebauliche Entwicklungen & Wohnungsbau"
+,"Sozialdemokratische Partei Deutschland"
+,"Sparkassenverband Bayern"
+,"SPD"
+,"SRL-Regionalgruppe Bayern"
+,"SRL - Vereinigung für Stadt-, Regional- und Landesplanung"
+,"Staatsregierung"
+,"Staatsregierung Bayern"
+,"Stadtwerke München GmbH"
+,"StMGP"
+,"StMUK"
+,"Thüringen"
+,"Universität Bayern e.V."
+,"VAUNET – Verband Privater Medien e. V."
+,"VAUNET – Verband Privater Medien e.V."
+,"VBEW"
+,"VBEW e. V."
+,"VBI Bayern e.V."
+,"VBP Verband Bayerischer Privatschulen e. V."
+,"VBR (Vereinigung Bayerischer Realschuldirektorinnen und Realschuldirektoren)"
+,"vbw"
+,"vbw - Vereinigung der Bayerischen Wirtschaft e. V."
+,"vbw – Vereinigung der Bayerischen Wirtschaft e. V."
+,"VCI-Landesverband Bayern"
+,"vds Bayern"
+,"VdW Bayern Verband bayerischer Wohnungsunternehmen e.V."
+,"Verband Bayerischer Lokalfunk"
+,"Verband Bayerischer Lokalrundfunk (VBL)"
+,"Verband Bayerischer Lokalrundfunk (VBL) e.V."
+,"Verband Bayerischer Privatschulen"
+,"Verband Bayerischer Privatschulen e. V."
+,"Verband Bayerischer Rundfunkanbieter"
+,"Verband bayerischer Wohnungsunternehmen e.V."
+,"Verband Bayerischer Zeitungsverleger e. V."
+,"Verband Bayerischer Zeitungsverleger e.V. (VBZV)"
+,"Verband der Bayerischen Energie- und Wasserwirschaft e. V. (VBEW)"
+,"Verband der Bayerischen Metall- und Elektro-Industrie e. V."
+,"Verband der Bayerischen Verwaltungsrichter und Verwaltungsrichterinnen"
+,"Verband der Chemischen Industrie e. V. - Landesverband Bayern"
+,"Verband der chemischen Industrie e.V., Landesverband Bayern (VCI-LV Bayern)"
+,"VERBAND DEUTSCHER ARCHITEKTEN VDA e.V."
+,"Verbände"
+,"Verband für Sonderpädagogik, Landesgruppe Bayern e.V."
+,"Verband für Sonderpädagogik, Landesgruppe Bayern e.V. (vds)"
+,"Verband katholischer Kindertageseinrichtungen Bayern e.V."
+,"Verband Wohneigentum - Landesverband Bayern e.V."
+,"Verband Wohneigentum Landesverband Bayern e. V."
+,"ver.di Bayern"
+,"Verein der Bayerischen Chemischen Industrie e. V."
+,"Vereinigung Bayerischer Realschuldirektorinnen und Realschuldirektoren e. V."
+,"Vereinigung Bayerischer Rundfunkanbieter"
+,"Vereinigung Bayerischer Rundfunkanbieter e.V. (VBRA)"
+,"Vereinigung der Bayerischen Wirtschaft e. V."
+,"Vereinigung der Pflegenden in Bayern"
+,"Vereinigung der Pflegenden in Bayern KöR"
+,"Vereinigung der Pflegenden in Bayern (VdPB)"
+,"Vereinigung für Stadt-, Regional- und Landesplanung (SRL) e.V."
+,"VKU-Landesgruppe Bayern"
+,"VKU Verband Kommunaler Unternehmen e.V."
+,"VPI Bayern e. V."
+,"VSPG"
+,"VSPG - Verband der Sozialpädagoginnen / Sozialpädagogen Bayerischer Gesundheitsämter e. V."
+,"Weisser Ring e.V."
+,"WEISSER RING Gemeinnütziger Verein zur Unterstützung von Kriminalitätsopfern und zur Verhütung von Straftaten e. V."
+,"Wust Wind Sonne"]
+output = []

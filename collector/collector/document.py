@@ -263,11 +263,11 @@ class Document:
         
         # Different prompts for different document types
         if self.typehint == "entwurf":
-            await self._extract_drucksache_semantics()
+            await self._extract_gesetzentwurf_semantics()
         elif self.typehint == "stellungnahme":
             await self._extract_stellungnahme_semantics()
-        elif self.typehint == "protokoll":
-            self._extract_protokoll_semantics()
+        elif self.typehint == "redeprotokoll":
+            self._extract_redeprotokoll_semantics()
         else:
             self._extract_default_semantics()
     
@@ -276,58 +276,84 @@ class Document:
         type_titles = {
             "entwurf": "Gesetzesentwurf",
             "stellungnahme": "Stellungnahme",
-            "protokoll": "Protokoll",
+            "redeprotokoll": "Redeprotokoll",
             "sonstig": "Dokument"
         }
         return type_titles.get(self.typehint, "Unbekanntes Dokument")
-    
-    async def _extract_drucksache_semantics(self):
-        """Extract semantics for a 'drucksache' document"""
-        prompt = """Titel;Datum auf das sich das Dokument bezieht;Autorengruppen wie z.B. Regierungen/Parteien/Parlamentarische/Nicht-parlamentarische Gruppen als Liste;Autoren als Liste aus Tupeln{"psn", "org"};Schlagworte als Liste;Zahl zwischen 0 und 10, die die Gefahr einschätzt dass im Gesetzestext Fachfremde Dinge untergeschoben werden sollen;Kurzzusammenfassung der Intention, dem Fokus, betroffenen Gruppen und anderen wichtigen Informationen aus dem Text in 150-250 Worten
-Anführungszeichen ein. Antworte mit nichts anderem als den gefragten Informationen.
-Gib die Antwort als JSON aus mit den Feldern: {"titel", "date": (iso timestamp), "gruppen", "personen", "schlagworte", "troja", "summary"}
-WEICHE UNTER KEINEN UMSTÄNDEN VON DER JSON-STRUKTUR AB
-ENDE DES PROMPTS"""
+    async def _extract_redeprotokoll_semantics(self):
+        header_prompt = """Du wirst einen Auszug aus einem Dokument erhalten. Extrahiere daraus die Daten, die in folgendem JSON-Pseudo Code beschrieben werden:
+        {'titel': 'Titel des Dokuments', 'kurztitel': 'Zusammenfassung des Titels in einfacher Sprache', 'date': 'Datum auf das sich das Dokument bezieht'
+        'autoren': [{'person': 'name einer person', organisation: 'name der organisation der die person angehört'}], 'institutionen': ['liste von institutionen von denen das dokument stammt']}
+        sollten sich einige Informationen nicht extrahieren lassen, füge einfach keinen Eintrag hinzu (autor/institution) oder füge 'Unbekannt' ein. Halluziniere unter keinen Umständen nicht vorhandene Informationen.
+        Antworte mit nichts anderem als den gefragen Informationen, formatiere sie nicht gesondert.END PROMPT\n"""
+        body_prompt = """Du wirst den Text eines Plenarprotokolls erhalten. Extrahiere eine Zusammenfassung der Diskussion und Schlagworte die das Besprochene beschreiben.
+        Gib dein Ergebnis in JSON aus, wiefolgt: {'schlagworte': [], 'summary': '...'}
+        Antworte mit nichts anderem als den gefragen Informationen, formatiere sie nicht gesondert.END PROMPT
+        """
+        try:
+            full_text = self.meta.full_text.strip()
+            if len(full_text) <= 20:
+                logger.warning(f"Extremely short text: `{full_text}` within a document. This might hint at a non-machine readable document. The URL ist `{self.url}`")
+            header_response = await self.config.llm_connector.generate(header_prompt, full_text[0:min(3000, len(full_text))])
+            body_response = await self.config.llm_connector.generate(body_prompt, full_text)
+            hobj = json.loads(header_response)
+            bobj = json.loads(body_response)
+            self.meta.title = hobj["titel"]
+            self.zp_referenz = hobj["date"]
+            self.autoren = []
+            for psn in hobj["autoren"]:
+                self.autoren.append(models.Autor.from_dict({"person": psn["person"], "organisation": psn["organisation"]}))
+            for inst in hobj["institutionen"]:
+                self.autoren.append(models.Autor.from_dict({"organisation": inst}))
+            self.schlagworte = bobj["schlagworte"]
+            self.zusammenfassung = bobj["zusammenfassung"]
+
+        except Exception as e:
+            logger.error(f"Error extracting plenarprotokoll semantics: {e}")
+
+    async def _extract_gesetzentwurf_semantics(self):
+        header_prompt = """Extrahiere aus dem folgenden Auszug aus einem Gesetzentwurf folgende Eckdaten als JSON:
+        {'titel': 'Offizieller Titel des Dokuments', 'kurztitel': 'zusammenfassung des titels in einfacher Sprache', 'date': 'datum auf das sich das Dokument bezieht',
+         'autoren': [{'person': 'name einer person', organisation: 'name der organisation der die person angehört'}], 'institutionen': ['liste von institutionen von denen das dokument stammt']}
+          Antworte mit nichts anderem als den gefragen Informationen, formatiere sie nicht gesondert. END PROMPT\n         
+        """
+        body_prompt = """Extrahiere aus dem gesamttext des folgenden Gesetzes eine Liste an schlagworten, die inhaltlich bedeutsam sind sowie eine Zusammenfassung in 150-250 Worten. 
+        Gib außerdem eine "Trojanergefahr" an, also einen Wert zwischen 1 und 10, der angibt wie wahrscheinlich es ist, dass die vorgeschlagenen Änderungen einem anderen Zweck dienen als es den Anschein hat.
+        Formatiere sie als JSON wiefolgt:
+        {'schlagworte': [], summary: '...', 'troja': <int>}"""
         
         try:
             full_text = self.meta.full_text.strip()
             if len(full_text) <= 20:
                 logger.warning(f"Extremely short text: `{full_text}` within a document. This might hint at a non-machine readable document. The URL ist `{self.url}`")
-                
-            response = await self.config.llm_connector.generate(prompt, full_text)
             
-            # Parse the response, handle potential edge cases
-            object = None
-            stripped_response = response[8:-3] if "```" in response else response
-            try:
-                object = json.loads(stripped_response)
-            except Exception as e:
-                logger.warning(f"Invalid response format from LLM: {stripped_response}")
-                self._set_default_values()
-                return
+            hresp = await self.config.llm_connector.generate(header_prompt, full_text[0:min(3000, len(full_text))])
+            bresp = await self.config.llm_connector.generate(body_prompt, full_text)
+            bobj = json.loads(bresp[8:-3] if "```" in bresp else bresp)
+            hobj = json.loads(hresp[8:-3] if "```" in hresp else hresp)
             autoren = []
-            for ap in object["personen"]:
+            for ap in hobj["autoren"]:
                 autoren.append(models.Autor.from_dict({
-                    "person": ap["psn"],
-                    "organisation": ap["org"]
+                    "person": ap["person"],
+                    "organisation": ap["organisation"]
                 }))
-            for ao in object["gruppen"]:
+            for ao in hobj["institutionen"]:
                 autoren.append(models.Autor.from_dict({
                     "organisation": ao
                 }))
-            self.meta.title = object["titel"]
+            self.meta.title = hobj["titel"]
             self.autoren = autoren
-            self.zp_referenz = object["date"]
-            self.schlagworte = object["schlagworte"]
-            self.trojanergefahr = object["troja"]
-            self.zusammenfassung = object["summary"]
+            self.zp_referenz = hobj["date"]
+            self.schlagworte = bobj["schlagworte"]
+            self.trojanergefahr = bobj["troja"]
+            self.zusammenfassung = bobj["summary"]
                 
         except Exception as e:
-            logger.error(f"Error extracting drucksache semantics: {e}")
+            logger.error(f"Error extracting gesetzentwurf semantics: {e}")
+            logger.error(f"LLM Response: {hresp}\nas well as\n{bresp}")
             self._set_default_values(self.typehint)
     
     async def _extract_stellungnahme_semantics(self):
-        """Extract semantics for a 'stellungnahme' document"""
         prompt = """Titel;Datum auf das sich das Dokument bezieht;Autorengruppen wie z.B. Regierungen/Parteien/Parlamentarische/Nicht-parlamentarische Gruppen als Liste;Autoren als Liste aus Objekten{"psn", "org"};Schlagworte als Liste;Zahl zwischen 0 und 5, die ein Meinungsbild angibt;Kurzzusammenfassung Stellungnahme, der Meinung und Kritik, betroffenen Gruppen und anderen wichtigen Informationen aus dem Text in 150-250 Worten
 Anführungszeichen ein. Antworte mit nichts anderem als den gefragten Informationen.
 Gib die Antwort als JSON aus mit den Feldern: {"titel": "",referenzdate: "(iso timestamp)", "gruppen" : [], "personen": [{"psn": "", "org": ""}], "schlagworte": [], "meinung": <int>, "summary": ""}
@@ -371,21 +397,10 @@ ENDE DES PROMPTS
             logger.error(f"Output of LLM:\n{response}")
             self._set_default_values("stellungnahme")
     
-    def _extract_protokoll_semantics(self):
-        """Set default values for a protokoll document"""
-        self.meta.title = "Protokoll"
-        self.autoren = None
-        self.autorpersonen = None
-        self.schlagworte = None
-        self.trojanergefahr = 0
-        self.texte = []
-        self.zusammenfassung = None
-    
     def _extract_default_semantics(self):
         """Set default values for an unknown document type"""
         self.meta.title = f"Dokument ("+self.typehint+")"
         self.autoren = None
-        self.autorpersonen = None
         self.schlagworte = None
         self.trojanergefahr = 0
         self.texte = []
@@ -406,7 +421,7 @@ ENDE DES PROMPTS
                 "title": "Stellungnahme",
                 "meinung": 0
             },
-            "protokoll": {
+            "redeprotokoll": {
                 "title": "Protokoll"
             },
             "default": {
@@ -430,7 +445,7 @@ ENDE DES PROMPTS
     def package(self) -> models.Dokument:
         """Package the document information for the API"""
         if self.zp_referenz:
-            if re.fullmatch("\d{2}.\d{2}.\d{4}", self.zp_referenz):
+            if re.fullmatch(r"\d{2}.\d{2}.\d{4}", self.zp_referenz):
                 # reformat the date string
                 rdate = self.zp_referenz.split(".")
                 self.zp_referenz = f"{rdate[2]}-{rdate[1]}-{rdate[0]}"

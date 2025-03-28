@@ -91,18 +91,17 @@ INSERT INTO
 VALUES
     ('preparl-entwurf'),
     ('entwurf'),
-    ('mitteilung'),
     ('antrag'),
     ('anfrage'),
     ('antwort'),
+    ('mitteilung'),
+    ('beschlussempf'),
     ('stellungnahme'),
     ('gutachten'),
-    ('beschlussempf'),
-    ('plenar-protokoll'),
-    ('plenar-tops'),
-    ('as-tops'),
-    ('as-tops-aend'),
-    ('as-tops-ergz'),
+    ('redeprotokoll'),
+    ('tops'),
+    ('tops-aend'),
+    ('tops-ergz'),
     ('sonstig');
 
 CREATE EXTENSION pg_trgm;

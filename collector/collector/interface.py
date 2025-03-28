@@ -78,7 +78,7 @@ class Scraper(ABC):
             except openapi_client.ApiException as e:
                 logger.error(f"API Exception: {e}")
                 if e.status == 422:
-                    logger.error("Unprocessable Entity, tried to send item:\n")
+                    logger.error("Unprocessable Entity, tried to send item(excluding full text):\n")
                     logger.error(sanitize_for_serialization(item))
                     try:
                         filepath = Path(self.config.api_object_log or "locallogs") / f"{self.collector_id}.json"

@@ -575,7 +575,7 @@ components:
         - "beschlussempf"    # Beschlussempfehlung von Ausschüssen
         - "stellungnahme"    # Stellungnahme von Personen oder Organisationen
         - "gutachten"        # Gutachten die im Auftrag des Parlaments erstellt werden
-        - "plenar-protokoll" # Plenarprotokoll
+        - "redeprotokoll"    # Ausschuss- oder Plenarprotokoll
         - "tops"             # Sitzungs-TOPs
         - "tops-aend"        # Sitzungs-TOPs Änderung
         - "tops-ergz"        # Sitzungs-TOPs Ergänzung

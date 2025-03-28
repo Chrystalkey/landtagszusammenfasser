@@ -1,6 +1,6 @@
 import asyncio
 import jsondiff
-from collector.scrapers.bylt_scraper import BYLTScraper
+from collector.scrapers.bylt_scraper import BYLTScraper,sanitize_orga
 from collector.convert import sanitize_for_serialization
 from collector.config import CollectorConfiguration
 from oapicode.openapi_client import Configuration

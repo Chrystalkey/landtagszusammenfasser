@@ -13,6 +13,7 @@ from bs4 import BeautifulSoup
 import openapi_client.models as models
 from collector.interface import Scraper
 from collector.document import Document
+import toml
 
 logger = logging.getLogger(__name__)
 NULL_UUID = uuid.UUID("00000000-0000-0000-0000-000000000000")
@@ -99,7 +100,7 @@ class BYLTScraper(Scraper):
                     initiatoren.append(
                         models.Autor.from_dict(
                             {
-                                "organisation": ini.text.strip()
+                                "organisation": sanitize_orga(ini.text.strip())
                             }
                         )
                     )
@@ -110,7 +111,7 @@ class BYLTScraper(Scraper):
                         models.Autor.from_dict(
                             {   
                                 "person": psn,
-                                "organisation": org
+                                "organisation": sanitize_orga(org)
                             }
                         )
                     )
@@ -122,7 +123,7 @@ class BYLTScraper(Scraper):
                         models.Autor.from_dict(
                             {   
                                 "person": psn,
-                                "organisation": org
+                                "organisation": sanitize_orga(org)
                             }
                         )
                     )
@@ -227,12 +228,12 @@ class BYLTScraper(Scraper):
                     if stln_urls["autor"] is not None:
                         if dok.autoren is None:
                             dok.autoren = [models.Autor.from_dict({
-                                "organisation": stln_urls["autor"]
+                                "organisation": sanitize_orga(stln_urls["autor"])
                             })]
                         else:
                             dok.autoren.append(
                                 models.Autor.from_dict({
-                                "organisation": stln_urls["autor"]
+                                "organisation": sanitize_orga(stln_urls["autor"])
                             })
                             )
                         if stln_urls["lobbyregister"] is not None:
@@ -250,7 +251,7 @@ class BYLTScraper(Scraper):
                 elif cellclass.startswith("plenum-proto"):
                     pproto = extract_plenproto(cells[1])
                     gremium = models.Gremium.from_dict({"name": "plenum", "parlament": "BY","wahlperiode": 19})
-                    dok = await self.create_document(pproto["pprotoaz"], models.Doktyp.PLENAR_MINUS_PROTOKOLL)
+                    dok = await self.create_document(pproto["pprotoaz"], models.Doktyp.REDEPROTOKOLL)
                     typ = None
                     video_link = pproto.get("video")
                     if cellclass == "plenum-proto-uebrw":
@@ -374,6 +375,11 @@ class BYLTScraper(Scraper):
             logger.debug("Cached version not found, fetching from source")
             document = Document(self.session, url, type_hint, self.config)
             await document.run_extraction()
+            if document.autoren:
+                document.autoren = [
+                    models.Autor.from_dict({"organisation": sanitize_orga(aut.organisation), 
+                                            "person": aut.person, "fachgebiet": aut.fachgebiet, 
+                                            "lobbyregister": aut.lobbyregister}) for aut in document.autoren]
             self.config.cache.store_dokument(url, document)
             return document
         else:
@@ -485,3 +491,47 @@ def extract_plenproto(cellsoup: BeautifulSoup) -> str:
 
 def extract_gbl_ausz(cellsoup: BeautifulSoup) -> str:
     return cellsoup.findAll("a")[1]["href"]
+
+def pretransform_standard():
+    input_dictionary = toml.load(os.path.join(os.path.dirname(__file__), "bylt_standardization.toml"))
+    matches = {}
+    for matchentry in input_dictionary["org"]["match"]:
+        for match in matchentry["match"]:
+            matches[match] = matchentry["replace_with"]
+    output = {
+        "org": {
+            "regex": input_dictionary["org"]["regex"],
+            "match": matches
+        },
+    }
+    return output
+
+standard_dictionary = pretransform_standard()
+
+def sanitize_orga(word: str) -> str:
+    global standard_dictionary
+
+    torgs = standard_dictionary["org"]
+    regex = torgs["regex"]
+    mrep  = torgs["match"]
+
+    replaced = word.strip()
+    modified = False
+    for rx in regex:
+        if rx.get("partial"):
+            if re.search(rx["partial"], replaced):
+                modified = True
+                replaced = re.sub(rx["partial"], rx["replace_with"], replaced)
+        elif rx.get("full"):
+            if re.fullmatch(rx["full"], replaced):
+                modified = True
+                replaced = rx["replace_with"]
+        else:
+            raise Exception("Expected one of `partial`,`full` in regex entry of standardization dictionary")
+    if modified:
+        word = replaced
+    replmatch_prep = word.lower().strip()
+    if replmatch_prep in mrep.keys():
+        return mrep[replmatch_prep]
+    else:
+        return word
