@@ -37,7 +37,7 @@ jobs:
         working-directory: database/
         run: cargo test
         env:
-          DATABASE_URL: postgres://ltzf-user:ltzf-pass@database:5432/ltzf
+          DATABASE_URL: postgres://ltzf-user:ltzf-pass@localhost:5432/ltzf
           SQLX_OFFLINE: true
 
   collector_tests:
