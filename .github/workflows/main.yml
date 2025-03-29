@@ -10,9 +10,9 @@ jobs:
       postgres:
         image: postgres:latest
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_db
+          POSTGRES_USER: ltzf-user
+          POSTGRES_PASSWORD: ltzf-pass
+          POSTGRES_DB: ltzf
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -37,7 +37,7 @@ jobs:
         working-directory: database/
         run: cargo test
         env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
+          DATABASE_URL: postgres://ltzf-user:ltzf-pass@database:5432/ltzf
           SQLX_OFFLINE: true
 
   collector_tests:
