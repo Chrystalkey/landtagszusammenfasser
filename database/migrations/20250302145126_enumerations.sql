@@ -48,6 +48,7 @@ VALUES
     ('gg-zustimmung'),
     ('gg-land-parl'),
     ('gg-land-volk'),
+    ('bundeswehreinsatz'),
     ('sonstig');
 
 INSERT INTO
@@ -90,15 +91,17 @@ INSERT INTO
 VALUES
     ('preparl-entwurf'),
     ('entwurf'),
+    ('antrag'),
+    ('anfrage'),
+    ('antwort'),
     ('mitteilung'),
+    ('beschlussempf'),
     ('stellungnahme'),
     ('gutachten'),
-    ('beschlussempf'),
-    ('plenar-protokoll'),
-    ('plenar-tops'),
-    ('as-tops'),
-    ('as-tops-aend'),
-    ('as-tops-ergz'),
+    ('redeprotokoll'),
+    ('tops'),
+    ('tops-aend'),
+    ('tops-ergz'),
     ('sonstig');
 
 CREATE EXTENSION pg_trgm;

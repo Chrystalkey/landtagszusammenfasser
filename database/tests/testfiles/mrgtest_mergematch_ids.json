@@ -1,0 +1,328 @@
+{
+  "context": [{
+    "api_id": "123e4567-e89b-12d3-a456-426614174000",
+    "titel": "string",
+    "kurztitel": "string",
+    "wahlperiode": 0,
+    "verfassungsaendernd": true,
+    "typ": "gg-einspruch",
+    "ids": [
+      {
+        "id": "123e4567-e",
+        "typ": "initdrucks"
+      }
+    ],
+    "links": [
+      "string"
+    ],
+    "initiatoren": [
+      {
+        "person": "string",
+        "organisation": "string",
+        "fachgebiet": "string",
+        "lobbyregister": "string"
+      }
+    ],
+    "stationen": [
+      {
+        "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "titel": "string",
+        "zp_start": "2024-01-01T00:00:00+00:00",
+        "zp_modifiziert": "2024-01-01T00:00:00+00:00",
+        "gremium": {
+          "parlament": "BT",
+          "wahlperiode": 0,
+          "link": "string",
+          "name": "Ausschuss für Inneres und Gemüseauflauf"
+        },
+        "gremium_federf": true,
+        "link": "string",
+        "parlament": "BT",
+        "typ": "preparl-regent",
+        "trojanergefahr": 10,
+        "schlagworte": [
+          "string"
+        ],
+        "dokumente": [
+          {
+            "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "drucksnr": "string",
+            "typ": "preparl-entwurf",
+            "titel": "string",
+            "kurztitel": "string",
+            "vorwort": "ganz anderer text der auf keinen Fall mergeable ist",
+            "volltext": "string",
+            "zusammenfassung": "string",
+            "zp_modifiziert": "2024-03-09T00:00:00+00:00",
+            "zp_referenz": "2024-03-07T00:00:00+00:00",
+            "zp_erstellt": "2024-03-08T00:00:00+00:00",
+            "link": "string",
+            "hash": "string",
+            "meinung": 5,
+            "schlagworte": [
+              "string"
+            ],
+            "autoren": [
+              {
+                "person": "string",
+                "organisation": "string",
+                "fachgebiet": "string",
+                "lobbyregister": "string"
+              }
+            ]
+          }
+        ],
+        "additional_links": [
+          "Link zu einem Videomitschnitt der Plenarsitzung"
+        ],
+        "stellungnahmen": [
+          {
+            "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "drucksnr": "string",
+            "typ": "preparl-entwurf",
+            "titel": "string",
+            "kurztitel": "string",
+            "vorwort": "string",
+            "volltext": "string",
+            "zusammenfassung": "string",
+            "zp_modifiziert": "2024-03-09T00:00:00+00:00",
+            "zp_referenz": "2024-03-07T00:00:00+00:00",
+            "zp_erstellt": "2024-03-08T00:00:00+00:00",
+            "link": "string",
+            "hash": "string",
+            "meinung": 5,
+            "schlagworte": [
+              "string"
+            ],
+            "autoren": [
+              {
+                "person": "string",
+                "organisation": "string",
+                "fachgebiet": "string",
+                "lobbyregister": "string"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }],
+  "vorgang": {
+    "api_id": "132e4567-e89b-12d3-a456-426614174000",
+    "titel": "string",
+    "kurztitel": "string",
+    "wahlperiode": 0,
+    "verfassungsaendernd": true,
+    "typ": "gg-einspruch",
+    "ids": [
+      {
+        "id": "123e4567-e",
+        "typ": "initdrucks"
+      }
+    ],
+    "links": [
+      "string"
+    ],
+    "initiatoren": [
+      {
+        "person": "string",
+        "organisation": "string",
+        "fachgebiet": "string",
+        "lobbyregister": "string"
+      }
+    ],
+    "stationen": [
+      {
+        "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "titel": "string",
+        "zp_start": "2024-01-01T00:00:00+00:00",
+        "zp_modifiziert": "2024-01-01T00:00:00+00:00",
+        "gremium": {
+          "parlament": "BT",
+          "wahlperiode": 0,
+          "link": "string",
+          "name": "Ausschuss für Inneres und Gemüseauflauf"
+        },
+        "gremium_federf": true,
+        "link": "string",
+        "parlament": "BT",
+        "typ": "preparl-regent",
+        "trojanergefahr": 10,
+        "schlagworte": [
+          "string"
+        ],
+        "dokumente": [
+          {
+            "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "drucksnr": "string",
+            "typ": "preparl-entwurf",
+            "titel": "string",
+            "kurztitel": "string",
+            "vorwort": "string",
+            "volltext": "string",
+            "zusammenfassung": "string",
+            "zp_modifiziert": "2024-03-09T00:00:00+00:00",
+            "zp_referenz": "2024-03-07T00:00:00+00:00",
+            "zp_erstellt": "2024-03-08T00:00:00+00:00",
+            "link": "string",
+            "hash": "string",
+            "meinung": 5,
+            "schlagworte": [
+              "string"
+            ],
+            "autoren": [
+              {
+                "person": "string",
+                "organisation": "string",
+                "fachgebiet": "string",
+                "lobbyregister": "string"
+              }
+            ]
+          }
+        ],
+        "additional_links": [
+          "Link zu einem Videomitschnitt der Plenarsitzung"
+        ],
+        "stellungnahmen": [
+          {
+            "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "drucksnr": "string",
+            "typ": "preparl-entwurf",
+            "titel": "string",
+            "kurztitel": "string",
+            "vorwort": "string",
+            "volltext": "string",
+            "zusammenfassung": "string",
+            "zp_modifiziert": "2024-03-09T00:00:00+00:00",
+            "zp_referenz": "2024-03-07T00:00:00+00:00",
+            "zp_erstellt": "2024-03-08T00:00:00+00:00",
+            "link": "string",
+            "hash": "string",
+            "meinung": 5,
+            "schlagworte": [
+              "string"
+            ],
+            "autoren": [
+              {
+                "person": "string",
+                "organisation": "string",
+                "fachgebiet": "string",
+                "lobbyregister": "string"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "result": [
+    {
+      "api_id": "123e4567-e89b-12d3-a456-426614174000",
+      "titel": "string",
+      "kurztitel": "string",
+      "wahlperiode": 0,
+      "verfassungsaendernd": true,
+      "typ": "gg-einspruch",
+      "ids": [
+        {
+          "id": "123e4567-e",
+          "typ": "initdrucks"
+        }
+      ],
+      "links": [
+        "string"
+      ],
+      "initiatoren": [
+        {
+          "person": "string",
+          "organisation": "string",
+          "fachgebiet": "string",
+          "lobbyregister": "string"
+        }
+      ],
+      "stationen": [
+        {
+          "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "titel": "string",
+          "zp_start": "2024-01-01T00:00:00+00:00",
+          "zp_modifiziert": "2024-01-01T00:00:00+00:00",
+          "gremium": {
+            "parlament": "BT",
+            "wahlperiode": 0,
+            "link": "string",
+            "name": "Ausschuss für Inneres und Gemüseauflauf"
+          },
+          "gremium_federf": true,
+          "link": "string",
+          "parlament": "BT",
+          "typ": "preparl-regent",
+          "trojanergefahr": 10,
+          "schlagworte": [
+            "string"
+          ],
+          "dokumente": [
+            {
+              "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              "drucksnr": "string",
+              "typ": "preparl-entwurf",
+              "titel": "string",
+              "kurztitel": "string",
+              "vorwort": "string",
+              "volltext": "string",
+              "zusammenfassung": "string",
+              "zp_modifiziert": "2024-03-09T00:00:00+00:00",
+              "zp_referenz": "2024-03-07T00:00:00+00:00",
+              "zp_erstellt": "2024-03-08T00:00:00+00:00",
+              "link": "string",
+              "hash": "string",
+              "meinung": 5,
+              "schlagworte": [
+                "string"
+              ],
+              "autoren": [
+                {
+                  "person": "string",
+                  "organisation": "string",
+                  "fachgebiet": "string",
+                  "lobbyregister": "string"
+                }
+              ]
+            }
+          ],
+          "additional_links": [
+            "Link zu einem Videomitschnitt der Plenarsitzung"
+          ],
+          "stellungnahmen": [
+            {
+              "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              "drucksnr": "string",
+              "typ": "preparl-entwurf",
+              "titel": "string",
+              "kurztitel": "string",
+              "vorwort": "string",
+              "volltext": "string",
+              "zusammenfassung": "string",
+              "zp_modifiziert": "2024-03-09T00:00:00+00:00",
+              "zp_referenz": "2024-03-07T00:00:00+00:00",
+              "zp_erstellt": "2024-03-08T00:00:00+00:00",
+              "link": "string",
+              "hash": "string",
+              "meinung": 5,
+              "schlagworte": [
+                "string"
+              ],
+              "autoren": [
+                {
+                  "person": "string",
+                  "organisation": "string",
+                  "fachgebiet": "string",
+                  "lobbyregister": "string"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

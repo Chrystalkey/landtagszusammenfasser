@@ -1,16 +1,227 @@
 {
-    "context": [{
-      "api_id": "123e4567-e89b-12d3-a456-426614174001",
-      "titel": "string",
-      "kurztitel": "string",
-      "wahlperiode": 0,
-      "verfassungsaendernd": true,
-      "initiatoren": [
-        "Staatsministerium für Justiz"
-      ],
-      "initiator_personen": [
-        "Ach, Manfred (CSU)"
-      ],
+  "context": [{
+    "api_id": "123e4567-e89b-12d3-a456-426614174000",
+    "titel": "string",
+    "kurztitel": "string",
+    "wahlperiode": 0,
+    "verfassungsaendernd": true,
+    "typ": "gg-einspruch",
+    "ids": [
+      {
+        "id": "123e4567-e",
+        "typ": "initdrucks"
+      }
+    ],
+    "links": [
+      "string"
+    ],
+    "initiatoren": [
+      {
+        "person": "string",
+        "organisation": "string",
+        "fachgebiet": "string",
+        "lobbyregister": "string"
+      }
+    ],
+    "stationen": [
+      {
+        "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "titel": "string",
+        "zp_start": "2024-01-01T00:00:00+00:00",
+        "zp_modifiziert": "2024-01-01T00:00:00+00:00",
+        "gremium": {
+          "parlament": "BT",
+          "wahlperiode": 0,
+          "link": "string",
+          "name": "Ausschuss für Inneres und Gemüseauflauf"
+        },
+        "gremium_federf": true,
+        "link": "string",
+        "parlament": "BT",
+        "typ": "preparl-regent",
+        "trojanergefahr": 10,
+        "schlagworte": [
+          "string"
+        ],
+        "dokumente": [
+          {
+            "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "drucksnr": "string",
+            "typ": "preparl-entwurf",
+            "titel": "string",
+            "kurztitel": "string",
+            "vorwort": "string",
+            "volltext": "string",
+            "zusammenfassung": "string",
+            "zp_modifiziert": "2024-03-09T00:00:00+00:00",
+            "zp_referenz": "2024-03-07T00:00:00+00:00",
+            "zp_erstellt": "2024-03-08T00:00:00+00:00",
+            "link": "string",
+            "hash": "string",
+            "meinung": 5,
+            "schlagworte": [
+              "string"
+            ],
+            "autoren": [
+              {
+                "person": "string",
+                "organisation": "string",
+                "fachgebiet": "string",
+                "lobbyregister": "string"
+              }
+            ]
+          }
+        ],
+        "additional_links": [
+          "Link zu einem Videomitschnitt der Plenarsitzung"
+        ],
+        "stellungnahmen": [
+          {
+            "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "drucksnr": "string",
+            "typ": "preparl-entwurf",
+            "titel": "string",
+            "kurztitel": "string",
+            "vorwort": "string",
+            "volltext": "string",
+            "zusammenfassung": "string",
+            "zp_modifiziert": "2024-03-09T00:00:00+00:00",
+            "zp_referenz": "2024-03-07T00:00:00+00:00",
+            "zp_erstellt": "2024-03-08T00:00:00+00:00",
+            "link": "string",
+            "hash": "string",
+            "meinung": 5,
+            "schlagworte": [
+              "string"
+            ],
+            "autoren": [
+              {
+                "person": "string",
+                "organisation": "string",
+                "fachgebiet": "string",
+                "lobbyregister": "string"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }],
+  "vorgang": {
+    "api_id": "123e4567-e89b-12d3-a456-426614174000",
+    "titel": "stringa",
+    "kurztitel": "stringa",
+    "wahlperiode": 2,
+    "verfassungsaendernd": false,
+    "typ": "gg-einspruch",
+    "ids": [
+      {
+        "id": "123e4567-e",
+        "typ": "initdrucks"
+      }
+    ],
+    "links": [
+      "string"
+    ],
+    "initiatoren": [
+      {
+        "person": "string",
+        "organisation": "string",
+        "fachgebiet": "string",
+        "lobbyregister": "string"
+      }
+    ],
+    "stationen": [
+      {
+        "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "titel": "string",
+        "zp_start": "2024-01-01T00:00:00+00:00",
+        "zp_modifiziert": "2024-01-01T00:00:00+00:00",
+        "gremium": {
+          "parlament": "BT",
+          "wahlperiode": 0,
+          "link": "string",
+          "name": "Ausschuss für Inneres und Gemüseauflauf"
+        },
+        "gremium_federf": true,
+        "link": "string",
+        "parlament": "BT",
+        "typ": "preparl-regent",
+        "trojanergefahr": 10,
+        "schlagworte": [
+          "string"
+        ],
+        "dokumente": [
+          {
+            "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "drucksnr": "string",
+            "typ": "preparl-entwurf",
+            "titel": "string",
+            "kurztitel": "string",
+            "vorwort": "string",
+            "volltext": "string",
+            "zusammenfassung": "string",
+            "zp_modifiziert": "2024-03-09T00:00:00+00:00",
+            "zp_referenz": "2024-03-07T00:00:00+00:00",
+            "zp_erstellt": "2024-03-08T00:00:00+00:00",
+            "link": "string",
+            "hash": "string",
+            "meinung": 5,
+            "schlagworte": [
+              "string"
+            ],
+            "autoren": [
+              {
+                "person": "string",
+                "organisation": "string",
+                "fachgebiet": "string",
+                "lobbyregister": "string"
+              }
+            ]
+          }
+        ],
+        "additional_links": [
+          "Link zu einem Videomitschnitt der Plenarsitzung"
+        ],
+        "stellungnahmen": [
+          {
+            "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "drucksnr": "string",
+            "typ": "preparl-entwurf",
+            "titel": "string",
+            "kurztitel": "string",
+            "vorwort": "string",
+            "volltext": "string",
+            "zusammenfassung": "string",
+            "zp_modifiziert": "2024-03-09T00:00:00+00:00",
+            "zp_referenz": "2024-03-07T00:00:00+00:00",
+            "zp_erstellt": "2024-03-08T00:00:00+00:00",
+            "link": "string",
+            "hash": "string",
+            "meinung": 5,
+            "schlagworte": [
+              "string"
+            ],
+            "autoren": [
+              {
+                "person": "string",
+                "organisation": "string",
+                "fachgebiet": "string",
+                "lobbyregister": "string"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "result": [
+    {
+      "api_id": "123e4567-e89b-12d3-a456-426614174000",
+      "titel": "stringa",
+      "kurztitel": "stringa",
+      "wahlperiode": 2,
+      "verfassungsaendernd": false,
       "typ": "gg-einspruch",
       "ids": [
         {
@@ -21,276 +232,97 @@
       "links": [
         "string"
       ],
-      "stationen": [
-        {
-          "titel": "string",
-          "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa2",
-          "start_zeitpunkt": "2025-03-03T14:39:36.022Z",
-          "letztes_update": "2025-03-03T14:39:36.022Z",
-          "gremium": {
-            "parlament": "BT",
-            "name": "Ausschuss für Inneres und Gemüseauflauf",
-            "wahlperiode": 10
-          },
-          "dokumente": [
-            {
-              "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa3",
-              "drucksnr": "string",
-              "typ": "entwurf",
-              "titel": "string",
-              "kurztitel": "string",
-              "vorwort": "string",
-              "volltext": "string",
-              "zusammenfassung": "string",
-              "letzte_modifikation": "2025-03-03T14:39:36.022Z",
-              "link": "string",
-              "hash": "aae9df89e8dfa9esd89a8de9e89f8a9eadf9e8",
-              "schlagworte": [
-                "string"
-              ],
-              "autorpersonen": [
-                "Ach, Manfred (CSU)"
-              ],
-              "autoren": [
-                "Staatsregierung, Fraktion die Grünen, Fraktion CDU/CSU"
-              ]
-            }
-          ],
-          "betroffene_texte": [
-            "§ 1 Abs. 1 Satz 1"
-          ],
-          "link": "string",
-          "parlament": "BT",
-          "schlagworte": [
-            "string"
-          ],
-          "stellungnahmen": [
-            {
-              "dokument": {
-                "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa4",
-                "drucksnr": null,
-                "typ": "entwurf",
-                "titel": "string",
-                "kurztitel": "string",
-                "vorwort": "string",
-                "volltext": "string",
-                "zusammenfassung": "string",
-                "letzte_modifikation": "2025-03-03T14:39:36.022Z",
-                "link": "string",
-                "hash": "string",
-                "schlagworte": [
-                  "string"
-                ],
-                "autorpersonen": [
-                  "Ach, Manfred (CSU)"
-                ],
-                "autoren": [
-                  "Staatsregierung, Fraktion die Grünen, Fraktion CDU/CSU"
-                ]
-              },
-              "meinung": 10,
-              "lobbyregister_link": "string"
-            }
-          ],
-          "typ": "preparl-regent",
-          "trojanergefahr": 10
-        }
-      ]
-    }],
-    "vorgang": {
-      "api_id": "123e4567-e89b-12d3-a456-426614174001",
-      "titel": "stringa",
-      "kurztitel": "stringa",
-      "wahlperiode": 0,
-      "verfassungsaendernd": false,
       "initiatoren": [
-        "Staatsministerium für Justiz"
-      ],
-      "initiator_personen": [
-        "Ach, Manfred (CSU)"
-      ],
-      "typ": "gg-einspruch",
-      "ids": [
         {
-          "id": "123e4567-e",
-          "typ": "initdrucks"
+          "person": "string",
+          "organisation": "string",
+          "fachgebiet": "string",
+          "lobbyregister": "string"
         }
-      ],
-      "links": [
-        "strong"
       ],
       "stationen": [
         {
+          "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           "titel": "string",
-          "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa2",
-          "start_zeitpunkt": "2025-03-03T14:39:36.022Z",
-          "letztes_update": "2025-03-03T14:39:36.022Z",
+          "zp_start": "2024-01-01T00:00:00+00:00",
+          "zp_modifiziert": "2024-01-01T00:00:00+00:00",
           "gremium": {
             "parlament": "BT",
-            "name": "Ausschuss für Inneres und Gemüseauflauf",
-            "wahlperiode": 10
+            "wahlperiode": 0,
+            "link": "string",
+            "name": "Ausschuss für Inneres und Gemüseauflauf"
           },
+          "gremium_federf": true,
+          "link": "string",
+          "parlament": "BT",
+          "typ": "preparl-regent",
+          "trojanergefahr": 10,
+          "schlagworte": [
+            "string"
+          ],
           "dokumente": [
             {
-              "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa3",
+              "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
               "drucksnr": "string",
-              "typ": "entwurf",
+              "typ": "preparl-entwurf",
               "titel": "string",
               "kurztitel": "string",
               "vorwort": "string",
               "volltext": "string",
               "zusammenfassung": "string",
-              "letzte_modifikation": "2025-03-03T14:39:36.022Z",
+              "zp_modifiziert": "2024-03-09T00:00:00+00:00",
+              "zp_referenz": "2024-03-07T00:00:00+00:00",
+              "zp_erstellt": "2024-03-08T00:00:00+00:00",
               "link": "string",
-              "hash": "aae9df89e8dfa9esd89a8de9e89f8a9eadf9e8",
+              "hash": "string",
+              "meinung": 5,
               "schlagworte": [
                 "string"
               ],
-              "autorpersonen": [
-                "Ach, Manfred (CSU)"
-              ],
               "autoren": [
-                "Staatsregierung, Fraktion die Grünen, Fraktion CDU/CSU"
+                {
+                  "person": "string",
+                  "organisation": "string",
+                  "fachgebiet": "string",
+                  "lobbyregister": "string"
+                }
               ]
             }
           ],
-          "betroffene_texte": [
-            "§ 1 Abs. 1 Satz 1"
-          ],
-          "link": "string",
-          "parlament": "BT",
-          "schlagworte": [
-            "string"
+          "additional_links": [
+            "Link zu einem Videomitschnitt der Plenarsitzung"
           ],
           "stellungnahmen": [
             {
-              "dokument": {
-                "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa4",
-                "drucksnr": null,
-                "typ": "entwurf",
-                "titel": "string",
-                "kurztitel": "string",
-                "vorwort": "string",
-                "volltext": "string",
-                "zusammenfassung": "string",
-                "letzte_modifikation": "2025-03-03T14:39:36.022Z",
-                "link": "string",
-                "hash": "string",
-                "schlagworte": [
-                  "string"
-                ],
-                "autorpersonen": [
-                  "Ach, Manfred (CSU)"
-                ],
-                "autoren": [
-                  "Staatsregierung, Fraktion die Grünen, Fraktion CDU/CSU"
-                ]
-              },
-              "meinung": 10,
-              "lobbyregister_link": "string"
-            }
-          ],
-          "typ": "preparl-regent",
-          "trojanergefahr": 10
-        }
-      ]
-    },
-    "result": [{
-      "api_id": "123e4567-e89b-12d3-a456-426614174001",
-      "titel": "stringa",
-      "kurztitel": "stringa",
-      "wahlperiode": 0,
-      "verfassungsaendernd": false,
-      "initiatoren": [
-        "Staatsministerium für Justiz"
-      ],
-      "initiator_personen": [
-        "Ach, Manfred (CSU)"
-      ],
-      "typ": "gg-einspruch",
-      "ids": [
-        {
-          "id": "123e4567-e",
-          "typ": "initdrucks"
-        }
-      ],
-      "links": [
-        "string", "strong"
-      ],
-      "stationen": [
-        {
-          "titel": "string",
-          "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa2",
-          "start_zeitpunkt": "2025-03-03T14:39:36.022Z",
-          "letztes_update": "2025-03-03T14:39:36.022Z",
-          "gremium": {
-            "parlament": "BT",
-            "name": "Ausschuss für Inneres und Gemüseauflauf",
-            "wahlperiode": 10
-          },
-          "dokumente": [
-            {
-              "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa3",
+              "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
               "drucksnr": "string",
-              "typ": "entwurf",
+              "typ": "preparl-entwurf",
               "titel": "string",
               "kurztitel": "string",
               "vorwort": "string",
               "volltext": "string",
               "zusammenfassung": "string",
-              "letzte_modifikation": "2025-03-03T14:39:36.022Z",
+              "zp_modifiziert": "2024-03-09T00:00:00+00:00",
+              "zp_referenz": "2024-03-07T00:00:00+00:00",
+              "zp_erstellt": "2024-03-08T00:00:00+00:00",
               "link": "string",
-              "hash": "aae9df89e8dfa9esd89a8de9e89f8a9eadf9e8",
+              "hash": "string",
+              "meinung": 5,
               "schlagworte": [
                 "string"
               ],
-              "autorpersonen": [
-                "Ach, Manfred (CSU)"
-              ],
               "autoren": [
-                "Staatsregierung, Fraktion die Grünen, Fraktion CDU/CSU"
+                {
+                  "person": "string",
+                  "organisation": "string",
+                  "fachgebiet": "string",
+                  "lobbyregister": "string"
+                }
               ]
             }
-          ],
-          "betroffene_texte": [
-            "§ 1 Abs. 1 Satz 1"
-          ],
-          "link": "string",
-          "parlament": "BT",
-          "schlagworte": [
-            "string"
-          ],
-          "stellungnahmen": [
-            {
-              "dokument": {
-                "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa4",
-                "drucksnr": null,
-                "typ": "entwurf",
-                "titel": "string",
-                "kurztitel": "string",
-                "vorwort": "string",
-                "volltext": "string",
-                "zusammenfassung": "string",
-                "letzte_modifikation": "2025-03-03T14:39:36.022Z",
-                "link": "string",
-                "hash": "string",
-                "schlagworte": [
-                  "string"
-                ],
-                "autorpersonen": [
-                  "Ach, Manfred (CSU)"
-                ],
-                "autoren": [
-                  "Staatsregierung, Fraktion die Grünen, Fraktion CDU/CSU"
-                ]
-              },
-              "meinung": 10,
-              "lobbyregister_link": "string"
-            }
-          ],
-          "typ": "preparl-regent",
-          "trojanergefahr": 10
+          ]
         }
       ]
-    }]
+    }
+  ]
 }

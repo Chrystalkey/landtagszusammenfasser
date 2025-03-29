@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT a.* FROM rel_dok_autor \n        INNER JOIN autor a ON a.id = aut_id\n        WHERE dok_id = $1 \n        ORDER BY organisation ASC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "person",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "organisation",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "fachgebiet",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "lobbyregister",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "ce11415305f01d6b64b9aeb8f393aa85d95474ca86ba48f375ce10fc55d8b02b"
+}

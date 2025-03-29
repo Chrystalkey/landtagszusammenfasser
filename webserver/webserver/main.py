@@ -129,7 +129,7 @@ class WebServer:
         last_update = "2024-01-01"  # TODO: Make this dynamic
 
         config = Configuration(
-            host=f"http://{os.environ.get('LTZFDB_HOST')}:{os.environ.get('LTZFDB_PORT', 80)}"
+            host=f"http://{os.environ.get('LTZF_API_HOST')}:{os.environ.get('LTZF_API_PORT', 80)}"
         )
 
         try:

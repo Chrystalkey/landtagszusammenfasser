@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO rel_sitzung_experten(sid, eid)\n    SELECT $1, eids FROM UNNEST($2::int4[]) as eids",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4Array"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "729af2a498212298ac5bf9ab6db11b5ba419668f50c222d3e3e472bd800d1fd7"
+}

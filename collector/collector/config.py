@@ -25,10 +25,10 @@ class CollectorConfiguration:
         global logger
         unset_keys = []
         # Database
-        self.database_url = os.getenv("LTZF_DATABASE", "http://localhost:80")
-        self.api_key = os.getenv("API_KEY", api_key)
+        self.database_url = os.getenv("LTZF_API_URL", "http://localhost:80")
+        self.api_key = os.getenv("LTZF_API_KEY", api_key)
         if self.api_key is None:
-            unset_keys.append("API_KEY")
+            unset_keys.append("LTZF_API_KEY")
         self.testing_mode = os.getenv("TESTING_MODE", 0) == 1 or testing_mode
         # Caching
         self.redis_host = os.getenv("REDIS_HOST", "localhost")
@@ -44,7 +44,6 @@ class CollectorConfiguration:
             os.path.dirname(__file__), "scrapers"
             )
         # Thresholds and optionals
-        self.trojan_threshold = int(os.getenv("TROJAN_THRESHOLD", "5"))
         self.api_obj_log = os.getenv("API_OBJ_LOG")
         
         #OpenAPI Configuration

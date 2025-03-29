@@ -77,10 +77,7 @@ class ScraperCache:
             serialized = value.to_json()
             logger.debug(f"Storing dokument {key} in redis")
             success = self.redis_client.set(
-                f"dok:{key}", 
-                serialized,
-                timedelta(minutes=self.cache_expiry_minutes)
-            )
+                f"dok:{key}", serialized)
             return success
         except Exception as e:
             logger.error(f"Error storing document {key} in cache: {e}")
@@ -114,8 +111,10 @@ class ScraperCache:
             if not result:
                 logger.debug(f"Document {key} not found in cache")
                 return None
-                
-            doc = Document.from_json(result)
+            try:
+                doc = Document.from_json(result)
+            except Exception as e:
+                logger.error(f"Blub: doc from json failed: {e}")
             
             # Verify the document was successfully processed
             if not getattr(doc, 'extraction_success', True):

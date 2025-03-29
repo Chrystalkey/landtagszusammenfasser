@@ -6,9 +6,6 @@
     "kurztitel": "Gesetzentwurf der Staatsregierung zur Änderung des Bayerischen Verwaltungsverfahrensgesetzes und weiterer Rechtsvorschriften",
     "wahlperiode": 19,
     "verfassungsaendernd": false,
-    "initiatoren": [
-      "Staatsregierung"
-    ],
     "typ": "gg-land-parl",
     "ids": [
       {
@@ -20,14 +17,24 @@
       "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157296",
       "https://www.bayern.landtag.de/www/ElanTextAblage_WP19/Drucksachen/Basisdrucksachen/0000002500/0000002828.pdf"
     ],
+    "initiatoren": [
+      {
+        "organisation": "Staatsregierung Bayern"
+      }
+    ],
     "stationen": [
       {
-        "start_zeitpunkt": "1940-01-01T00:00:00+00:00",
+        "zp_start": "1940-01-01T00:00:00+00:00",
         "gremium": {
           "parlament": "BY",
           "wahlperiode": 19,
           "name": "plenum"
         },
+        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157296",
+        "parlament": "BY",
+        "typ": "parl-initiativ",
+        "trojanergefahr": 1,
+        "schlagworte": [],
         "dokumente": [
           {
             "drucksnr": "19/3616",
@@ -35,170 +42,121 @@
             "titel": "Testtitel",
             "volltext": "test",
             "zusammenfassung": "test",
-            "letzte_modifikation": "1940-01-01T00:00:00+00:00",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
             "link": "https://www.example.com",
             "hash": "testhash",
             "schlagworte": [
               "test"
             ],
-            "autorpersonen": [
-              "autorpersonen"
-            ],
-            "autoren": [
-              "autoren"
-            ]
+            "autoren": []
           }
         ],
-        "betroffene_texte": [
-          "test"
-        ],
-        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157296",
-        "parlament": "BY",
-        "schlagworte": [],
+        "additional_links": [],
         "stellungnahmen": [
           {
-            "dokument": {
-              "drucksnr": "example",
-              "typ": "entwurf",
-              "titel": "Testtitel",
-              "volltext": "test",
-              "zusammenfassung": "test",
-              "letzte_modifikation": "1940-01-01T00:00:00+00:00",
-              "link": "https://www.example.com",
-              "hash": "testhash",
-              "schlagworte": [
-                "test"
-              ],
-              "autorpersonen": [
-                "autorpersonen"
-              ],
-              "autoren": [
-                "autoren"
-              ]
-            },
-            "meinung": 1
+            "drucksnr": "example",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autoren": []
           },
           {
-            "dokument": {
-              "drucksnr": "example",
-              "typ": "entwurf",
-              "titel": "Testtitel",
-              "volltext": "test",
-              "zusammenfassung": "test",
-              "letzte_modifikation": "1940-01-01T00:00:00+00:00",
-              "link": "https://www.example.com",
-              "hash": "testhash",
-              "schlagworte": [
-                "test"
-              ],
-              "autorpersonen": [
-                "autorpersonen"
-              ],
-              "autoren": [
-                "autoren"
-              ]
-            },
-            "meinung": 1
+            "drucksnr": "example",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autoren": []
           },
           {
-            "dokument": {
-              "drucksnr": "example",
-              "typ": "entwurf",
-              "titel": "Testtitel",
-              "volltext": "test",
-              "zusammenfassung": "test",
-              "letzte_modifikation": "1940-01-01T00:00:00+00:00",
-              "link": "https://www.example.com",
-              "hash": "testhash",
-              "schlagworte": [
-                "test"
-              ],
-              "autorpersonen": [
-                "autorpersonen"
-              ],
-              "autoren": [
-                "autoren"
-              ]
-            },
-            "meinung": 1
+            "drucksnr": "example",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autoren": []
           },
           {
-            "dokument": {
-              "drucksnr": "example",
-              "typ": "entwurf",
-              "titel": "Testtitel",
-              "volltext": "test",
-              "zusammenfassung": "test",
-              "letzte_modifikation": "1940-01-01T00:00:00+00:00",
-              "link": "https://www.example.com",
-              "hash": "testhash",
-              "schlagworte": [
-                "test"
-              ],
-              "autorpersonen": [
-                "autorpersonen"
-              ],
-              "autoren": [
-                "autoren"
-              ]
-            },
-            "meinung": 1
+            "drucksnr": "example",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autoren": []
           },
           {
-            "dokument": {
-              "drucksnr": "example",
-              "typ": "entwurf",
-              "titel": "Testtitel",
-              "volltext": "test",
-              "zusammenfassung": "test",
-              "letzte_modifikation": "1940-01-01T00:00:00+00:00",
-              "link": "https://www.example.com",
-              "hash": "testhash",
-              "schlagworte": [
-                "test"
-              ],
-              "autorpersonen": [
-                "autorpersonen"
-              ],
-              "autoren": [
-                "autoren"
-              ]
-            },
-            "meinung": 1
+            "drucksnr": "example",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autoren": []
           },
           {
-            "dokument": {
-              "drucksnr": "example",
-              "typ": "entwurf",
-              "titel": "Testtitel",
-              "volltext": "test",
-              "zusammenfassung": "test",
-              "letzte_modifikation": "1940-01-01T00:00:00+00:00",
-              "link": "https://www.example.com",
-              "hash": "testhash",
-              "schlagworte": [
-                "test"
-              ],
-              "autorpersonen": [
-                "autorpersonen"
-              ],
-              "autoren": [
-                "autoren"
-              ]
-            },
-            "meinung": 1
+            "drucksnr": "example",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autoren": []
           }
-        ],
-        "typ": "parl-initiativ",
-        "trojanergefahr": 1
+        ]
       },
       {
-        "start_zeitpunkt": "1940-01-01T00:00:00+00:00",
+        "zp_start": "1940-01-01T00:00:00+00:00",
         "gremium": {
           "parlament": "BY",
           "wahlperiode": 19,
           "name": "plenum"
         },
+        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157296",
+        "parlament": "BY",
+        "typ": "parl-vollvlsgn",
+        "schlagworte": [],
         "dokumente": [
           {
             "drucksnr": "example",
@@ -206,36 +164,33 @@
             "titel": "Testtitel",
             "volltext": "test",
             "zusammenfassung": "test",
-            "letzte_modifikation": "1940-01-01T00:00:00+00:00",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
             "link": "https://www.example.com",
             "hash": "testhash",
             "schlagworte": [
               "test"
             ],
-            "autorpersonen": [
-              "autorpersonen"
-            ],
-            "autoren": [
-              "autoren"
-            ]
+            "autoren": []
           }
         ],
-        "betroffene_texte": [
-          "test"
+        "additional_links": [
+          "#"
         ],
-        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157296",
-        "parlament": "BY",
-        "schlagworte": [],
-        "stellungnahmen": [],
-        "typ": "parl-vollvlsgn"
+        "stellungnahmen": []
       },
       {
-        "start_zeitpunkt": "1940-01-01T00:00:00+00:00",
+        "zp_start": "1940-01-01T00:00:00+00:00",
         "gremium": {
           "parlament": "BY",
           "wahlperiode": 19,
           "name": "Ausschuss für Verfassung, Recht, Parlamentsfragen und Integration"
         },
+        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157296",
+        "parlament": "BY",
+        "typ": "parl-ausschber",
+        "trojanergefahr": 1,
+        "schlagworte": [],
         "dokumente": [
           {
             "drucksnr": "19/4270",
@@ -243,18 +198,14 @@
             "titel": "Testtitel",
             "volltext": "test",
             "zusammenfassung": "test",
-            "letzte_modifikation": "1940-01-01T00:00:00+00:00",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
             "link": "https://www.example.com",
             "hash": "testhash",
             "schlagworte": [
               "test"
             ],
-            "autorpersonen": [
-              "autorpersonen"
-            ],
-            "autoren": [
-              "autoren"
-            ]
+            "autoren": []
           },
           {
             "drucksnr": "19/4270",
@@ -262,37 +213,31 @@
             "titel": "Testtitel",
             "volltext": "test",
             "zusammenfassung": "test",
-            "letzte_modifikation": "1940-01-01T00:00:00+00:00",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
             "link": "https://www.example.com",
             "hash": "testhash",
             "schlagworte": [
               "test"
             ],
-            "autorpersonen": [
-              "autorpersonen"
-            ],
-            "autoren": [
-              "autoren"
-            ]
+            "autoren": []
           }
         ],
-        "betroffene_texte": [
-          "test"
-        ],
-        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157296",
-        "parlament": "BY",
-        "schlagworte": [],
-        "stellungnahmen": [],
-        "typ": "parl-ausschber",
-        "trojanergefahr": 1
+        "additional_links": [],
+        "stellungnahmen": []
       },
       {
-        "start_zeitpunkt": "1940-01-01T00:00:00+00:00",
+        "zp_start": "1940-01-01T00:00:00+00:00",
         "gremium": {
           "parlament": "BY",
           "wahlperiode": 19,
           "name": "plenum"
         },
+        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157296",
+        "parlament": "BY",
+        "typ": "parl-akzeptanz",
+        "trojanergefahr": 1,
+        "schlagworte": [],
         "dokumente": [
           {
             "drucksnr": "example",
@@ -300,18 +245,14 @@
             "titel": "Testtitel",
             "volltext": "test",
             "zusammenfassung": "test",
-            "letzte_modifikation": "1940-01-01T00:00:00+00:00",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
             "link": "https://www.example.com",
             "hash": "testhash",
             "schlagworte": [
               "test"
             ],
-            "autorpersonen": [
-              "autorpersonen"
-            ],
-            "autoren": [
-              "autoren"
-            ]
+            "autoren": []
           },
           {
             "drucksnr": "19/4353",
@@ -319,37 +260,30 @@
             "titel": "Testtitel",
             "volltext": "test",
             "zusammenfassung": "test",
-            "letzte_modifikation": "1940-01-01T00:00:00+00:00",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
             "link": "https://www.example.com",
             "hash": "testhash",
             "schlagworte": [
               "test"
             ],
-            "autorpersonen": [
-              "autorpersonen"
-            ],
-            "autoren": [
-              "autoren"
-            ]
+            "autoren": []
           }
         ],
-        "betroffene_texte": [
-          "test"
-        ],
-        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157296",
-        "parlament": "BY",
-        "schlagworte": [],
-        "stellungnahmen": [],
-        "typ": "parl-akzeptanz",
-        "trojanergefahr": 1
+        "additional_links": [],
+        "stellungnahmen": []
       },
       {
-        "start_zeitpunkt": "1940-01-01T00:00:00+00:00",
+        "zp_start": "1940-01-01T00:00:00+00:00",
         "gremium": {
           "parlament": "BY",
           "wahlperiode": 19,
           "name": "gesetzesblatt"
         },
+        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157296",
+        "parlament": "BY",
+        "typ": "postparl-gsblt",
+        "schlagworte": [],
         "dokumente": [
           {
             "drucksnr": "example",
@@ -357,26 +291,18 @@
             "titel": "Testtitel",
             "volltext": "test",
             "zusammenfassung": "test",
-            "letzte_modifikation": "1940-01-01T00:00:00+00:00",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
             "link": "https://www.example.com",
             "hash": "testhash",
             "schlagworte": [
               "test"
             ],
-            "autorpersonen": [
-              "autorpersonen"
-            ],
-            "autoren": [
-              "autoren"
-            ]
+            "autoren": []
           }
         ],
-        "betroffene_texte": [],
-        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157296",
-        "parlament": "BY",
-        "schlagworte": [],
-        "stellungnahmen": [],
-        "typ": "postparl-gsblt"
+        "additional_links": [],
+        "stellungnahmen": []
       }
     ]
   }

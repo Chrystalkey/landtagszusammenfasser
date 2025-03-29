@@ -1,0 +1,37 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH pre_table AS (\n        SELECT vorgang.id, MAX(station.zp_start) as lastmod FROM vorgang\n            INNER JOIN vorgangstyp vt ON vt.id = vorgang.typ\n            LEFT JOIN station ON station.vg_id = vorgang.id\n\t\t\tINNER JOIN parlament on parlament.id = station.p_id\n            WHERE TRUE\n            AND vorgang.wahlperiode = COALESCE($1, vorgang.wahlperiode)\n            AND vt.value = COALESCE($2, vt.value)\n\t\t\tAND parlament.value= COALESCE($3, parlament.value)\n\t\t\tAND (CAST($4 as text) IS NULL OR EXISTS(SELECT 1 FROM rel_vorgang_init rvi INNER JOIN autor a ON a.id = rvi.in_id WHERE a.person = $4))\n\t\t\tAND (CAST($5 as text) IS NULL OR EXISTS(SELECT 1 FROM rel_vorgang_init rvi INNER JOIN autor a ON a.id = rvi.in_id WHERE a.organisation = $5))\n\t\t\tAND (CAST($6 as text) IS NULL OR EXISTS(SELECT 1 FROM rel_vorgang_init rvi INNER JOIN autor a ON a.id = rvi.in_id WHERE a.fachgebiet = $6))\n        GROUP BY vorgang.id\n        ORDER BY lastmod\n        )\nSELECT * FROM pre_table WHERE\nlastmod > COALESCE($7, CAST('1940-01-01T20:20:20Z' as TIMESTAMPTZ)) \nAND lastmod < COALESCE($8, NOW())\nORDER BY pre_table.lastmod ASC\nOFFSET COALESCE($9, 0) LIMIT COALESCE($10, 64)\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "lastmod",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Varchar",
+        "Varchar",
+        "Text",
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Timestamptz",
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      null
+    ]
+  },
+  "hash": "a3aadc194947104bd0e1c3dec941fb54004ce86e3b13ee047eff76d45a6f62d4"
+}

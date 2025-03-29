@@ -50,21 +50,36 @@
       },
       {
         "ordinal": 9,
-        "name": "last_mod",
+        "name": "zp_lastmod",
         "type_info": "Timestamptz"
       },
       {
         "ordinal": 10,
+        "name": "zp_referenz",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "zp_created",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 12,
         "name": "link",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 11,
+        "ordinal": 13,
         "name": "hash",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 12,
+        "ordinal": 14,
+        "name": "meinung",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 15,
         "name": "typ_value",
         "type_info": "Varchar"
       }
@@ -86,7 +101,10 @@
       true,
       false,
       false,
+      true,
       false,
+      false,
+      true,
       false
     ]
   },

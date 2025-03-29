@@ -1,0 +1,54 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        WITH similarities AS (\n            SELECT id, \n            SIMILARITY(person, $1) as p, \n            SIMILARITY(organisation, $2) as o, \n            SIMILARITY(fachgebiet, $3) as f\n            FROM autor a\n        )\n        SELECT a.*, \n        CASE WHEN s.p IS NOT NULL THEN s.p\n        ELSE s.o END AS sim\n        \n        FROM autor a \n        INNER JOIN similarities s ON s.id = a.id\n        \n        WHERE \n        \n        (($1 IS NULL AND a.person IS NULL) OR s.p > 0.66) AND \n        s.o > 0.66 AND\n        (($3 IS NULL AND a.fachgebiet IS NULL) OR s.f > 0.66)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "person",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "organisation",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "fachgebiet",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "lobbyregister",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "sim",
+        "type_info": "Float4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      true,
+      true,
+      null
+    ]
+  },
+  "hash": "c40663eddbacbb746c110635d8d0300054271b8317d9d4aa900771d88b694ee5"
+}

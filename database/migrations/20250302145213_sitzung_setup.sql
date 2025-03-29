@@ -1,0 +1,35 @@
+-- Add migration script here
+
+CREATE TABLE sitzung(
+    id SERIAL PRIMARY KEY,
+    api_id UUID NOT NULL UNIQUE,
+    titel VARCHAR,
+    termin TIMESTAMP WITH TIME ZONE NOT NULL,
+    gr_id INTEGER NOT NULL REFERENCES gremium(id) ON DELETE CASCADE,
+    nummer INTEGER NOT NULL,
+    public BOOLEAN NOT NULL,
+    link VARCHAR,
+    last_update TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+CREATE TABLE rel_sitzung_doks(
+    sid INTEGER NOT NULL REFERENCES sitzung(id) ON DELETE CASCADE,
+    did INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE,
+    PRIMARY KEY (sid, did)
+);
+CREATE TABLE rel_sitzung_experten(
+    sid INTEGER NOT NULL REFERENCES sitzung(id) ON DELETE CASCADE,
+    eid INTEGER NOT NULL REFERENCES autor(id) ON DELETE CASCADE,
+    PRIMARY KEY (sid, eid)
+);
+
+CREATE TABLE top (
+    id SERIAL PRIMARY KEY,
+    sid INTEGER NOT NULL REFERENCES sitzung ON DELETE CASCADE,
+    nummer INTEGER NOT NULL,
+    titel VARCHAR NOT NULL
+);
+CREATE TABLE tops_doks(
+    top_id INTEGER NOT NULL REFERENCES top(id) ON DELETE CASCADE,
+    dok_id INTEGER NOT NULL REFERENCES dokument(id) ON DELETE CASCADE,
+    PRIMARY KEY (top_id, dok_id)
+);

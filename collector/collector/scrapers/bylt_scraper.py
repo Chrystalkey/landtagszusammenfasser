@@ -13,6 +13,7 @@ from bs4 import BeautifulSoup
 import openapi_client.models as models
 from collector.interface import Scraper
 from collector.document import Document
+import toml
 
 logger = logging.getLogger(__name__)
 NULL_UUID = uuid.UUID("00000000-0000-0000-0000-000000000000")
@@ -93,16 +94,40 @@ class BYLTScraper(Scraper):
             # Initiatoren
             init_ptr = soup.find(string="Initiatoren")
             initiat_lis = init_ptr.find_next("ul").find_all("li")
-            init_dings = []
-            init_persn = []
+            initiatoren = []
             for ini in initiat_lis:
                 if "(" not in ini.text:
-                    init_dings.append(ini.text)
+                    initiatoren.append(
+                        models.Autor.from_dict(
+                            {
+                                "organisation": sanitize_orga(ini.text.strip())
+                            }
+                        )
+                    )
+                elif "(MSc)" not in ini.text and "(BSc)" not in ini.text:
+                    org = ini.text.split("(")[1][:-1].strip()
+                    psn = ini.text.split("(")[0].strip()
+                    initiatoren.append(
+                        models.Autor.from_dict(
+                            {   
+                                "person": psn,
+                                "organisation": sanitize_orga(org)
+                            }
+                        )
+                    )
                 else:
-                    init_persn.append(ini.text)
-            vg.initiatoren = init_dings
-            if len(init_persn) > 0:
-                vg.initiator_personen = init_persn
+                    textsplit = ini.text.split("(")
+                    org = textsplit[2][:-1].strip()
+                    psn = (textsplit[0]+"("+textsplit[1]).strip()
+                    initiatoren.append(
+                        models.Autor.from_dict(
+                            {   
+                                "person": psn,
+                                "organisation": sanitize_orga(org)
+                            }
+                        )
+                    )
+            vg.initiatoren = initiatoren
             assert (
                 len(vg.initiatoren) > 0
             ), f"Error: Could not find Initiatoren for url {listing_item}"
@@ -156,7 +181,7 @@ class BYLTScraper(Scraper):
                 ### Initialize Station scaffold
                 stat = models.Station.from_dict(
                     {
-                        "start_zeitpunkt": timestamp,
+                        "zp_start": timestamp,
                         "dokumente": [],
                         "link": listing_item,
                         "parlament": "BY",
@@ -164,7 +189,6 @@ class BYLTScraper(Scraper):
                         "stellungnahmen": [],
                         "typ": "postparl-kraft",
                         "trojaner": False,
-                        "betroffene_texte": [],
                         "additional_links": [],
                     }
                 )
@@ -187,7 +211,6 @@ class BYLTScraper(Scraper):
                     dok.drucksnr = str(inds)
                     stat.dokumente = [models.DokRef(dok.package())]
                     stat.trojanergefahr = max(dok.trojanergefahr, 1)
-                    stat.betroffene_texte = list(set(dok.texte))
                 elif cellclass == "unknown":
                     logger.warning(f"Unknown Cell class for VG {listing_item}\nContents: {cells[1].text}")
                     continue
@@ -202,18 +225,21 @@ class BYLTScraper(Scraper):
                     ), "Error: Stellungnahme ohne Vorhergehenden Gesetzestext"
                     stln_urls = extract_schrstellung(cells[1])
                     dok = await self.create_document(stln_urls["stellungnahme"], models.Doktyp.STELLUNGNAHME)
-                    if stln_urls["autor"]:
-                        if dok.authoren is None:
-                            dok.authoren = stln_urls["autor"]
+                    if stln_urls["autor"] is not None:
+                        if dok.autoren is None:
+                            dok.autoren = [models.Autor.from_dict({
+                                "organisation": sanitize_orga(stln_urls["autor"])
+                            })]
                         else:
-                            dok.authoren.append(stln_urls["autor"])
-                    stln = models.Stellungnahme.from_dict(
-                        {
-                            "meinung": max(dok.meinung or 1, 1),
-                            "dokument": dok.package(),
-                            "lobbyregister_url": stln_urls["lobbyregister"],
-                        }
-                    )
+                            dok.autoren.append(
+                                models.Autor.from_dict({
+                                "organisation": sanitize_orga(stln_urls["autor"])
+                            })
+                            )
+                        if stln_urls["lobbyregister"] is not None:
+                            dok.autoren[-1].lobbyregister = stln_urls["lobbyregister"]
+                            
+                    stln = dok.package()
                     assert (
                         len(vg.stationen) > 0
                     ), "Error: Stellungnahme ohne Vorhergehenden Gesetzestext"
@@ -225,8 +251,7 @@ class BYLTScraper(Scraper):
                 elif cellclass.startswith("plenum-proto"):
                     pproto = extract_plenproto(cells[1])
                     gremium = models.Gremium.from_dict({"name": "plenum", "parlament": "BY","wahlperiode": 19})
-                    dok = await self.create_document(pproto["pprotoaz"], models.Doktyp.PLENAR_MINUS_PROTOKOLL)
-                    betroffene_texte = list(set(dok.texte))
+                    dok = await self.create_document(pproto["pprotoaz"], models.Doktyp.REDEPROTOKOLL)
                     typ = None
                     video_link = pproto.get("video")
                     if cellclass == "plenum-proto-uebrw":
@@ -241,15 +266,15 @@ class BYLTScraper(Scraper):
                         vg.stationen[-1].typ = typ
                         vg.stationen[-1].dokumente.append(models.DokRef(dok.package()))
                         vg.stationen[-1].gremium = gremium
-                        vg.stationen[-1].betroffene_texte = betroffene_texte
-                        vg.stationen[-1].additional_links.append(video_link)
+                        if video_link:
+                            vg.stationen[-1].additional_links.append(video_link)
                         continue
                     else:
                         stat.typ = typ
                         stat.dokumente = [models.DokRef(dok.package())]
                         stat.gremium = gremium
-                        stat.betroffene_texte = betroffene_texte
-                        stat.additional_links.append(video_link)
+                        if video_link:
+                            stat.additional_links.append(video_link)
 
                 ## Rückzugsmitteilung
                 ## Ein Link
@@ -257,19 +282,16 @@ class BYLTScraper(Scraper):
                     dok = await self.create_document(extract_singlelink(cells[1]), models.Doktyp.MITTEILUNG)
                     dok.drucksnr = extract_drucksnr(cells[1])
                     typ = models.Stationstyp.PARL_MINUS_ZURUECKGZ
-                    betroffene_texte = list(set(dok.texte))
                     gremium = models.Gremium.from_dict({"name": "plenum", "parlament": "BY","wahlperiode": 19})
                     if len(vg.stationen) > 0 and vg.stationen[-1].typ == typ:
                         vg.stationen[-1].typ = typ
                         vg.stationen[-1].dokumente.append(models.DokRef(dok.package()))
                         vg.stationen[-1].gremium = gremium
-                        vg.stationen[-1].betroffene_texte = betroffene_texte
                         continue
                     else:
                         stat.typ = typ
                         stat.dokumente = [models.DokRef(dok.package())]
                         stat.gremium = gremium
-                        stat.betroffene_texte = betroffene_texte
 
                 ## Plenumsentscheidung
                 ## hat einen Dokumentenlink
@@ -279,7 +301,6 @@ class BYLTScraper(Scraper):
                     typ = None
                     trojanergefahr = max(dok.trojanergefahr, 1)
                     gremium = models.Gremium.from_dict({"name": "plenum", "parlament": "BY","wahlperiode": 19})
-                    betroffene_texte = list(set(dok.texte))
                     if cellclass.endswith("zustm"):
                         typ = "parl-akzeptanz"
                     elif cellclass.endswith("ablng"):
@@ -288,14 +309,12 @@ class BYLTScraper(Scraper):
                         vg.stationen[-1].typ = typ
                         vg.stationen[-1].dokumente.append(models.DokRef(dok.package()))
                         vg.stationen[-1].gremium = gremium
-                        vg.stationen[-1].betroffene_texte = betroffene_texte
                         vg.stationen[-1].trojanergefahr = trojanergefahr
                         continue
                     else:
                         stat.typ = typ      
                         stat.dokumente = [models.DokRef(dok.package())]
                         stat.gremium = gremium
-                        stat.betroffene_texte = betroffene_texte
                         stat.trojanergefahr = trojanergefahr
                 ## Ausschussberichterstattung
                 ## hat 1 Link: Beschlussempfehlung
@@ -319,13 +338,6 @@ class BYLTScraper(Scraper):
                         # Update trojaner flag if necessary
                         existing_station.trojanergefahr = max(dok.trojanergefahr, 1)
                         
-                        # Merge betroffene_texte lists
-                        if dok.texte:
-                            if not existing_station.betroffene_texte:
-                                existing_station.betroffene_texte = []
-                            existing_station.betroffene_texte.extend(dok.texte)
-                            existing_station.betroffene_texte = list(set(existing_station.betroffene_texte))
-                        
                         continue
                     else:
                         # Create new committee station
@@ -336,7 +348,6 @@ class BYLTScraper(Scraper):
                         })
                         stat.dokumente = [models.DokRef(dok.package())]
                         stat.trojanergefahr = max(dok.trojanergefahr, 1)
-                        stat.betroffene_texte = list(set(dok.texte))
                 ## Gesetzblatt. Zwei Links, einer davon 
                 elif cellclass == "gsblatt":
                     stat.gremium = models.Gremium.from_dict({
@@ -364,6 +375,11 @@ class BYLTScraper(Scraper):
             logger.debug("Cached version not found, fetching from source")
             document = Document(self.session, url, type_hint, self.config)
             await document.run_extraction()
+            if document.autoren:
+                document.autoren = [
+                    models.Autor.from_dict({"organisation": sanitize_orga(aut.organisation), 
+                                            "person": aut.person, "fachgebiet": aut.fachgebiet, 
+                                            "lobbyregister": aut.lobbyregister}) for aut in document.autoren]
             self.config.cache.store_dokument(url, document)
             return document
         else:
@@ -475,3 +491,47 @@ def extract_plenproto(cellsoup: BeautifulSoup) -> str:
 
 def extract_gbl_ausz(cellsoup: BeautifulSoup) -> str:
     return cellsoup.findAll("a")[1]["href"]
+
+def pretransform_standard():
+    input_dictionary = toml.load(os.path.join(os.path.dirname(__file__), "bylt_standardization.toml"))
+    matches = {}
+    for matchentry in input_dictionary["org"]["match"]:
+        for match in matchentry["match"]:
+            matches[match] = matchentry["replace_with"]
+    output = {
+        "org": {
+            "regex": input_dictionary["org"]["regex"],
+            "match": matches
+        },
+    }
+    return output
+
+standard_dictionary = pretransform_standard()
+
+def sanitize_orga(word: str) -> str:
+    global standard_dictionary
+
+    torgs = standard_dictionary["org"]
+    regex = torgs["regex"]
+    mrep  = torgs["match"]
+
+    replaced = word.strip()
+    modified = False
+    for rx in regex:
+        if rx.get("partial"):
+            if re.search(rx["partial"], replaced):
+                modified = True
+                replaced = re.sub(rx["partial"], rx["replace_with"], replaced)
+        elif rx.get("full"):
+            if re.fullmatch(rx["full"], replaced):
+                modified = True
+                replaced = rx["replace_with"]
+        else:
+            raise Exception("Expected one of `partial`,`full` in regex entry of standardization dictionary")
+    if modified:
+        word = replaced
+    replmatch_prep = word.lower().strip()
+    if replmatch_prep in mrep.keys():
+        return mrep[replmatch_prep]
+    else:
+        return word
