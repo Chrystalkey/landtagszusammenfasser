@@ -293,7 +293,7 @@ impl openapi::apis::default::Default for LTZFServer {
     ) -> Result<VorgangPutResponse, ()> {
         let rval = objects::vorgang_put(self, &body).await;
         match rval {
-            Ok(_) => Ok(VorgangPutResponse::Status201_SuccessfullyIntegratedTheObject),
+            Ok(_) => Ok(VorgangPutResponse::Status201_Success),
             Err(e) => {
                 tracing::warn!("Error Occurred and Is Returned: {:?}", e.to_string());
                 match e {
