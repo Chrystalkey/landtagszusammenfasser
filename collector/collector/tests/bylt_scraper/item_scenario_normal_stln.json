@@ -1,122 +1,308 @@
 {
   "url": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157296",
   "result": {
-    "api_id": "123e4567-e89b-12d3-a456-426614174000",
-    "titel": "string",
-    "kurztitel": "string",
-    "wahlperiode": 0,
-    "verfassungsaendernd": true,
-    "typ": "gg-einspruch",
+    "api_id": "00000000-0000-0000-0000-000000000000",
+    "titel": "Gesetzentwurf der Staatsregierung zur Änderung des Bayerischen Verwaltungsverfahrensgesetzes und weiterer Rechtsvorschriften",
+    "kurztitel": "Gesetzentwurf der Staatsregierung zur Änderung des Bayerischen Verwaltungsverfahrensgesetzes und weiterer Rechtsvorschriften",
+    "wahlperiode": 19,
+    "verfassungsaendernd": false,
+    "typ": "gg-land-parl",
     "ids": [
       {
-        "id": "123e4567-e",
+        "id": "19/3616",
         "typ": "initdrucks"
       }
     ],
     "links": [
-      "string"
+      "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157296",
+      "https://www.bayern.landtag.de/www/ElanTextAblage_WP19/Drucksachen/Basisdrucksachen/0000002500/0000002828.pdf"
     ],
     "initiatoren": [
       {
-        "person": "string",
-        "organisation": "string",
-        "fachgebiet": "string",
-        "lobbyregister": "string"
+        "organisation": "Staatsregierung Bayern"
       }
     ],
     "stationen": [
       {
-        "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-        "titel": "string",
-        "zp_start": "2024-01-01T00:00:00+00:00",
-        "zp_modifiziert": "2024-01-01T00:00:00+00:00",
+        "zp_start": "1940-01-01T00:00:00+00:00",
         "gremium": {
-          "parlament": "BT",
-          "wahlperiode": 0,
-          "link": "string",
-          "name": "Ausschuss für Inneres und Gemüseauflauf"
+          "parlament": "BY",
+          "wahlperiode": 19,
+          "name": "plenum"
         },
-        "gremium_federf": true,
-        "link": "string",
-        "parlament": "BT",
-        "typ": "preparl-regent",
-        "trojanergefahr": 10,
-        "schlagworte": [
-          "string", "string"
-        ],
+        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157296",
+        "parlament": "BY",
+        "typ": "parl-initiativ",
+        "trojanergefahr": 1,
+        "schlagworte": [],
         "dokumente": [
           {
-            "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "drucksnr": "string",
-            "typ": "preparl-entwurf",
-            "titel": "string",
-            "kurztitel": "string",
-            "vorwort": "string",
-            "volltext": "string",
-            "zusammenfassung": "string",
-            "zp_modifiziert": "2024-03-09T00:00:00+00:00",
-            "zp_referenz": "2024-03-07T00:00:00+00:00",
-            "zp_erstellt": "2024-03-08T00:00:00+00:00",
-            "link": "string",
-            "hash": "string",
-            "meinung": 5,
+            "drucksnr": "19/3616",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
             "schlagworte": [
-              "string","string"
+              "test"
             ],
-            "autoren": [
-              {
-                "person": "string",
-                "organisation": "string",
-                "fachgebiet": "string",
-                "lobbyregister": "string"
-              },
-              {
-                "person": "string",
-                "organisation": "string",
-                "fachgebiet": "string",
-                "lobbyregister": "string"
-              }
-            ]
+            "autoren": []
+          }
+        ],
+        "additional_links": [],
+        "stellungnahmen": [
+          {
+            "drucksnr": "example",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autoren": []
+          },
+          {
+            "drucksnr": "example",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autoren": []
+          },
+          {
+            "drucksnr": "example",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autoren": []
+          },
+          {
+            "drucksnr": "example",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autoren": []
+          },
+          {
+            "drucksnr": "example",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autoren": []
+          },
+          {
+            "drucksnr": "example",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autoren": []
+          }
+        ]
+      },
+      {
+        "zp_start": "1940-01-01T00:00:00+00:00",
+        "gremium": {
+          "parlament": "BY",
+          "wahlperiode": 19,
+          "name": "plenum"
+        },
+        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157296",
+        "parlament": "BY",
+        "typ": "parl-vollvlsgn",
+        "schlagworte": [],
+        "dokumente": [
+          {
+            "drucksnr": "example",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autoren": []
           }
         ],
         "additional_links": [
-          "Link zu einem Videomitschnitt der Plenarsitzung"
+          "#"
         ],
-        "stellungnahmen": [
+        "stellungnahmen": []
+      },
+      {
+        "zp_start": "1940-01-01T00:00:00+00:00",
+        "gremium": {
+          "parlament": "BY",
+          "wahlperiode": 19,
+          "name": "Ausschuss für Verfassung, Recht, Parlamentsfragen und Integration"
+        },
+        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157296",
+        "parlament": "BY",
+        "typ": "parl-ausschber",
+        "trojanergefahr": 1,
+        "schlagworte": [],
+        "dokumente": [
           {
-            "api_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "drucksnr": "string",
-            "typ": "preparl-entwurf",
-            "titel": "string",
-            "kurztitel": "string",
-            "vorwort": "string",
-            "volltext": "string",
-            "zusammenfassung": "string",
-            "zp_modifiziert": "2024-03-09T00:00:00+00:00",
-            "zp_referenz": "2024-03-07T00:00:00+00:00",
-            "zp_erstellt": "2024-03-08T00:00:00+00:00",
-            "link": "string",
-            "hash": "string",
-            "meinung": 5,
+            "drucksnr": "19/4270",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
             "schlagworte": [
-              "string", "string"
+              "test"
             ],
-            "autoren": [
-              {
-                "person": "string",
-                "organisation": "string",
-                "fachgebiet": "string",
-                "lobbyregister": "string"
-              },
-              {
-                "person": "string",
-                "organisation": "string",
-                "fachgebiet": "string",
-                "lobbyregister": "string"
-              }
-            ]
+            "autoren": []
+          },
+          {
+            "drucksnr": "19/4270",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autoren": []
           }
-        ]
+        ],
+        "additional_links": [],
+        "stellungnahmen": []
+      },
+      {
+        "zp_start": "1940-01-01T00:00:00+00:00",
+        "gremium": {
+          "parlament": "BY",
+          "wahlperiode": 19,
+          "name": "plenum"
+        },
+        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157296",
+        "parlament": "BY",
+        "typ": "parl-akzeptanz",
+        "trojanergefahr": 1,
+        "schlagworte": [],
+        "dokumente": [
+          {
+            "drucksnr": "example",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autoren": []
+          },
+          {
+            "drucksnr": "19/4353",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autoren": []
+          }
+        ],
+        "additional_links": [],
+        "stellungnahmen": []
+      },
+      {
+        "zp_start": "1940-01-01T00:00:00+00:00",
+        "gremium": {
+          "parlament": "BY",
+          "wahlperiode": 19,
+          "name": "gesetzesblatt"
+        },
+        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157296",
+        "parlament": "BY",
+        "typ": "postparl-gsblt",
+        "schlagworte": [],
+        "dokumente": [
+          {
+            "drucksnr": "example",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autoren": []
+          }
+        ],
+        "additional_links": [],
+        "stellungnahmen": []
       }
     ]
   }
