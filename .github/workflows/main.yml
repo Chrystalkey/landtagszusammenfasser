@@ -30,9 +30,8 @@ jobs:
           toolchain: stable
           profile: minimal
           override: true
-          
-      - name: Install PostgreSQL client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Generate OAPI Code
+        run: sh oapi_gen.sh
 
       - name: Run cargo tests
         working-directory: database/
@@ -50,7 +49,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.13'
           
       - name: Install Poetry
         uses: snok/install-poetry@v1
@@ -58,6 +57,9 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
           
+      - name: Generate OAPI Code
+        run: sh oapi_gen.sh
+
       - name: Run pytest
         working-directory: collector/
         run: poetry install && poetry run pytest
