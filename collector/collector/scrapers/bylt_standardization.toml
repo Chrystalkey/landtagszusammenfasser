@@ -24,8 +24,13 @@ match = [
 replace_with = "Bündnis 90/Die Grünen (Grüne)"
 match = [
     "bündnis90/ die grünen",
+    "bündnis90 /die grünen",
     "bündnis90/die grünen",
+    "bündnis90 / die grünen",
     "bündnis 90/ die grünen",
+    "bündnis 90/die grünen",
+    "bündnis 90 /die grünen",
+    "bündnis 90 / die grünen",
     "fraktion bündnis 90/die grünen",
     "fraktion bundnis 90/die grünen im bayerischen landtag"
 ]

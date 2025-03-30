@@ -104,28 +104,15 @@ class BYLTScraper(Scraper):
                             }
                         )
                     )
-                elif "(MSc)" not in ini.text and "(BSc)" not in ini.text:
-                    org = ini.text.split("(")[1][:-1].strip()
-                    psn = ini.text.split("(")[0].strip()
-                    initiatoren.append(
-                        models.Autor.from_dict(
-                            {   
-                                "person": psn,
-                                "organisation": sanitize_orga(org)
-                            }
-                        )
-                    )
                 else:
-                    textsplit = ini.text.split("(")
-                    org = textsplit[2][:-1].strip()
-                    psn = (textsplit[0]+"("+textsplit[1]).strip()
+                    split = ini.text.split("(")
+                    org = split[-1][:-1].strip()
+                    psn = "(".join(split[:-1]).strip()
                     initiatoren.append(
-                        models.Autor.from_dict(
-                            {   
-                                "person": psn,
-                                "organisation": sanitize_orga(org)
-                            }
-                        )
+                        models.Autor.from_dict({
+                            "person": psn,
+                            "organisation": sanitize_orga(org)
+                        })
                     )
             vg.initiatoren = initiatoren
             assert (

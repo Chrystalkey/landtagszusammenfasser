@@ -19,8 +19,6 @@ pypdf = "^5.1.0"
 openapi-client = {path = "oapicode"}
 jsondiff = "^2.2.1"
 kreuzberg = "^3.0.1"
-
-[tool.poetry.group.dev.dependencies]
 toml = "^0.10.2"
 
 [build-system]

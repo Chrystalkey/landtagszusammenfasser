@@ -9,8 +9,8 @@
     "typ": "gg-land-parl",
     "ids": [
       {
-        "id": "19/449",
-        "typ": "initdrucks"
+      "id": "19/449",
+      "typ": "initdrucks"
       }
     ],
     "links": [
@@ -19,212 +19,212 @@
     ],
     "initiatoren": [
       {
-        "person": "Katrin Ebner-Steiner",
-        "organisation": "Alternative für Deutschland (AfD)"
+      "person": "Katrin Ebner-Steiner",
+      "organisation": "Alternative für Deutschland (AfD)"
       },
       {
-        "person": "Christoph Maier",
-        "organisation": "Alternative für Deutschland (AfD)"
+      "person": "Christoph Maier",
+      "organisation": "Alternative für Deutschland (AfD)"
       },
       {
-        "person": "(MSc) Martin Böhm",
-        "organisation": "Alternative für Deutschland (AfD)"
+      "person": "(MSc) Martin Böhm",
+      "organisation": "Alternative für Deutschland (AfD)"
       },
       {
-        "person": "Richard Graupner",
-        "organisation": "Alternative für Deutschland (AfD)"
+      "person": "Richard Graupner",
+      "organisation": "Alternative für Deutschland (AfD)"
       },
       {
-        "person": "Prof. Dr. Ingo Hahn",
-        "organisation": "Alternative für Deutschland (AfD)"
+      "person": "Prof. Dr. Ingo Hahn",
+      "organisation": "Alternative für Deutschland (AfD)"
       },
       {
-        "person": "Markus Walbrunn",
-        "organisation": "Alternative für Deutschland (AfD)"
+      "person": "Markus Walbrunn",
+      "organisation": "Alternative für Deutschland (AfD)"
       },
       {
-        "organisation": "Alternative für Deutschland (AfD)"
+      "organisation": "Alternative für Deutschland (AfD)"
       }
     ],
     "stationen": [
       {
-        "zp_start": "1940-01-01T00:00:00+00:00",
-        "gremium": {
-          "parlament": "BY",
-          "wahlperiode": 19,
-          "name": "plenum"
-        },
-        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=153885",
+      "zp_start": "1940-01-01T00:00:00+00:00",
+      "gremium": {
         "parlament": "BY",
-        "typ": "parl-initiativ",
-        "trojanergefahr": 1,
-        "schlagworte": [],
-        "dokumente": [
-          {
-            "drucksnr": "19/449",
-            "typ": "entwurf",
-            "titel": "Testtitel",
-            "volltext": "test",
-            "zusammenfassung": "test",
-            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
-            "zp_referenz": "1940-01-01T00:00:00+00:00",
-            "link": "https://www.example.com",
-            "hash": "testhash",
-            "schlagworte": [
-              "test"
-            ],
-            "autoren": []
-          }
+        "wahlperiode": 19,
+        "name": "plenum"
+      },
+      "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=153885",
+      "parlament": "BY",
+      "typ": "parl-initiativ",
+      "trojanergefahr": 1,
+      "schlagworte": [],
+      "dokumente": [
+        {
+        "drucksnr": "19/449",
+        "typ": "entwurf",
+        "titel": "Testtitel",
+        "volltext": "test",
+        "zusammenfassung": "test",
+        "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+        "zp_referenz": "1940-01-01T00:00:00+00:00",
+        "link": "https://www.example.com",
+        "hash": "testhash",
+        "schlagworte": [
+          "test"
         ],
-        "additional_links": [],
-        "stellungnahmen": []
+        "autoren": []
+        }
+      ],
+      "additional_links": [],
+      "stellungnahmen": []
       },
       {
-        "zp_start": "1940-01-01T00:00:00+00:00",
-        "gremium": {
-          "parlament": "BY",
-          "wahlperiode": 19,
-          "name": "plenum"
-        },
-        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=153885",
+      "zp_start": "1940-01-01T00:00:00+00:00",
+      "gremium": {
         "parlament": "BY",
-        "typ": "parl-vollvlsgn",
-        "schlagworte": [],
-        "dokumente": [
-          {
-            "drucksnr": "example",
-            "typ": "entwurf",
-            "titel": "Testtitel",
-            "volltext": "test",
-            "zusammenfassung": "test",
-            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
-            "zp_referenz": "1940-01-01T00:00:00+00:00",
-            "link": "https://www.example.com",
-            "hash": "testhash",
-            "schlagworte": [
-              "test"
-            ],
-            "autoren": []
-          }
+        "wahlperiode": 19,
+        "name": "plenum"
+      },
+      "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=153885",
+      "parlament": "BY",
+      "typ": "parl-vollvlsgn",
+      "schlagworte": [],
+      "dokumente": [
+        {
+        "drucksnr": "example",
+        "typ": "entwurf",
+        "titel": "Testtitel",
+        "volltext": "test",
+        "zusammenfassung": "test",
+        "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+        "zp_referenz": "1940-01-01T00:00:00+00:00",
+        "link": "https://www.example.com",
+        "hash": "testhash",
+        "schlagworte": [
+          "test"
         ],
-        "additional_links": [
-          "#"
-        ],
-        "stellungnahmen": []
+        "autoren": []
+        }
+      ],
+      "additional_links": [
+        "#"
+      ],
+      "stellungnahmen": []
       },
       {
-        "zp_start": "1940-01-01T00:00:00+00:00",
-        "gremium": {
-          "parlament": "BY",
-          "wahlperiode": 19,
-          "name": "Ausschuss für Wohnen, Bau und Verkehr"
-        },
-        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=153885",
+      "zp_start": "1940-01-01T00:00:00+00:00",
+      "gremium": {
         "parlament": "BY",
-        "typ": "parl-ausschber",
-        "trojanergefahr": 1,
-        "schlagworte": [],
-        "dokumente": [
-          {
-            "drucksnr": "19/1801",
-            "typ": "entwurf",
-            "titel": "Testtitel",
-            "volltext": "test",
-            "zusammenfassung": "test",
-            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
-            "zp_referenz": "1940-01-01T00:00:00+00:00",
-            "link": "https://www.example.com",
-            "hash": "testhash",
-            "schlagworte": [
-              "test"
-            ],
-            "autoren": []
-          }
+        "wahlperiode": 19,
+        "name": "Ausschuss für Wohnen, Bau und Verkehr"
+      },
+      "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=153885",
+      "parlament": "BY",
+      "typ": "parl-ausschber",
+      "trojanergefahr": 1,
+      "schlagworte": [],
+      "dokumente": [
+        {
+        "drucksnr": "19/1801",
+        "typ": "entwurf",
+        "titel": "Testtitel",
+        "volltext": "test",
+        "zusammenfassung": "test",
+        "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+        "zp_referenz": "1940-01-01T00:00:00+00:00",
+        "link": "https://www.example.com",
+        "hash": "testhash",
+        "schlagworte": [
+          "test"
         ],
-        "additional_links": [],
-        "stellungnahmen": []
+        "autoren": []
+        }
+      ],
+      "additional_links": [],
+      "stellungnahmen": []
       },
       {
-        "zp_start": "1940-01-01T00:00:00+00:00",
-        "gremium": {
-          "parlament": "BY",
-          "wahlperiode": 19,
-          "name": "Ausschuss für Verfassung, Recht, Parlamentsfragen und Integration"
-        },
-        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=153885",
+      "zp_start": "1940-01-01T00:00:00+00:00",
+      "gremium": {
         "parlament": "BY",
-        "typ": "parl-ausschber",
-        "trojanergefahr": 1,
-        "schlagworte": [],
-        "dokumente": [
-          {
-            "drucksnr": "19/1801",
-            "typ": "entwurf",
-            "titel": "Testtitel",
-            "volltext": "test",
-            "zusammenfassung": "test",
-            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
-            "zp_referenz": "1940-01-01T00:00:00+00:00",
-            "link": "https://www.example.com",
-            "hash": "testhash",
-            "schlagworte": [
-              "test"
-            ],
-            "autoren": []
-          }
+        "wahlperiode": 19,
+        "name": "Ausschuss für Verfassung, Recht, Parlamentsfragen und Integration"
+      },
+      "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=153885",
+      "parlament": "BY",
+      "typ": "parl-ausschber",
+      "trojanergefahr": 1,
+      "schlagworte": [],
+      "dokumente": [
+        {
+        "drucksnr": "19/1801",
+        "typ": "entwurf",
+        "titel": "Testtitel",
+        "volltext": "test",
+        "zusammenfassung": "test",
+        "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+        "zp_referenz": "1940-01-01T00:00:00+00:00",
+        "link": "https://www.example.com",
+        "hash": "testhash",
+        "schlagworte": [
+          "test"
         ],
-        "additional_links": [],
-        "stellungnahmen": []
+        "autoren": []
+        }
+      ],
+      "additional_links": [],
+      "stellungnahmen": []
       },
       {
-        "zp_start": "1940-01-01T00:00:00+00:00",
-        "gremium": {
-          "parlament": "BY",
-          "wahlperiode": 19,
-          "name": "plenum"
-        },
-        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=153885",
+      "zp_start": "1940-01-01T00:00:00+00:00",
+      "gremium": {
         "parlament": "BY",
-        "typ": "parl-ablehnung",
-        "trojanergefahr": 1,
-        "schlagworte": [],
-        "dokumente": [
-          {
-            "drucksnr": "example",
-            "typ": "entwurf",
-            "titel": "Testtitel",
-            "volltext": "test",
-            "zusammenfassung": "test",
-            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
-            "zp_referenz": "1940-01-01T00:00:00+00:00",
-            "link": "https://www.example.com",
-            "hash": "testhash",
-            "schlagworte": [
-              "test"
-            ],
-            "autoren": []
-          },
-          {
-            "drucksnr": "19/1964",
-            "typ": "entwurf",
-            "titel": "Testtitel",
-            "volltext": "test",
-            "zusammenfassung": "test",
-            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
-            "zp_referenz": "1940-01-01T00:00:00+00:00",
-            "link": "https://www.example.com",
-            "hash": "testhash",
-            "schlagworte": [
-              "test"
-            ],
-            "autoren": []
-          }
+        "wahlperiode": 19,
+        "name": "plenum"
+      },
+      "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=153885",
+      "parlament": "BY",
+      "typ": "parl-ablehnung",
+      "trojanergefahr": 1,
+      "schlagworte": [],
+      "dokumente": [
+        {
+        "drucksnr": "example",
+        "typ": "entwurf",
+        "titel": "Testtitel",
+        "volltext": "test",
+        "zusammenfassung": "test",
+        "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+        "zp_referenz": "1940-01-01T00:00:00+00:00",
+        "link": "https://www.example.com",
+        "hash": "testhash",
+        "schlagworte": [
+          "test"
         ],
-        "additional_links": [
-          "#"
+        "autoren": []
+        },
+        {
+        "drucksnr": "19/1964",
+        "typ": "entwurf",
+        "titel": "Testtitel",
+        "volltext": "test",
+        "zusammenfassung": "test",
+        "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+        "zp_referenz": "1940-01-01T00:00:00+00:00",
+        "link": "https://www.example.com",
+        "hash": "testhash",
+        "schlagworte": [
+          "test"
         ],
-        "stellungnahmen": []
+        "autoren": []
+        }
+      ],
+      "additional_links": [
+        "#"
+      ],
+      "stellungnahmen": []
       }
     ]
-  }
+    }
 }
