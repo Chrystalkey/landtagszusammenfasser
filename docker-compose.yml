@@ -51,7 +51,7 @@ services:
 
   collector:
     build:
-      context: collector
+      context: ltzf-collector
       network: host
     image: ltzf-collector:test
     container_name: ltzf-collector
