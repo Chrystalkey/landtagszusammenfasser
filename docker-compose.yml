@@ -73,7 +73,7 @@ services:
   
   webserver:
     build:
-      context: webserver
+      context: ltzf-website
       network: host
     image: ltzf-webserver:test
     container_name: ltzf-webserver
