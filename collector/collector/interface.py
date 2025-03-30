@@ -15,6 +15,7 @@ from openapi_client import models
 
 logger = logging.getLogger(__name__)
 
+
 class Scraper(ABC):
     listing_urls: List[str] = []
     result_objects: List[models.Vorgang] = []
@@ -47,21 +48,23 @@ class Scraper(ABC):
     async def senditem(self, item: models.Vorgang) -> Optional[models.Vorgang]:
         """
         Send a Vorgang item to the API
-        
+
         Args:
             item: The Vorgang object to send
-            
+
         Returns:
             The sent item on success, None on failure
         """
         global logger
         logger.info(f"Sending Item with id `{item.api_id}` to Database")
         logger.debug(f"Collector ID: {self.collector_id}")
-        
+
         # Save to log file if configured
         if self.config.api_object_log is not None:
             try:
-                filepath = Path(self.config.api_object_log) / f"{self.collector_id}.json"
+                filepath = (
+                    Path(self.config.api_object_log) / f"{self.collector_id}.json"
+                )
                 with filepath.open("a", encoding="utf-8") as file:
                     file.write(str(sanitize_for_serialization(item)) + ",\n")
             except Exception as e:
@@ -78,18 +81,21 @@ class Scraper(ABC):
             except openapi_client.ApiException as e:
                 logger.error(f"API Exception: {e}")
                 if e.status == 422:
-                    logger.error("Unprocessable Entity, tried to send item:\n")
                     logger.error(sanitize_for_serialization(item))
+                    logger.error(
+                        "Unprocessable Entity, tried to send item(see above)\n"
+                    )
                     try:
-                        filepath = Path(self.config.api_object_log or "locallogs") / f"{self.collector_id}.json"
+                        filepath = (
+                            Path(self.config.api_object_log or "locallogs")
+                            / f"{self.collector_id}.json"
+                        )
                         with filepath.open("a", encoding="utf-8") as file:
                             file.write(str(sanitize_for_serialization(item)) + ",\n")
                     except Exception as e:
                         logger.error(f"Failed to write to API object log: {e}")
                 elif e.status == 401:
                     logger.error("Authentication failed. Check your API key.")
-                elif e.status == 409:
-                    logger.error(f"Conflict: Item with ID {item.api_id} already exists")
                 return None
             except Exception as e:
                 logger.error(f"Unexpected error sending item to API: {e}")
@@ -104,7 +110,7 @@ class Scraper(ABC):
         except Exception as e:
             logger.error(f"Error processing item {item}: {e}", exc_info=True)
             raise
-    
+
     async def run(self):
         """
         Main method to run the scraper:
@@ -117,33 +123,35 @@ class Scraper(ABC):
         item_list = []
         tasks = []
         logger.debug(f"{self.__class__.__name__}::extract")
-        
+
         # Extract all listing pages
         try:
             for lpage in self.listing_urls:
                 logger.debug(f"Initializing listing page extractor for {lpage}")
                 tasks.append(self.listing_page_extractor(lpage))
-            
+
             # Wait for all listing page extractor tasks to complete
             item_list = await asyncio.gather(*tasks, return_exceptions=True)
-            
+
             # Handle any exceptions from listing page extractors
             for i, result in enumerate(item_list):
                 if isinstance(result, Exception):
-                    logger.error(f"Error extracting listing page {self.listing_urls[i]}: {result}")
+                    logger.error(
+                        f"Error extracting listing page {self.listing_urls[i]}: {result}"
+                    )
                     item_list[i] = []  # Replace exception with empty list
-            
+
             # Flatten the list of lists into a set to eliminate duplicates
             iset = set(x for xs in item_list if isinstance(xs, list) for x in xs)
         except Exception as e:
             logger.error(f"Error extracting listing pages: {e}", exc_info=True)
             return
-        
+
         # Process all items
         tasks = []
         processed_count = 0
         skipped_count = 0
-        
+
         for item in iset:
             # Check if item is already in cache
             cached = self.config.cache.get_vorgang(str(item))
@@ -151,13 +159,15 @@ class Scraper(ABC):
                 logger.debug(f"URL {item} found in cache, skipping...")
                 skipped_count += 1
                 continue
-                
+
             logger.debug(f"Initializing item extractor for {item}")
             tasks.append(self.item_processing(item))
             processed_count += 1
 
-        logger.info(f"Processing {processed_count} items, skipped {skipped_count} cached items")
-        
+        logger.info(
+            f"Processing {processed_count} items, skipped {skipped_count} cached items"
+        )
+
         # Process all items
         temp_res = []
         if tasks:
@@ -171,7 +181,7 @@ class Scraper(ABC):
         # Process results and store in cache
         success_count = 0
         error_count = 0
-        
+
         for result in temp_res:
             if not isinstance(result, Exception) and result and result[0]:
                 obj = result[0]
@@ -182,7 +192,10 @@ class Scraper(ABC):
             else:
                 error_count += 1
                 if isinstance(result, Exception):
-                    logger.error(f"Item extraction failed with exception: {result}", exc_info=True)
+                    logger.error(
+                        f"Item extraction failed with exception: {result}",
+                        exc_info=True,
+                    )
                 else:
                     logger.error(f"Item extraction failed with result: {result}")
 
@@ -195,10 +208,10 @@ class Scraper(ABC):
     async def listing_page_extractor(self, url: str) -> List[Any]:
         """
         Extract a listing page into individual item URLs
-        
+
         Args:
             url: The listing page URL
-            
+
         Returns:
             A list of item URLs found on the listing page
         """
@@ -209,10 +222,10 @@ class Scraper(ABC):
     async def item_extractor(self, listing_item: Any) -> models.Vorgang:
         """
         Extract an individual item into a Vorgang object
-        
+
         Args:
             listing_item: The item URL or identifier
-            
+
         Returns:
             A Vorgang object containing the extracted information
         """

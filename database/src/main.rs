@@ -47,7 +47,7 @@ pub struct Configuration {
     #[arg(
         long,
         env = "LTZF_KEYADDER_KEY",
-        help = "The API Key that is used to add new Keys. This is not saved in the database."
+        help = "The API Key that is used to add new Keys. This is saved in the database."
     )]
     pub keyadder_key: String,
 
@@ -129,18 +129,6 @@ async fn main() -> Result<()> {
     sqlx::migrate!().run(&sqlx_db).await?;
     tracing::debug!("Executed Migrations");
 
-    let mailer = config.build_mailer().await;
-    let mailer = if let Err(e) = mailer {
-        tracing::warn!(
-            "Failed to create mailer: {}\nMailer will not be available",
-            e
-        );
-        None
-    } else {
-        tracing::debug!("Started Mailer");
-        Some(mailer.unwrap())
-    };
-
     // Run Key Administrative Functions
     let keyadder_hash = digest(config.keyadder_key.as_str());
 
@@ -150,20 +138,24 @@ async fn main() -> Result<()> {
         ($1, (SELECT id FROM api_scope WHERE value = 'keyadder' LIMIT 1), (SELECT last_value FROM api_keys_id_seq))
         ON CONFLICT DO NOTHING;", keyadder_hash)
     .execute(&sqlx_db).await?;
+    let mailbundle = crate::utils::notify::MailBundle::new(&config).await?;
 
-    let state = Arc::new(LTZFServer::new(sqlx_db, mailer, config));
+    let state = Arc::new(LTZFServer::new(sqlx_db, config, mailbundle));
     tracing::debug!("Constructed Server State");
 
     // Init Axum router
     let rate_limiter = axum_gcra::RateLimitLayer::<()>::builder()
-    .with_default_quota(axum_gcra::gcra::Quota::new(std::time::Duration::from_secs(1), NonZeroU64::new(256).unwrap()))
-    .with_global_fallback(true)
-    .with_extension(true)
-    .default_handle_error();
-    let request_size_limit = tower_http::limit::RequestBodyLimitLayer::new(1024*1024*256); // 256 MB
+        .with_default_quota(axum_gcra::gcra::Quota::new(
+            std::time::Duration::from_secs(1),
+            NonZeroU64::new(256).unwrap(),
+        ))
+        .with_global_fallback(true)
+        .with_extension(true)
+        .default_handle_error();
+    let request_size_limit = tower_http::limit::RequestBodyLimitLayer::new(1024 * 1024 * 1024 * 16); // 16GB
     let app = openapi::server::new(state.clone())
-    .layer(request_size_limit)
-    .layer(rate_limiter);
+        .layer(request_size_limit)
+        .layer(rate_limiter);
     tracing::debug!("Constructed Router");
     tracing::info!(
         "Starting Server on {}:{}",

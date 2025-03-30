@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE dokument SET\n        drucksnr = $2, titel =$3,\n        kurztitel = COALESCE($4, kurztitel), vorwort=COALESCE($5, vorwort),\n        volltext=COALESCE($6, volltext), zusammenfassung=COALESCE($7, zusammenfassung),\n        zp_lastmod=$8, link=$9, hash=$10, meinung=$11\n        WHERE dokument.id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Timestamptz",
+        "Varchar",
+        "Varchar",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "1baec834be0a03c81d15b29bc0fd75ce97df5968ce462a9daef8c6e47709d158"
+}

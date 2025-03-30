@@ -168,9 +168,7 @@ pub async fn auth_delete(
     .await?;
 
     if let Some(_) = ret {
-        return Ok(
-            openapi::apis::default::AuthDeleteResponse::Status204_APIKeyWasDeletedSuccessfully,
-        );
+        return Ok(openapi::apis::default::AuthDeleteResponse::Status204_Success);
     }
     return Ok(openapi::apis::default::AuthDeleteResponse::Status404_APIKeyNotFound);
 }
