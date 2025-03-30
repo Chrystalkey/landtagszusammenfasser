@@ -4,10 +4,10 @@
 
 echo "[OAPI-Gen] Generating Client and Server Code from Spec"
 Set-Location -Path "ltzf-backend"
-& oapigen.ps1
+Invoke-Expression -Command .\oapigen.ps1
 Set-Location -Path "../ltzf-collector"
-& oapigen.ps1
+Invoke-Expression -Command .\oapigen.ps1
 Set-Location -Path "../ltzf-website"
-& oapigen.ps1
+Invoke-Expression -Command .\oapigen.ps1
 Set-Location -Path ".."
 echo "[OAPI-Gen] Done Generating Client and Server Code"
