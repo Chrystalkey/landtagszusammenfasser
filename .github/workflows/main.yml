@@ -23,6 +23,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
@@ -46,6 +48,8 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       
       - name: Set up Python
         uses: actions/setup-python@v4
