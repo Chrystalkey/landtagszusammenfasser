@@ -64,7 +64,7 @@ jobs:
           
       - name: Generate OAPI Code
         working-directory: ltzf-collector/
-        run: sh oapi_gen.sh
+        run: sh oapigen.sh
 
       - name: Run pytest
         working-directory: ltzf-collector/
