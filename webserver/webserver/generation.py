@@ -54,12 +54,12 @@ def generate_content(model: models.Vorgang) -> str:
 def generate_header(model: models.Vorgang) -> str:
     title = " ".join(model.titel.split())  # Normalize whitespace
 
-    inilen = min(5, len(model.initiatoren))
-    initiatoren = ", ".join(str(i) for i in sorted(model.initiatoren, key=lambda el: 0 if "(" not in el else 1)[:inilen])
-    if len(model.initiatoren) > 5:
+    organisationen = set(i.organisation for i in model.initiatoren)
+    initiatoren = ", ".join(organisationen)
+    if len(organisationen) > 5:
         initiatoren += ", ..."
     
-    latest_station = max(model.stationen, key=lambda s: s.start_zeitpunkt)
+    latest_station = max(model.stationen, key=lambda s: s.zp_start)
     last_station_type = latest_station.typ
     status = "Unbekannt"
     if last_station_type.startswith("preparl"):
@@ -77,11 +77,11 @@ def generate_header(model: models.Vorgang) -> str:
             if stat.dokumente:
                 initiative = stat.dokumente[0].actual_instance
         
-        if not last_drucksache or (stat.typ in ["parl-ausschber", "parl-akzeptanz", "postparl-gsblt"] and (not last_ds_date or last_ds_date < stat.start_zeitpunkt)):
+        if not last_drucksache or (stat.typ in ["parl-ausschber", "parl-akzeptanz", "postparl-gsblt"] and (not last_ds_date or last_ds_date < stat.zp_start)):
             for doc in stat.dokumente:
                 if doc.actual_instance.typ == "entwurf":
                     last_drucksache = doc.actual_instance
-                    last_ds_date = stat.start_zeitpunkt
+                    last_ds_date = stat.zp_start
                     break
     if last_drucksache and hasattr(last_drucksache, 'zusammenfassung') and last_drucksache.zusammenfassung:
         zusammenfassung = last_drucksache.zusammenfassung
@@ -90,12 +90,12 @@ def generate_header(model: models.Vorgang) -> str:
 
     builder = "+++\n"
     builder += f"title=\"{title}\"\n"
-    builder += f"date=\"{format_datetime(latest_station.start_zeitpunkt)}\"\n"
+    builder += f"date=\"{format_datetime(latest_station.zp_start)}\"\n"
     builder += "template=\"gesetzpage.html\"\n"
     builder += "[extra]\n"
     builder += f"station=\"" + last_station_type + "\"\n"
     builder += f"status=\"{status}\"\n"
-    builder += f"date=\"{format_datetime(latest_station.start_zeitpunkt)}\"\n"
+    builder += f"date=\"{format_datetime(latest_station.zp_start)}\"\n"
     builder += f"initiator=\"{initiatoren}\"\n"
     builder += f"gesetzestyp=\"{gesetzestyp_map.get(model.typ, model.typ)}\"\n"
     builder += f"zusammenfassung=\"{zusammenfassung}\"\n"
@@ -105,13 +105,14 @@ def generate_header(model: models.Vorgang) -> str:
         if hasattr(last_drucksache, 'drucksnr') and last_drucksache.drucksnr:
             builder += f"drucksnr=\"{last_drucksache.drucksnr}\"\n"
         if hasattr(last_drucksache, 'autoren') and last_drucksache.autoren:
-            builder += f"authoren=\"{', '.join(last_drucksache.autoren)}\"\n"
+            autoren = set()
+            for a in last_drucksache.autoren:
+                if a.person is not None:
+                    autoren.add(a.person)
+            builder += f"authoren=\"{', '.join(autoren)}\"\n"
     
     if initiative:
         builder += f"entwurf_link=\"{initiative.link}\"\n"
-    
-    if hasattr(latest_station, 'betroffene_texte') and latest_station.betroffene_texte:
-        builder += f"texte=\"{', '.join(latest_station.betroffene_texte)}\"\n"
     
     builder += "+++\n"
     return builder
@@ -119,7 +120,7 @@ def generate_header(model: models.Vorgang) -> str:
 def generate_body(model: models.Vorgang) -> str:
     global doktyp_map
     title = model.titel
-    last_station = max(model.stationen, key=lambda s: s.start_zeitpunkt)
+    last_station = max(model.stationen, key=lambda s: s.zp_start)
     last_station_type = last_station.typ
 
     last_drucksache = None
@@ -130,11 +131,11 @@ def generate_body(model: models.Vorgang) -> str:
             if stat.dokumente:
                 initiative = stat.dokumente[0].actual_instance
         
-        if not last_drucksache or (stat.typ in ["parl-ausschber", "parl-akzeptanz", "postparl-gsblt"] and (not last_ds_date or last_ds_date < stat.start_zeitpunkt)):
+        if not last_drucksache or (stat.typ in ["parl-ausschber", "parl-akzeptanz", "postparl-gsblt"] and (not last_ds_date or last_ds_date < stat.zp_start)):
             for doc in stat.dokumente:
                 if doc.actual_instance.typ == "entwurf":
                     last_drucksache = doc.actual_instance
-                    last_ds_date = stat.start_zeitpunkt
+                    last_ds_date = stat.zp_start
                     break
     
     last_stype_readable = station_map.get(last_station_type, last_station_type)
@@ -142,15 +143,15 @@ def generate_body(model: models.Vorgang) -> str:
     
     builder = "# Beratungsverlauf\n"
 
-    # Sort by start_zeitpunkt as datetime objects
-    sorted_stations = sorted(model.stationen, key=lambda x: (x.start_zeitpunkt, 0 if x.typ.startswith("prep") else 1 if x.typ.startswith("parl") else 2))
+    # Sort by zp_start as datetime objects
+    sorted_stations = sorted(model.stationen, key=lambda x: (x.zp_start, 0 if x.typ.startswith("prep") else 1 if x.typ.startswith("parl") else 2))
     for s in sorted_stations:
         if s.typ == "parl-ausschber" and hasattr(s, 'gremium') and s.gremium:
             builder += "## " + station_map.get(s.typ) + f" im {s.gremium.name}" + "\n"
         else:
             builder += "## " + station_map.get(s.typ, "Unbekannte Station") + "\n"
         # Format the datetime for display
-        builder += f"Datum: {format_datetime(s.start_zeitpunkt)}\n\n"
+        builder += f"Datum: {format_datetime(s.zp_start)}\n\n"
         if len(s.dokumente) > 0: 
             builder += "### Dokumente\n"
         for dok in s.dokumente:

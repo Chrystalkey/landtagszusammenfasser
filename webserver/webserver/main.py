@@ -58,8 +58,8 @@ class ContentGenerator:
         vorgaenge = response if isinstance(response, list) else getattr(response, 'payload', [])
         
         for vg in vorgaenge:
-            # Find latest station using start_zeitpunkt instead of datum
-            latest_station = max(vg.stationen, key=lambda s: s.start_zeitpunkt)
+            # Find latest station using zp_start instead of datum
+            latest_station = max(vg.stationen, key=lambda s: s.zp_start)
             station_type = latest_station.typ
 
             # Determine output path based on station type
