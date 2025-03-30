@@ -31,10 +31,11 @@ jobs:
           profile: minimal
           override: true
       - name: Generate OAPI Code
-        run: sh oapi_gen.sh
+        working-directory: ltzf-backend/
+        run: sh oapigen.sh
 
       - name: Run cargo tests
-        working-directory: database/
+        working-directory: ltzf-backend/
         run: cargo test
         env:
           DATABASE_URL: postgres://ltzf-user:ltzf-pass@localhost:5432/ltzf
@@ -58,8 +59,9 @@ jobs:
           virtualenvs-in-project: true
           
       - name: Generate OAPI Code
+        working-directory: ltzf-collector/
         run: sh oapi_gen.sh
 
       - name: Run pytest
-        working-directory: collector/
+        working-directory: ltzf-collector/
         run: poetry install && poetry run pytest
