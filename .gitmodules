@@ -1,3 +1,6 @@
 [submodule "ltzf-website"]
 	path = ltzf-website
 	url = git@github.com:Chrystalkey/ltzf-website.git
+[submodule "ltzf-backend"]
+	path = ltzf-backend
+	url = git@github.com:Chrystalkey/ltzf-backend.git
