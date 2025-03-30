@@ -21,6 +21,9 @@ jsondiff = "^2.2.1"
 kreuzberg = "^3.0.1"
 toml = "^0.10.2"
 
+[tool.poetry.group.dev.dependencies]
+black = "^25.1.0"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

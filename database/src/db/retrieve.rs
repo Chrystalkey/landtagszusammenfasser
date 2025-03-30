@@ -32,11 +32,11 @@ pub async fn vorgang_by_id(
         WHERE vg_id = $1 ORDER BY organisation ASC",
         id
     )
-    .map(|row| models::Autor{
+    .map(|row| models::Autor {
         fachgebiet: row.fachgebiet,
         lobbyregister: row.lobbyregister,
         organisation: row.organisation,
-        person: row.person
+        person: row.person,
     })
     .fetch_all(&mut **executor)
     .await?;
@@ -130,13 +130,10 @@ pub async fn station_by_id(
     .fetch_all(&mut **executor)
     .await?;
 
-    let add_links = sqlx::query!(
-        "SELECT link FROM rel_station_link WHERE stat_id = $1",
-        id
-    )
-    .map(|r| r.link)
-    .fetch_all(&mut **executor)
-    .await?;
+    let add_links = sqlx::query!("SELECT link FROM rel_station_link WHERE stat_id = $1", id)
+        .map(|r| r.link)
+        .fetch_all(&mut **executor)
+        .await?;
     let temp_stat = sqlx::query!(
         "SELECT s.*, p.value as parlv, st.value as stattyp
         FROM station s
@@ -148,16 +145,21 @@ pub async fn station_by_id(
     .fetch_one(&mut **executor)
     .await?;
 
-    let gremium = sqlx::query!("
+    let gremium = sqlx::query!(
+        "
     SELECT p.value, g.name, g.wp, 
     g.link FROM gremium g INNER JOIN parlament p on p.id = g.parl
-        WHERE g.id = $1", temp_stat.gr_id)
-        .map(|x|models::Gremium{
-            name: x.name, wahlperiode: x.wp as u32,
-            parlament: models::Parlament::from_str(&x.value).unwrap(),
-            link: x.link
-        })
-        .fetch_optional(&mut **executor).await?;
+        WHERE g.id = $1",
+        temp_stat.gr_id
+    )
+    .map(|x| models::Gremium {
+        name: x.name,
+        wahlperiode: x.wp as u32,
+        parlament: models::Parlament::from_str(&x.value).unwrap(),
+        link: x.link,
+    })
+    .fetch_optional(&mut **executor)
+    .await?;
 
     return Ok(models::Station {
         parlament: models::Parlament::from_str(temp_stat.parlv.as_str())
@@ -176,7 +178,7 @@ pub async fn station_by_id(
         api_id: Some(temp_stat.api_id),
         link: temp_stat.link,
         additional_links: as_option(add_links),
-        gremium_federf: temp_stat.gremium_isff
+        gremium_federf: temp_stat.gremium_isff,
     });
 }
 
@@ -211,11 +213,11 @@ pub async fn dokument_by_id(
         ORDER BY organisation ASC",
         id
     )
-    .map(|r| models::Autor{
+    .map(|r| models::Autor {
         person: r.person,
         organisation: r.organisation,
         lobbyregister: r.lobbyregister,
-        fachgebiet: r.fachgebiet
+        fachgebiet: r.fachgebiet,
     })
     .fetch_all(&mut **executor)
     .await?;
@@ -226,7 +228,7 @@ pub async fn dokument_by_id(
         kurztitel: rec.kurztitel,
         vorwort: rec.vorwort,
         volltext: rec.volltext,
-        
+
         zp_erstellt: rec.zp_created,
         zp_modifiziert: rec.zp_lastmod,
         zp_referenz: rec.zp_referenz,
@@ -294,10 +296,7 @@ EXISTS ( 									-- mit denen mindestens ein dokument assoziiert ist, dass hier
     });
 }
 
-pub async fn sitzung_by_id(
-    id: i32,
-    tx: &mut sqlx::PgTransaction<'_>,
-) -> Result<models::Sitzung> {
+pub async fn sitzung_by_id(id: i32, tx: &mut sqlx::PgTransaction<'_>) -> Result<models::Sitzung> {
     let scaffold = sqlx::query!(
         "SELECT a.api_id, a.public, a.termin, p.value as plm, a.link as as_link, a.titel, a.nummer,
         g.name as grname, g.wp, g.link as gr_link FROM sitzung a
@@ -309,11 +308,13 @@ pub async fn sitzung_by_id(
     .fetch_one(&mut **tx)
     .await?;
     // tops
-    let topids = sqlx::query!("SELECT * FROM top t WHERE t.sid = $1 ORDER BY titel ASC", id)
-    .map(|r|
-        r.id
+    let topids = sqlx::query!(
+        "SELECT * FROM top t WHERE t.sid = $1 ORDER BY titel ASC",
+        id
     )
-    .fetch_all(&mut **tx).await?;
+    .map(|r| r.id)
+    .fetch_all(&mut **tx)
+    .await?;
     let mut tops = vec![];
     for top in &topids {
         tops.push(top_by_id(*top, tx).await?);
@@ -329,19 +330,22 @@ pub async fn sitzung_by_id(
         fachgebiet: r.fachgebiet,
         lobbyregister: r.lobbyregister,
         organisation: r.organisation,
-        person: r.person
+        person: r.person,
     })
     .fetch_all(&mut **tx)
     .await?;
 
-    let dids = sqlx::query!("SELECT dok_id from reL_station_dokument WHERE stat_id = $1", id)
+    let dids = sqlx::query!(
+        "SELECT dok_id from reL_station_dokument WHERE stat_id = $1",
+        id
+    )
     .map(|r| r.dok_id)
-    .fetch_all(&mut **tx).await?;
+    .fetch_all(&mut **tx)
+    .await?;
     let mut doks = vec![];
-    for d in dids{
+    for d in dids {
         doks.push(dokument_by_id(d, tx).await?);
     }
-
 
     return Ok(models::Sitzung {
         api_id: Some(scaffold.api_id),
@@ -362,11 +366,11 @@ pub async fn sitzung_by_id(
     });
 }
 
-pub struct SitzungFilterParameters{
+pub struct SitzungFilterParameters {
     pub since: Option<chrono::DateTime<chrono::Utc>>,
     pub until: Option<chrono::DateTime<chrono::Utc>>,
     pub parlament: Option<models::Parlament>,
-    pub wp : Option<u32>,
+    pub wp: Option<u32>,
     pub limit: Option<u32>,
     pub offset: Option<u32>,
     pub vgid: Option<Uuid>,
@@ -376,7 +380,6 @@ pub async fn sitzung_by_param(
     params: &SitzungFilterParameters,
     tx: &mut sqlx::PgTransaction<'_>,
 ) -> Result<Vec<models::Sitzung>> {
-
     let as_list = sqlx::query!(
         "
       WITH pre_table AS (
@@ -431,9 +434,13 @@ pub async fn vorgang_by_parameter(
     header_params: &models::VorgangGetHeaderParams,
     executor: &mut sqlx::PgTransaction<'_>,
 ) -> Result<Vec<models::Vorgang>> {
-    let lower_bnd = header_params.if_modified_since.map(|el| 
-        if params.since.is_some() {params.since.unwrap().min(el)}else{el}
-    );
+    let lower_bnd = header_params.if_modified_since.map(|el| {
+        if params.since.is_some() {
+            params.since.unwrap().min(el)
+        } else {
+            el
+        }
+    });
     let vg_list = sqlx::query!(
         "WITH pre_table AS (
         SELECT vorgang.id, MAX(station.zp_start) as lastmod FROM vorgang

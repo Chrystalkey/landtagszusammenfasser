@@ -145,14 +145,17 @@ async fn main() -> Result<()> {
 
     // Init Axum router
     let rate_limiter = axum_gcra::RateLimitLayer::<()>::builder()
-    .with_default_quota(axum_gcra::gcra::Quota::new(std::time::Duration::from_secs(1), NonZeroU64::new(256).unwrap()))
-    .with_global_fallback(true)
-    .with_extension(true)
-    .default_handle_error();
-    let request_size_limit = tower_http::limit::RequestBodyLimitLayer::new(1024*1024*1024*16); // 16GB
+        .with_default_quota(axum_gcra::gcra::Quota::new(
+            std::time::Duration::from_secs(1),
+            NonZeroU64::new(256).unwrap(),
+        ))
+        .with_global_fallback(true)
+        .with_extension(true)
+        .default_handle_error();
+    let request_size_limit = tower_http::limit::RequestBodyLimitLayer::new(1024 * 1024 * 1024 * 16); // 16GB
     let app = openapi::server::new(state.clone())
-    .layer(request_size_limit)
-    .layer(rate_limiter);
+        .layer(request_size_limit)
+        .layer(rate_limiter);
     tracing::debug!("Constructed Router");
     tracing::info!(
         "Starting Server on {}:{}",

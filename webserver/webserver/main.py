@@ -21,9 +21,12 @@ from typing import List, Optional
 from openapi_client import ApiClient, Configuration, DefaultApi
 from openapi_client import models
 
-logging.basicConfig(level=logging.INFO,format="%(asctime)s|%(levelname)s: %(filename)s: %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s|%(levelname)s: %(filename)s: %(message)s"
+)
 
 logger = logging.getLogger(__name__)
+
 
 class ContentGenerator:
     def __init__(self):
@@ -31,7 +34,7 @@ class ContentGenerator:
 
     def generate_content(self, response: Optional[List[models.Vorgang]]) -> None:
         """Generate markdown files from legislative proposals."""
-        
+
         pagestatepath = self.base_dir / "pagestate.toml"
         pagestate = {}
         if pagestatepath.exists():
@@ -40,23 +43,34 @@ class ContentGenerator:
             pagestate = {"beratung": [], "nachbereitung": [], "vorbereitung": []}
         if not response:
             logger.warning("No items to generate")
-            
+
             try:
                 ber_path = Path(self.base_dir / "beratung.md")
-                ber_path.write_text(generation.generate_beratung(pagestate["beratung"]), encoding="utf-8")
+                ber_path.write_text(
+                    generation.generate_beratung(pagestate["beratung"]),
+                    encoding="utf-8",
+                )
                 vorb_path = Path(self.base_dir / "vorbereitung.md")
-                vorb_path.write_text(generation.generate_vorbereitung(pagestate["vorbereitung"]), encoding="utf-8")
+                vorb_path.write_text(
+                    generation.generate_vorbereitung(pagestate["vorbereitung"]),
+                    encoding="utf-8",
+                )
                 nach_path = Path(self.base_dir / "nachbereitung.md")
-                nach_path.write_text(generation.generate_nachbereitung(pagestate["nachbereitung"]), encoding="utf-8")
+                nach_path.write_text(
+                    generation.generate_nachbereitung(pagestate["nachbereitung"]),
+                    encoding="utf-8",
+                )
 
                 pagestatepath.write_text(toml.dumps(pagestate))
             except Exception as e:
                 logger.error(f"Failed to write to pagestate or the section sites: {e}")
             return
-            
+
         # Handle the updated response structure
-        vorgaenge = response if isinstance(response, list) else getattr(response, 'payload', [])
-        
+        vorgaenge = (
+            response if isinstance(response, list) else getattr(response, "payload", [])
+        )
+
         for vg in vorgaenge:
             # Find latest station using zp_start instead of datum
             latest_station = max(vg.stationen, key=lambda s: s.zp_start)
@@ -103,14 +117,22 @@ class ContentGenerator:
                     file.write(content)
             except Exception as e:
                 logger.error(f"Failed to write to {path}: {e}")
-                
+
         try:
             ber_path = Path(self.base_dir / "beratung.md")
-            ber_path.write_text(generation.generate_beratung(pagestate["beratung"]), encoding="utf-8")
+            ber_path.write_text(
+                generation.generate_beratung(pagestate["beratung"]), encoding="utf-8"
+            )
             vorb_path = Path(self.base_dir / "vorbereitung.md")
-            vorb_path.write_text(generation.generate_vorbereitung(pagestate["vorbereitung"]), encoding="utf-8")
+            vorb_path.write_text(
+                generation.generate_vorbereitung(pagestate["vorbereitung"]),
+                encoding="utf-8",
+            )
             nach_path = Path(self.base_dir / "nachbereitung.md")
-            nach_path.write_text(generation.generate_nachbereitung(pagestate["nachbereitung"]), encoding="utf-8")
+            nach_path.write_text(
+                generation.generate_nachbereitung(pagestate["nachbereitung"]),
+                encoding="utf-8",
+            )
 
             pagestatepath.write_text(toml.dumps(pagestate))
         except Exception as e:

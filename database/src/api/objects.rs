@@ -24,12 +24,14 @@ pub async fn vg_id_get(
     .map(|x| x.id)
     .fetch_optional(&mut *tx)
     .await?;
-    if let Some(dbid) = dbid{
+    if let Some(dbid) = dbid {
         let result = retrieve::vorgang_by_id(dbid, &mut tx).await?;
         tx.commit().await?;
         Ok(result)
     } else {
-        Err(crate::error::LTZFError::Validation { source:  crate::error::DataValidationError::QueryParametersNotSatisfied})
+        Err(crate::error::LTZFError::Validation {
+            source: crate::error::DataValidationError::QueryParametersNotSatisfied,
+        })
     }
 }
 
@@ -52,19 +54,24 @@ pub async fn s_get_by_id(
     use openapi::apis::default::SGetByIdResponse;
     let mut tx = server.sqlx_db.begin().await?;
     let api_id = path_params.sid;
-    let id = sqlx::query!("
+    let id = sqlx::query!(
+        "
     SELECT id FROM sitzung WHERE api_id = $1
-    AND last_update > COALESCE($2, CAST('1940-01-01T00:00:00' AS TIMESTAMPTZ));", 
-    api_id, header_params.if_modified_since)
-        .map(|r| r.id)
-        .fetch_optional(&mut *tx)
-        .await?;
-    if let Some(id) = id{
+    AND last_update > COALESCE($2, CAST('1940-01-01T00:00:00' AS TIMESTAMPTZ));",
+        api_id,
+        header_params.if_modified_since
+    )
+    .map(|r| r.id)
+    .fetch_optional(&mut *tx)
+    .await?;
+    if let Some(id) = id {
         let result = retrieve::sitzung_by_id(id, &mut tx).await?;
         tx.commit().await?;
         Ok(SGetByIdResponse::Status200_SuccessfulOperation(result))
-    }else{
-        Err(crate::error::LTZFError::Validation { source: crate::error::DataValidationError::QueryParametersNotSatisfied })
+    } else {
+        Err(crate::error::LTZFError::Validation {
+            source: crate::error::DataValidationError::QueryParametersNotSatisfied,
+        })
     }
 }
 
@@ -73,30 +80,43 @@ pub async fn s_get(
     qparams: &SGetQueryParams,
     header_params: &models::SGetHeaderParams,
 ) -> Result<openapi::apis::default::SGetResponse> {
-    let range = find_applicable_date_range(None, None, None, qparams.since, qparams.until, header_params.if_modified_since);
-    if range.is_none(){
-        return Ok(openapi::apis::default::SGetResponse::Status416_RequestRangeNotSatisfiable)
+    let range = find_applicable_date_range(
+        None,
+        None,
+        None,
+        qparams.since,
+        qparams.until,
+        header_params.if_modified_since,
+    );
+    if range.is_none() {
+        return Ok(openapi::apis::default::SGetResponse::Status416_RequestRangeNotSatisfiable);
     }
-    let params = retrieve::SitzungFilterParameters{
+    let params = retrieve::SitzungFilterParameters {
         gremium_like: None,
         limit: qparams.limit.map(|x| x as u32),
         offset: qparams.offset.map(|x| x as u32),
         parlament: qparams.p,
-        wp : qparams.wp.map(|x| x as u32),
+        wp: qparams.wp.map(|x| x as u32),
         since: range.unwrap().0,
         until: range.unwrap().1,
         vgid: qparams.vgid,
     };
 
     let mut tx: sqlx::Transaction<'_, sqlx::Postgres> = server.sqlx_db.begin().await?;
-    let result = retrieve::sitzung_by_param(&params,  &mut tx).await?;
+    let result = retrieve::sitzung_by_param(&params, &mut tx).await?;
     tx.commit().await?;
     if result.is_empty() && header_params.if_modified_since.is_none() {
-        return Ok(openapi::apis::default::SGetResponse::Status204_NoContentFoundForTheSpecifiedParameters);
-    }else if result.is_empty() && header_params.if_modified_since.is_some(){
+        return Ok(
+            openapi::apis::default::SGetResponse::Status204_NoContentFoundForTheSpecifiedParameters,
+        );
+    } else if result.is_empty() && header_params.if_modified_since.is_some() {
         return Ok(openapi::apis::default::SGetResponse::Status304_NoNewChanges);
     }
-    return Ok(openapi::apis::default::SGetResponse::Status200_AntwortAufEineGefilterteAnfrageZuSitzungen(result));
+    return Ok(
+        openapi::apis::default::SGetResponse::Status200_AntwortAufEineGefilterteAnfrageZuSitzungen(
+            result,
+        ),
+    );
 }
 
 pub async fn vorgang_id_put(

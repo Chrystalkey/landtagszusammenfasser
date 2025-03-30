@@ -45,12 +45,16 @@ pub async fn insert_vorgang(
 
     // insert initiatoren
     let mut init_ids = vec![];
-    for x in &vg.initiatoren{
+    for x in &vg.initiatoren {
         init_ids.push(insert_or_retrieve_autor(x, tx, server).await?);
     }
-    sqlx::query!("INSERT INTO rel_vorgang_init(in_id, vg_id) SELECT val, $2 FROM UNNEST($1::int4[])as val;",
-    &init_ids[..], vg_id)
-    .execute(&mut **tx).await?;
+    sqlx::query!(
+        "INSERT INTO rel_vorgang_init(in_id, vg_id) SELECT val, $2 FROM UNNEST($1::int4[])as val;",
+        &init_ids[..],
+        vg_id
+    )
+    .execute(&mut **tx)
+    .await?;
 
     // insert ids
     let ident_list = vg
@@ -115,11 +119,21 @@ pub async fn insert_station(
         (SELECT id FROM stationstyp WHERE value = $7), $8, $9, 
         COALESCE($10, NOW()), $11)
         RETURNING station.id",
-        sapi, gr_id, stat.link,
-        stat.parlament.to_string(), stat.titel, stat.trojanergefahr.map(|x|x as i32), srv.guard_ts(stat.typ, sapi, obj)?,
-        stat.zp_start, vg_id, stat.zp_modifiziert, stat.gremium_federf
-    ).map(|r|r.id)
-    .fetch_one(&mut **tx).await?;
+        sapi,
+        gr_id,
+        stat.link,
+        stat.parlament.to_string(),
+        stat.titel,
+        stat.trojanergefahr.map(|x| x as i32),
+        srv.guard_ts(stat.typ, sapi, obj)?,
+        stat.zp_start,
+        vg_id,
+        stat.zp_modifiziert,
+        stat.gremium_federf
+    )
+    .map(|r| r.id)
+    .fetch_one(&mut **tx)
+    .await?;
 
     // links
     sqlx::query!(
@@ -151,10 +165,14 @@ pub async fn insert_station(
         for stln in stln {
             doks.push(insert_dokument(stln, tx, srv).await?);
         }
-        sqlx::query!("INSERT INTO rel_station_stln (stat_id, dok_id)
+        sqlx::query!(
+            "INSERT INTO rel_station_stln (stat_id, dok_id)
         SELECT $1, did FROM UNNEST($2::int4[]) as did ON CONFLICT DO NOTHING",
-        stat_id, &doks[..]
-        ).execute(&mut **tx).await?;
+            stat_id,
+            &doks[..]
+        )
+        .execute(&mut **tx)
+        .await?;
     }
     // schlagworte
     insert_station_sw(stat_id, stat.schlagworte.unwrap_or(vec![]), tx).await?;
@@ -190,23 +208,39 @@ pub async fn insert_dokument(
             $1,$2, (SELECT id FROM dokumententyp WHERE value = $3),
             $4,$5,$6,$7,$8,$9,$10,$11, $12,$13,$14
         )RETURNING id",
-        dapi, dok.drucksnr,  srv.guard_ts(dok.typ, dapi, obj)?, dok.titel, dok.kurztitel, dok.vorwort,
-        dok.volltext,dok.zusammenfassung, dok.zp_modifiziert, dok.link, dok.hash,
-        dok.zp_referenz, dok.zp_erstellt, dok.meinung.map(|r|r as i32)
-    ).map(|r|r.id).fetch_one(&mut **tx).await?;
+        dapi,
+        dok.drucksnr,
+        srv.guard_ts(dok.typ, dapi, obj)?,
+        dok.titel,
+        dok.kurztitel,
+        dok.vorwort,
+        dok.volltext,
+        dok.zusammenfassung,
+        dok.zp_modifiziert,
+        dok.link,
+        dok.hash,
+        dok.zp_referenz,
+        dok.zp_erstellt,
+        dok.meinung.map(|r| r as i32)
+    )
+    .map(|r| r.id)
+    .fetch_one(&mut **tx)
+    .await?;
 
     // Schlagworte
     insert_dok_sw(did, dok.schlagworte.unwrap_or(vec![]), tx).await?;
 
     // authoren
     let mut aids = vec![];
-    for a in &dok.autoren{
+    for a in &dok.autoren {
         aids.push(insert_or_retrieve_autor(a, tx, srv).await?)
     }
     sqlx::query!(
         "INSERT INTO rel_dok_autor(dok_id, aut_id) 
     SELECT $1, blub FROM UNNEST($2::int4[]) as blub ON CONFLICT DO NOTHING",
-        did, &aids[..])
+        did,
+        &aids[..]
+    )
     .execute(&mut **tx)
     .await?;
     return Ok(did);

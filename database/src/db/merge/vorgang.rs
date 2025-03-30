@@ -144,7 +144,11 @@ pub async fn station_merge_candidates(
         })
         .collect();
     let (gr_name, gr_wp, gr_parl) = if let Some(gremium) = &model.gremium {
-        (Some(gremium.name.clone()), Some(gremium.wahlperiode as i32), Some(gremium.parlament.to_string()))
+        (
+            Some(gremium.name.clone()),
+            Some(gremium.wahlperiode as i32),
+            Some(gremium.parlament.to_string()),
+        )
     } else {
         (None, None, None)
     };
@@ -166,7 +170,9 @@ pub async fn station_merge_candidates(
         model.api_id,
         vorgang,
         srv.guard_ts(model.typ, api_id, obj)?,
-        gr_name, gr_parl, gr_wp,
+        gr_name,
+        gr_parl,
+        gr_wp,
         &dok_hash[..]
     )
     .fetch_all(executor)
@@ -244,7 +250,7 @@ pub async fn execute_merge_dokument(
         model.zp_modifiziert,
         model.link,
         model.hash,
-        model.meinung.map(|x|x as i32)
+        model.meinung.map(|x| x as i32)
     )
     .execute(&mut **tx)
     .await?;
@@ -252,14 +258,16 @@ pub async fn execute_merge_dokument(
     insert::insert_dok_sw(db_id, model.schlagworte.clone().unwrap_or(vec![]), tx).await?;
     // autoren::UNION
     let mut aids = vec![];
-    for a in &model.autoren{
+    for a in &model.autoren {
         aids.push(insert_or_retrieve_autor(a, tx, srv).await?);
     }
     sqlx::query!(
         "INSERT INTO rel_dok_autor(dok_id, aut_id)
     SELECT $1, blub FROM UNNEST($2::int4[]) as blub 
     ON CONFLICT DO NOTHING",
-        db_id, &aids[..])
+        db_id,
+        &aids[..]
+    )
     .execute(&mut **tx)
     .await?;
 
@@ -325,7 +333,7 @@ pub async fn execute_merge_station(
 
     // schlagworte::UNION
     insert::insert_station_sw(db_id, model.schlagworte.clone().unwrap_or(vec![]), tx).await?;
-    
+
     // dokumente::UNION
     let mut insert_ids = vec![];
     for dok in model.dokumente.iter() {
@@ -392,7 +400,7 @@ pub async fn execute_merge_station(
         .execute(&mut **tx)
         .await?;
     }
-    
+
     // stellungnahmen
     for stln in model.stellungnahmen.as_ref().unwrap_or(&vec![]) {
         match dokument_merge_candidates(stln, &mut **tx, srv).await? {
@@ -456,7 +464,7 @@ pub async fn execute_merge_vorgang(
     .await?;
     /// initiatoren / initpersonen::UNION
     let mut aids = vec![];
-    for a in &model.initiatoren{
+    for a in &model.initiatoren {
         aids.push(insert_or_retrieve_autor(a, tx, srv).await?);
     }
     sqlx::query!(
@@ -521,8 +529,7 @@ pub async fn execute_merge_vorgang(
                 .map(|r| r.api_id)
                 .fetch_all(&mut **tx)
                 .await?;
-                notify_ambiguous_match(mids, stat, 
-                    "exec_merge_vorgang: station matching", srv);
+                notify_ambiguous_match(mids, stat, "exec_merge_vorgang: station matching", srv);
             }
         }
     }
@@ -530,7 +537,10 @@ pub async fn execute_merge_vorgang(
     tracing::info!(
         "Merging of Vg Successful: Merged `{}`(ext) with  `{}`(db)",
         model.api_id,
-        sqlx::query!("SELECT api_id FROM vorgang WHERE id = $1", candidate).map(|r|r.api_id).fetch_one(&mut **tx).await?
+        sqlx::query!("SELECT api_id FROM vorgang WHERE id = $1", candidate)
+            .map(|r| r.api_id)
+            .fetch_one(&mut **tx)
+            .await?
     );
     Ok(())
 }
@@ -680,13 +690,14 @@ mod scenariotest {
                 limit: None,
                 offset: None,
             };
-            let hdmock = VorgangGetHeaderParams{
-                if_modified_since: None
+            let hdmock = VorgangGetHeaderParams {
+                if_modified_since: None,
             };
             let mut tx = self.server.sqlx_db.begin().await.unwrap();
-            let db_vorgangs = crate::db::retrieve::vorgang_by_parameter(&paramock, &hdmock, &mut tx)
-                .await
-                .unwrap();
+            let db_vorgangs =
+                crate::db::retrieve::vorgang_by_parameter(&paramock, &hdmock, &mut tx)
+                    .await
+                    .unwrap();
 
             tx.rollback().await.unwrap();
             for expected in self.result.iter() {
