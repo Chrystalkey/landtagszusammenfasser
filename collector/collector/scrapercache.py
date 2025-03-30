@@ -20,7 +20,7 @@ class ScraperCache:
     """
 
     redis_client: Optional[redis.Redis] = None
-    cache_expiry_minutes: int = 60 * 24  # Default 24 hours for document cache
+    cache_expiry_minutes: int = 60 * 24 * 365  # Default 24 hours for document cache
     disabled: bool = False
 
     def __init__(

@@ -543,7 +543,7 @@ components:
         - "gg-zustimmung"     # Bundesgesetz Zustimmungspflich
         - "gg-land-parl"      # Landesgesetz, normal
         - "gg-land-volk"      # Landesgesetz, Volksgesetzgebung
-        - "bundeswehreinsatz" # Bundeswehreinsatz
+        - "bw-einsatz"        # Bundeswehreinsatz
         - "sonstig"           # other, email me
     stationstyp:
       description: "Stationen, die ein Gesetz o.Ä. Vorgang in verschiedenen Ausformungen durchlaufen kann. Im Prinzip ist die Festlegung auf Prä / Postparlamentarisch arbiträr."
