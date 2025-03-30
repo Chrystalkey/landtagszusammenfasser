@@ -1,9 +1,0 @@
-public/
-.idea/
-.vscode/
-*.zip
-*.7z
-*.rar
-
-content/*/*
-!content/*/*_index.md
