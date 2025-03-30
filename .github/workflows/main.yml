@@ -1,6 +1,6 @@
 name: Testing the LTZF Project
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
   database_tests:
