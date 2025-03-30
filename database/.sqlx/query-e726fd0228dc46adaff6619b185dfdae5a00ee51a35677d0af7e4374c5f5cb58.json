@@ -15,53 +15,53 @@
       },
       {
         "ordinal": 2,
-        "name": "gr_id",
-        "type_info": "Int4"
-      },
-      {
-        "ordinal": 3,
-        "name": "gremium_isff",
-        "type_info": "Bool"
-      },
-      {
-        "ordinal": 4,
-        "name": "vg_id",
-        "type_info": "Int4"
-      },
-      {
-        "ordinal": 5,
-        "name": "p_id",
-        "type_info": "Int4"
-      },
-      {
-        "ordinal": 6,
-        "name": "typ",
-        "type_info": "Int4"
-      },
-      {
-        "ordinal": 7,
         "name": "titel",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 8,
-        "name": "start_zeitpunkt",
+        "ordinal": 3,
+        "name": "zp_start",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 9,
-        "name": "letztes_update",
+        "ordinal": 4,
+        "name": "zp_modifiziert",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 10,
+        "ordinal": 5,
+        "name": "link",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
         "name": "trojanergefahr",
         "type_info": "Int4"
       },
       {
+        "ordinal": 7,
+        "name": "p_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "gr_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 9,
+        "name": "gremium_isff",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 10,
+        "name": "typ",
+        "type_info": "Int4"
+      },
+      {
         "ordinal": 11,
-        "name": "link",
-        "type_info": "Varchar"
+        "name": "vg_id",
+        "type_info": "Int4"
       },
       {
         "ordinal": 12,
@@ -83,15 +83,15 @@
       false,
       false,
       true,
-      true,
-      false,
-      false,
-      false,
-      true,
       false,
       false,
       true,
       true,
+      false,
+      true,
+      true,
+      false,
+      false,
       false,
       false
     ]

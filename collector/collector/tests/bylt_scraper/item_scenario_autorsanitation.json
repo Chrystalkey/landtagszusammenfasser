@@ -1,0 +1,196 @@
+{
+  "url": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=159519",
+  "result": {
+    "api_id": "00000000-0000-0000-0000-000000000000",
+    "titel": "Gesetzentwurf zur Änderung des Bayerischen Katastrophenschutzgesetzes   hier: Helfergleichstellung in Bayern",
+    "kurztitel": "Gesetzentwurf zur Änderung des Bayerischen Katastrophenschutzgesetzes   hier: Helfergleichstellung in Bayern",
+    "wahlperiode": 19,
+    "verfassungsaendernd": false,
+    "typ": "gg-land-parl",
+    "ids": [
+      {
+        "id": "19/5774",
+        "typ": "initdrucks"
+      }
+    ],
+    "links": [
+      "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=159519",
+      "https://www.bayern.landtag.de/www/ElanTextAblage_WP19/Drucksachen/Basisdrucksachen/0000005000/0000005302.pdf"
+    ],
+    "initiatoren": [
+      {
+        "person": "Katharina Schulze",
+        "organisation": "Bündnis 90/Die Grünen (Grüne)"
+      },
+      {
+        "person": "Johannes Becher",
+        "organisation": "Bündnis 90/Die Grünen (Grüne)"
+      },
+      {
+        "person": "Florian Siekmann",
+        "organisation": "Bündnis 90/Die Grünen (Grüne)"
+      },
+      {
+        "person": "Ludwig Hartmann",
+        "organisation": "Bündnis 90/Die Grünen (Grüne)"
+      },
+      {
+        "person": "Dipl.-Betriebswirtin (FH) Claudia Köhler",
+        "organisation": "Bündnis 90/Die Grünen (Grüne)"
+      },
+      {
+        "person": "Jürgen Mistol",
+        "organisation": "Bündnis 90/Die Grünen (Grüne)"
+      },
+      {
+        "person": "Verena Osgyan",
+        "organisation": "Bündnis 90/Die Grünen (Grüne)"
+      },
+      {
+        "person": "Tim Pargent",
+        "organisation": "Bündnis 90/Die Grünen (Grüne)"
+      },
+      {
+        "person": "Stephanie Schuhknecht",
+        "organisation": "Bündnis 90/Die Grünen (Grüne)"
+      },
+      {
+        "person": "Benjamin Adjei",
+        "organisation": "Bündnis 90/Die Grünen (Grüne)"
+      },
+      {
+        "person": "Andreas Birzele",
+        "organisation": "Bündnis 90/Die Grünen (Grüne)"
+      },
+      {
+        "person": "Cemal Bozoğlu",
+        "organisation": "Bündnis 90/Die Grünen (Grüne)"
+      },
+      {
+        "person": "Max Deisenhofer",
+        "organisation": "Bündnis 90/Die Grünen (Grüne)"
+      },
+      {
+        "person": "Gülseren Demirel",
+        "organisation": "Bündnis 90/Die Grünen (Grüne)"
+      },
+      {
+        "person": "Toni Schuberl",
+        "organisation": "Bündnis 90/Die Grünen (Grüne)"
+      },
+      {
+        "organisation": "Bündnis 90/Die Grünen (Grüne)"
+      }
+    ],
+    "stationen": [
+      {
+        "zp_start": "1940-01-01T00:00:00+00:00",
+        "gremium": {
+          "parlament": "BY",
+          "wahlperiode": 19,
+          "name": "plenum"
+        },
+        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=159519",
+        "parlament": "BY",
+        "typ": "parl-initiativ",
+        "trojanergefahr": 1,
+        "schlagworte": [],
+        "dokumente": [
+          {
+            "drucksnr": "19/5774",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autoren": []
+          }
+        ],
+        "additional_links": [],
+        "stellungnahmen": [
+          {
+            "drucksnr": "example",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autoren": []
+          },
+          {
+            "drucksnr": "example",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autoren": []
+          },
+          {
+            "drucksnr": "example",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autoren": []
+          },
+          {
+            "drucksnr": "example",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autoren": []
+          },
+          {
+            "drucksnr": "example",
+            "typ": "entwurf",
+            "titel": "Testtitel",
+            "volltext": "test",
+            "zusammenfassung": "test",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
+            "link": "https://www.example.com",
+            "hash": "testhash",
+            "schlagworte": [
+              "test"
+            ],
+            "autoren": []
+          }
+        ]
+      }
+    ]
+  }
+}

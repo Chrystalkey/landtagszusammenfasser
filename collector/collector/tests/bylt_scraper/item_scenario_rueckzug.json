@@ -6,43 +6,6 @@
     "kurztitel": "Gesetzentwurf zur Änderung der Bayerischen Bauordnung  hier: Abschaffung des Solardach-Zwangs",
     "wahlperiode": 19,
     "verfassungsaendernd": false,
-    "initiatoren": [
-      "Alternative für Deutschland"
-    ],
-    "initiator_personen": [
-      "Katrin Ebner-Steiner (AfD)",
-      "Christoph Maier (AfD)",
-      "(MSc) Martin Böhm (AfD)",
-      "Richard Graupner (AfD)",
-      "Prof. Dr. Ingo Hahn (AfD)",
-      "Markus Walbrunn (AfD)",
-      "Florian Köhler (AfD)",
-      "Oskar Lipp (AfD)",
-      "Johannes Meier (AfD)",
-      "Dieter Arnold (AfD)",
-      "Oskar Atzinger (AfD)",
-      "Jörg Baumann (AfD)",
-      "Franz Bergmüller (AfD)",
-      "Rene Dierkes (AfD)",
-      "Daniel Halemba (AfD)",
-      "Martin Huber (AfD)",
-      "Andreas Jurca (AfD)",
-      "Stefan Löw (AfD)",
-      "Roland Magerl (AfD)",
-      "Ferdinand Mang (AfD)",
-      "Gerd Mannes (AfD)",
-      "Harald Meußgeier (AfD)",
-      "Johann Müller (AfD)",
-      "Benjamin Nolte (AfD)",
-      "Elena Roon (AfD)",
-      "Franz Schmid (AfD)",
-      "Ulrich Singer (AfD)",
-      "Ralf Stadler (AfD)",
-      "Ramona Storm (AfD)",
-      "Markus Striedl (AfD)",
-      "Matthias Vogler (AfD)",
-      "Andreas Winhart (AfD)"
-    ],
     "typ": "gg-land-parl",
     "ids": [
       {
@@ -54,14 +17,152 @@
       "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157725",
       "https://www.bayern.landtag.de/www/ElanTextAblage_WP19/Drucksachen/Basisdrucksachen/0000003000/0000003064.pdf"
     ],
+    "initiatoren": [
+      {
+        "person": "Katrin Ebner-Steiner",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Christoph Maier",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "(MSc) Martin Böhm",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Richard Graupner",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Prof. Dr. Ingo Hahn",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Markus Walbrunn",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Florian Köhler",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Oskar Lipp",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Johannes Meier",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Dieter Arnold",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Oskar Atzinger",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Jörg Baumann",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Franz Bergmüller",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Rene Dierkes",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Daniel Halemba",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Martin Huber",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Andreas Jurca",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Stefan Löw",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Roland Magerl",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Ferdinand Mang",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Gerd Mannes",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Harald Meußgeier",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Johann Müller",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Benjamin Nolte",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Elena Roon",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Franz Schmid",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Ulrich Singer",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Ralf Stadler",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Ramona Storm",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Markus Striedl",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Matthias Vogler",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "person": "Andreas Winhart",
+        "organisation": "Alternative für Deutschland (AfD)"
+      },
+      {
+        "organisation": "Alternative für Deutschland (AfD)"
+      }
+    ],
     "stationen": [
       {
-        "start_zeitpunkt": "1940-01-01T00:00:00+00:00",
+        "zp_start": "1940-01-01T00:00:00+00:00",
         "gremium": {
           "parlament": "BY",
           "wahlperiode": 19,
           "name": "plenum"
         },
+        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157725",
+        "parlament": "BY",
+        "typ": "parl-initiativ",
+        "trojanergefahr": 1,
+        "schlagworte": [],
         "dokumente": [
           {
             "drucksnr": "19/3998",
@@ -69,37 +170,30 @@
             "titel": "Testtitel",
             "volltext": "test",
             "zusammenfassung": "test",
-            "letzte_modifikation": "1940-01-01T00:00:00+00:00",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
             "link": "https://www.example.com",
             "hash": "testhash",
             "schlagworte": [
               "test"
             ],
-            "autorpersonen": [
-              "autorpersonen"
-            ],
-            "autoren": [
-              "autoren"
-            ]
+            "autoren": []
           }
         ],
-        "betroffene_texte": [
-          "test"
-        ],
-        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157725",
-        "parlament": "BY",
-        "schlagworte": [],
-        "stellungnahmen": [],
-        "typ": "parl-initiativ",
-        "trojanergefahr": 1
+        "additional_links": [],
+        "stellungnahmen": []
       },
       {
-        "start_zeitpunkt": "1940-01-01T00:00:00+00:00",
+        "zp_start": "1940-01-01T00:00:00+00:00",
         "gremium": {
           "parlament": "BY",
           "wahlperiode": 19,
           "name": "plenum"
         },
+        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157725",
+        "parlament": "BY",
+        "typ": "parl-zurueckgz",
+        "schlagworte": [],
         "dokumente": [
           {
             "drucksnr": "19/4166",
@@ -107,18 +201,14 @@
             "titel": "Testtitel",
             "volltext": "test",
             "zusammenfassung": "test",
-            "letzte_modifikation": "1940-01-01T00:00:00+00:00",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
             "link": "https://www.example.com",
             "hash": "testhash",
             "schlagworte": [
               "test"
             ],
-            "autorpersonen": [
-              "autorpersonen"
-            ],
-            "autoren": [
-              "autoren"
-            ]
+            "autoren": []
           },
           {
             "drucksnr": "example",
@@ -126,28 +216,18 @@
             "titel": "Testtitel",
             "volltext": "test",
             "zusammenfassung": "test",
-            "letzte_modifikation": "1940-01-01T00:00:00+00:00",
+            "zp_modifiziert": "1940-01-01T00:00:00+00:00",
+            "zp_referenz": "1940-01-01T00:00:00+00:00",
             "link": "https://www.example.com",
             "hash": "testhash",
             "schlagworte": [
               "test"
             ],
-            "autorpersonen": [
-              "autorpersonen"
-            ],
-            "autoren": [
-              "autoren"
-            ]
+            "autoren": []
           }
         ],
-        "betroffene_texte": [
-          "test"
-        ],
-        "link": "https://www.bayern.landtag.de/webangebot3/views/vorgangsanzeige/vorgangsanzeige.xhtml?gegenstandid=157725",
-        "parlament": "BY",
-        "schlagworte": [],
-        "stellungnahmen": [],
-        "typ": "parl-zurueckgz"
+        "additional_links": [],
+        "stellungnahmen": []
       }
     ]
   }

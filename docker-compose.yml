@@ -64,11 +64,11 @@ services:
     volumes:
       - ./temp/locallogs:/app/locallogs
     environment:
-      LTZF_DATABASE: "http://ltzf-db:80"
+      LTZF_API_URL: "http://ltzf-db:80"
+      LTZF_API_KEY: "tegernsee-apfelsaft-co2grenzwert"
       REDIS_HOST: "redis"
       API_OBJ_LOG: "locallogs"
       OPENAI_API_KEY: "example"
-      API_KEY: "tegernsee-apfelsaft-co2grenzwert"
 
   
   webserver:
@@ -85,7 +85,7 @@ services:
     ports:
       - 8081:80
     environment:
-      LTZFDB_HOST: "ltzf-db"
+      LTZF_API_HOST: "ltzf-db"
 
 networks:
   ltzf-network:

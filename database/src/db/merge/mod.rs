@@ -1,4 +1,3 @@
-pub mod assitzung;
 pub mod vorgang;
 
 pub enum MergeState<T> {

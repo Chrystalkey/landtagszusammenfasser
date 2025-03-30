@@ -8,6 +8,7 @@ target/
 __pycache__/
 .pytest_cache/
 
+**/**/.env
 oapi-generator/
 oapicode
 www/
