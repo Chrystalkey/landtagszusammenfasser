@@ -26,7 +26,7 @@ class CollectorConfiguration:
         global logger
         unset_keys = []
         # Database
-        self.database_url = os.getenv("LTZF_API_URL", "http://localhost:80")
+        self.database_url = os.getenv("LTZF_API_URL", "http://localhost:8080")
         self.api_key = os.getenv("LTZF_API_KEY", api_key)
         if self.api_key is None:
             unset_keys.append("LTZF_API_KEY")

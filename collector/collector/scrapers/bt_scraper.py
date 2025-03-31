@@ -206,14 +206,12 @@ class BundestagAPIScraper(Scraper):
         #Wenn gar nichts passt, setze auf Sonstig
         if not typ:
             typ = models.Stationstyp.SONSTIG
-            
-        datum = self._parse_date(position.get("datum"))
-
+         
         #Ermittle die zugehörigen Dokumente
         dokumente = await self._extract_dokumente(position, typ)
         #Erstelle die Station
         return models.Station.from_dict({
-            "start_zeitpunkt": f"{datum}T00:00:00",  # Startzeitpunkt als Datum mit 00:00:00
+            "zp_start": self._parse_date(position.get("datum")),  
             "dokumente": dokumente,             
             "parlament": position.get("zuordnung"),
             "typ": typ,
@@ -262,14 +260,16 @@ class BundestagAPIScraper(Scraper):
         # Erzeuge ein serialisierbares Dictionary für das Dokument
         return [{
             "titel": position.get("titel", ""),
-            "letzte_modifikation": datetime.now().isoformat(),
+            "zp_modifiziert": self._parse_date(datetime.now().isoformat()),
+            "zp_referenz": self._parse_date(data.get("documents", [{}])[0].get("datum", "")),
             "link": position.get("fundstelle", {}).get("pdf_url", ""),
             "hash": "",  # Muss noch implementiert werden
             "typ": dokument_typ,
             "zusammenfassung": zusammenfassung,
             "schlagworte": [],
             "drucksnr": drsnr,
-            "volltext": volltext
+            "volltext": volltext,
+            "autoren": [] # ToDo: Hier müssen die Autoren noch implementiert werden
         }]
     
 
@@ -297,9 +297,9 @@ class BundestagAPIScraper(Scraper):
     def _parse_date(self, date_str: str) -> str:
         """Konvertiert ein Datum-String in das erwartete ISO-Format"""
         if not date_str:
-            return datetime.now().date().isoformat()
+            return datetime.now().date().isoformat() #Aktuelles Datum, wenn kein Datum vorhanden
         try:
-            return datetime.strptime(date_str, "%Y-%m-%d").date().isoformat()
+            return datetime.strptime(date_str, "%Y-%m-%dT00:00:00+00:00").date().isoformat()
         except ValueError:
-            return datetime.now().date().isoformat()
+            return datetime.now().date().isoformat() #Aktuelles Datum, wenn kein Datum vorhanden
 
