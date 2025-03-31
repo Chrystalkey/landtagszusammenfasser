@@ -4,11 +4,11 @@
 # The generated code will be placed in the collector/oapicode and database/oapicode directories
 
 echo "[OAPI-Gen] Generating Client and Server Code from Spec"
-cd -Path "ltzf-backend"
+cd "ltzf-backend"
 sh oapigen.sh
 cd "../ltzf-collector"
 sh oapigen.sh
-cd -Path "../ltzf-website"
+cd "../ltzf-website"
 sh oapigen.sh
 cd ..
 echo "[OAPI-Gen] Done Generating Client and Server Code"
