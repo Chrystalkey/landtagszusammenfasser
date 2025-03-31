@@ -1,5 +1,0 @@
-{
-    "listing_url": "https://www.bayern.landtag.de/parlament/dokumente/drucksachen?isInitialCheck=0&q=&dknr=&suchverhalten=AND&dokumentenart=Drucksache&ist_basisdokument=on&sort=date&anzahl_treffer=200&wahlperiodeid%5B%5D=19&erfassungsdatum%5Bstart%5D=&erfassungsdatum%5Bend%5D=&dokumentenart=Drucksache&suchvorgangsarten%5B%5D=Gesetze%5C%5CGesetzentwurf&suchvorgangsarten%5B%5D=Gesetze%5C%5CStaatsvertrag&suchvorgangsarten%5B%5D=Gesetze%5C%5CHaushaltsgesetz%2C+Nachtragshaushaltsgesetz",
-    "url_regex": "https:\\/\\/www\\.bayern\\.landtag\\.de\\/webangebot3\\/views\\/vorgangsanzeige\\/vorgangsanzeige\\.xhtml\\?gegenstandid=\\d+",
-    "minimum_count": 40
-}

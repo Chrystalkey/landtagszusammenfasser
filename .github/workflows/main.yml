@@ -23,6 +23,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
@@ -31,10 +33,11 @@ jobs:
           profile: minimal
           override: true
       - name: Generate OAPI Code
-        run: sh oapi_gen.sh
+        working-directory: ltzf-backend/
+        run: sh oapigen.sh
 
       - name: Run cargo tests
-        working-directory: database/
+        working-directory: ltzf-backend/
         run: cargo test
         env:
           DATABASE_URL: postgres://ltzf-user:ltzf-pass@localhost:5432/ltzf
@@ -45,6 +48,8 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -58,8 +63,9 @@ jobs:
           virtualenvs-in-project: true
           
       - name: Generate OAPI Code
-        run: sh oapi_gen.sh
+        working-directory: ltzf-collector/
+        run: sh oapigen.sh
 
       - name: Run pytest
-        working-directory: collector/
+        working-directory: ltzf-collector/
         run: poetry install && poetry run pytest

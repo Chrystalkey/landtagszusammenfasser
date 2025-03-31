@@ -30,7 +30,7 @@ services:
 
   ltzf-db:
     build:
-      context: database
+      context: ltzf-backend
       network: host
     image: ltzf-db:test
     container_name: ltzf-db
@@ -51,7 +51,7 @@ services:
 
   collector:
     build:
-      context: collector
+      context: ltzf-collector
       network: host
     image: ltzf-collector:test
     container_name: ltzf-collector
