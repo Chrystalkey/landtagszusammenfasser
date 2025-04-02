@@ -110,31 +110,25 @@ Ein Beispiel wie man das Projekt aufsetzt findet sich in dem [Docker Compose Fil
 
 ### Arguments for LTZF-DB
 ```bash
-Usage: ltzusfas-db [OPTIONS] --db-url <DB_URL> --keyadder-key <KEYADDER_KEY>
+Usage: ltzf-db.exe [OPTIONS] --db-url <DB_URL> --keyadder-key <KEYADDER_KEY>
 
 Options:
       --mail-server <MAIL_SERVER>
-          [env: MAIL_SERVER=smtp.web.de]
       --mail-user <MAIL_USER>
-          [env: MAIL_USER=]
       --mail-password <MAIL_PASSWORD>
-          [env: MAIL_PASSWORD=]
       --mail-sender <MAIL_SENDER>
-          [env: MAIL_SENDER=]
       --mail-recipient <MAIL_RECIPIENT>
-          [env: MAIL_RECIPIENT=]
       --host <HOST>
-          [env: LTZF_HOST=127.0.0.1] [default: 0.0.0.0]
+          [default: 0.0.0.0]
       --port <PORT>
-          [env: LTZF_PORT=8080] [default: 80]
+          [default: 80]
   -d, --db-url <DB_URL>
-          [env: DATABASE_URL=postgres://ltzf-user:ltzf-pass@localhost/ltzf]
   -c, --config <CONFIG>
-          
+
       --keyadder-key <KEYADDER_KEY>
-          The API Key that is used to add new Keys. This is not saved in the database. [env: LTZF_KEYADDER_KEY=]
+          The API Key that is used to add new Keys. This is saved in the database.
       --merge-title-similarity <MERGE_TITLE_SIMILARITY>
-          [env: MERGE_TITLE_SIMILARITY=] [default: 0.8]
+          [default: 0.8]
   -h, --help
           Print help
   -V, --version

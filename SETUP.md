@@ -36,10 +36,16 @@ In full: `git clone git@github.com:Chrystalkey/landtagszusammenfasser.git --recu
 - redis
 
 You will notice, the Python dependencies are the same versions.
+Note, that you might not have to set up everything if you only want to develop on one project!
+Below are some shortcuts to get you started!
 
-A way to setup everything that is requried on Ubuntu is:
+### Setup Shortcut for Everything
+
+A way to setup everything that is required on Ubuntu is:
 ```bash
-sudo apt update && sudo apt install libpq-dev gcc python3 python3-poetry curl docker docker-compose-v2 postgres tesseract-ocr pandoc
+sudo apt update && sudo apt install libpq-dev gcc python3 python3-poetry wget curl docker docker-compose-v2 postgres tesseract-ocr pandoc
+wget "https://github.com/barnumbirr/zola-debian/releases/download/v0.19.2-1/zola_0.19.2-1_amd64_bookworm.deb" 
+dpkg -i "zola_0.19.2-1_amd64_bookworm.deb" && rm "zola_0.19.2-1_amd64_bookworm.deb"
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 rustup # Now follow the default on-screen options
 cargo install sqlx-cli
@@ -58,7 +64,7 @@ A way to setup everything required on windows is:
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
 
-scoop install mingw gcc vcpkg poetry python tesseract tesseract-languages
+scoop install mingw gcc vcpkg poetry python tesseract tesseract-languages zola
 vcpkg install --triplet=x64-mingw-static libpq
 
 curl -O "https://win.rustup.rs/x86_64"
@@ -67,7 +73,105 @@ cargo install sqlx-cli
 
 ## after all prerequisites are installed to get to a working state, do:
 git clone git@github.com:Chrystalkey/landtagszusammenfasser.git --recurse-submodules
+cd landtagszusammenfasser
 .\oapi_gen.ps1
+```
+
+### Setup Shortcut if you only want to develop on ltzf-collector
+Windows
+1. install wsl
+2. install docker for windows with the WSL backend
+```powershell
+# scoop
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+
+scoop install poetry python tesseract tesseract-languages
+
+## after all prerequisites are installed to get to a working state, do:
+git clone git@github.com:Chrystalkey/landtagszusammenfasser.git --recurse-submodules
+cd landtagszusammenfasser
+.\oapi_gen.ps1
+```
+
+Linux
+```bash
+sudo apt update && sudo apt install python3 python3-poetry curl docker docker-compose-v2 postgres tesseract-ocr pandoc
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+rustup # Now follow the default on-screen options
+cargo install sqlx-cli
+
+## after all prerequisites are installed to get to a working state, do:
+git clone git@github.com:Chrystalkey/landtagszusammenfasser.git --recurse-submodules
+cd landtagszusammenfasser
+sh oapi_gen.sh
+```
+
+### Setup Shortcut if you only want to develop on ltzf-website
+Windows
+1. install wsl
+2. install docker for windows with the WSL backend
+```powershell
+# scoop
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+
+scoop install poetry python zola
+
+## after all prerequisites are installed to get to a working state, do:
+git clone git@github.com:Chrystalkey/landtagszusammenfasser.git --recurse-submodules
+cd landtagszusammenfasser
+.\oapi_gen.ps1
+```
+
+Linux
+```bash
+sudo apt update && sudo apt install python3 python3-poetry wget curl docker docker-compose-v2 postgres
+wget "https://github.com/barnumbirr/zola-debian/releases/download/v0.19.2-1/zola_0.19.2-1_amd64_bookworm.deb" 
+dpkg -i "zola_0.19.2-1_amd64_bookworm.deb" && rm "zola_0.19.2-1_amd64_bookworm.deb"
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+rustup # Now follow the default on-screen options
+cargo install sqlx-cli
+
+## after all prerequisites are installed to get to a working state, do:
+git clone git@github.com:Chrystalkey/landtagszusammenfasser.git --recurse-submodules
+cd landtagszusammenfasser
+sh oapi_gen.sh
+```
+
+### Setup Shortcut if you only want to develop on ltzf-backend
+Windows
+1. install wsl
+2. install docker for windows with the WSL backend
+```powershell
+# scoop
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+
+scoop install mingw gcc vcpkg
+vcpkg install --triplet=x64-mingw-static libpq
+
+curl -O "https://win.rustup.rs/x86_64"
+./rustup-init.exe # follow on-screen instructions
+cargo install sqlx-cli
+
+## after all prerequisites are installed to get to a working state, do:
+git clone git@github.com:Chrystalkey/landtagszusammenfasser.git --recurse-submodules
+cd landtagszusammenfasser
+.\oapi_gen.ps1
+```
+
+Linux
+```bash
+sudo apt update && sudo apt install libpq-dev gcc wget curl docker docker-compose-v2 postgres
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+rustup # Now follow the default on-screen options
+cargo install sqlx-cli
+
+## after all prerequisites are installed to get to a working state, do:
+git clone git@github.com:Chrystalkey/landtagszusammenfasser.git --recurse-submodules
+cd landtagszusammenfasser
+sh oapi_gen.sh
 ```
 
 ### After-Setup Care
@@ -107,4 +211,5 @@ The command to build/setup any of the three sub-projects is `docker compose up -
 
 Note that the provided docker-compose file does _not_ contain any actual credentials (except for the test root api key which is irrelevant).
 I personally use git stash to keep one version of it containing all relevant credentials on hand.
-Remember to set the OPENAI_API_KEY and LTZF_API_KEY variables properly!
+
+Remember to set the OPENAI_API_KEY and LTZF_API_KEY variables properly when containerizing ltzf-collector!
