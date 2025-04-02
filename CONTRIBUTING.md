@@ -10,11 +10,11 @@ Make yourself familiar with the structure!
 A quick setup instruction for development can be found in [SETUP.md](SETUP.md).
 
 ## State of the Project and the most Pressing Construction Sites
-The project is currently in a very very unstable state. 
-This primarily means the API is changing in subtle ways every now and then, (although the pace of change is slowing).
+The project is currently in a very unstable state. 
+This primarily means the API is changing in subtle ways every now and then, (although the pace of change is slowing to a halt).
 The reason for this is that we are still figuring out how to  represent seventeen independent legislative processes, which is an ongoing venture.
 
-If this is fine, then the most pressing concerns would be
+If this is fine for you, then the most pressing concerns would be
 1. if you know python
     1. give the collector subproject a little overhaul, solidifying error handling, logging and general execution structure
     2. give the document handling in collectors a little overhaul! I am sure there is a better was to do it than what happens now
@@ -23,6 +23,7 @@ If this is fine, then the most pressing concerns would be
     5. (after some meddling with collectors) give us input on how to improve the http api from the collection side! There is always room for improvement and better consistency
 2. if you know how to do websites
     1. give us one, please. The one currently residing in webserver/ is a placeholder and more or less a way of making sure the correct data comes out
+       also please use the framework with which you are comfortable, with no objections from our side.
     2. give your input on how to improve the http api from the GET-side of things! Suggestions are very much appreciated
 3. if you know rust
     1. write tests for the database/ subproject. Scenario tests as well as unit tests in rust
