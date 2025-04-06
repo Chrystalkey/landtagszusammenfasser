@@ -3,7 +3,7 @@ FROM debian:bookworm-slim
 LABEL maintainer="Benedikt Schäfer"
 LABEL description="Pre-Image that generates openapi code from scratch every time the spec changes"
 LABEL version="0.1"
-ENV OPENAPI_GENERATOR_VERSION="7.11.0"
+ENV OPENAPI_GENERATOR_VERSION="7.12.0"
 RUN apt update && apt install -y --no-install-recommends maven jq curl \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir /app \
