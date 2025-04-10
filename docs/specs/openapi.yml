@@ -233,7 +233,7 @@ paths:
       responses:
         201:
           description: "Created"
-        204:
+        304:
           description: "Not Modified"
         401:
           $ref: "#/components/responses/UnauthorizedError"
@@ -340,7 +340,62 @@ paths:
         - $ref: "#/components/parameters/year"
         - $ref: "#/components/parameters/month"
         - $ref: "#/components/parameters/day-of-month"
-
+  /api/v1/dokument/{api_id}:
+    get:
+      operationId: "dokument_get_by_id"
+      description: "Endpunkt um ein Dokument einzeln abzurufen"
+      parameters:
+        - name: api_id
+          required: true
+          in: path
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dokument"
+        404:
+          description: Not found
+    put:
+      operationId: "dokument_put_id"
+      description: Endpunkt um Dokumente für spätere Referenz upzuloaden
+      parameters:
+        - name: api_id
+          required: true
+          in: path
+          schema:
+            type: string
+            format: uuid
+      responses:
+        201:
+          description: "Created successfully"
+        304:
+          description: "Not Modified"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+      security:
+        - apiKey: []
+    delete:
+      operationId: "dokument_delete_id"
+      description: "Convenience Endpoint"
+      parameters:
+        - name: api_id
+          required: true
+          in: path
+          schema:
+            type: string
+            format: uuid
+      responses:
+        204:
+          description: "Success"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+      security:
+        - apiKey: []
 components:
   parameters:
     year: 
@@ -423,6 +478,13 @@ components:
       schema:
         type: integer
         minimum: 0
+    contains:
+      name: contains
+      description: der string wird case-insensitiv gematcht mit jedem verfügbaren Feld gematcht. Der vollständige String muss enthalten sein.
+      in: query
+      required: false
+      schema:
+        type: string
     vgtyp:
       name: "vgtyp"
       in: "query"
@@ -749,6 +811,33 @@ components:
           type: "array"
           items: 
             $ref: "#/components/schemas/dokument"
+    lobbyregeintrag:
+      type: object
+      description: "Eintrag im Bundestagslobbyregister zu einem bestimmten Vorgang"
+      required:
+        - organisation
+        - interne_id
+        - intention
+        - link
+        - betroffene_drucksachen
+      properties:
+        organisation:
+          $ref: "#/components/schemas/autor"
+        interne_id:
+          type: string
+          description: "Interne ID des Lobbyregisters, notwendig für die bildung von Links"
+        intention:
+          type: string
+          description: "Lobbyregistereintrag zu dem  Was und Warum man auf den Vorgang Einfluss nehmen will"
+        link:
+          type: string
+          format: url
+          description: "Direktlink zum Lobbyregistereintrag"
+        betroffene_drucksachen:
+          type: array
+          description: "Stringarray mit betroffenen Drucksachennummern. Wird in der Datenbank _nicht_ integriert und nur flach aufgelegt"
+          items:
+            type: string
     vorgang:
       type: "object"
       description: "'Master-Objekt' der API. Der Wrapper um Stationen, die den Beratungsverlauf tatsächlich beschreiben. Ein Vorgang kann dabei nicht nur ein Gesetz, sondern auch ein parlamentarischer Antrag sein."
@@ -795,6 +884,10 @@ components:
           type: "array"
           items:
             $ref: "#/components/schemas/station"
+        lobbyregister:
+          type: array
+          items:
+            $ref: "#/components/schemas/lobbyregeintrag"
     vg_ident:
       type: "object"
       description: "Eindeutiger Identifikator für einen Vorgang innerhalb eines Parlaments+Wahlperiode. Kann z.B. eine Initiativdrucksache oder eine Vorgansnummer im Parlament sein."
