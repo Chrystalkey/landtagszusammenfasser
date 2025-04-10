@@ -396,6 +396,176 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
       security:
         - apiKey: []
+  /api/v1/gremien:
+    get:
+      operationId: "gremien_get"
+      parameters:
+        - $ref: "#/components/parameters/gremium-like"
+        - $ref: "#/components/parameters/parlament"
+        - $ref: "#/components/parameters/wahlperiode"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/gremium"
+        204:
+          description: No Content
+        
+    put:
+      operationId: "gremien_put"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/gremium"
+      responses:
+        201:
+          description: Success
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+      security:
+        - apiKey: [] 
+
+    delete:
+      operationId: "gremien_delete_by_param"
+      parameters:
+        - $ref: "#/components/parameters/gremium-like"
+        - $ref: "#/components/parameters/parlament"
+        - $ref: "#/components/parameters/wahlperiode"
+      responses:
+        204:
+          description: Success
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+      security:
+        - apiKey: []
+  /api/v1/autoren:
+    get:
+      operationId: "autoren_get"
+      parameters:
+        - $ref: "#/components/parameters/autor-contains"
+        - $ref: "#/components/parameters/autor-fachgebiet"
+        - $ref: "#/components/parameters/autor-organisation"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/autor"
+        204:
+          description: No Content
+        
+    put:
+      operationId: "autoren_put"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/autor"
+      responses:
+        201:
+          description: Success
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+      security:
+        - apiKey: [] 
+
+    delete:
+      operationId: "autoren_delete_by_param"
+      parameters:
+        - $ref: "#/components/parameters/autor-contains"
+        - $ref: "#/components/parameters/autor-fachgebiet"
+        - $ref: "#/components/parameters/autor-organisation"
+      responses:
+        204:
+          description: Success
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+      security:
+        - apiKey: []
+  /api/v1/enumeration/{name}:
+    get:
+      operationId: "enum_get"
+      parameters:
+        - $ref: "#/components/parameters/contains"
+        - name: "name"
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: ["schlagworte", "stationstypen", "vorgangstypen", "parlamente", "vgidtypen", "dokumententypen"]
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        204:
+          description: No Content
+
+    put:
+      operationId: "enum_put"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+      parameters:
+        - name: "name"
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: ["schlagworte", "stationstypen", "vorgangstypen", "parlamente", "vgidtypen", "dokumententypen"]
+      responses:
+        201:
+          description: Success
+        304:
+          description: Unchanged
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+      security:
+        - apiKey: [] 
+  /api/v1/enumeration/{name}/{item}:
+    delete:
+      operationId: "enum_delete"
+      description: "Item wird case-sensitiv gematcht und dementsprechend gelöscht"
+      parameters:
+        - name: "item"
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: "name"
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: ["schlagworte", "stationstypen", "vorgangstypen", "parlamente", "vgidtypen", "dokumententypen"]
+      responses:
+        204:
+          description: Success
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+      security:
+        - apiKey: []
+
 components:
   parameters:
     year: 
@@ -424,7 +594,6 @@ components:
         type: integer
         minimum: 1
         maximum: 31
-
     gremium-like:
       name: "gr"
       in: query
@@ -480,7 +649,14 @@ components:
         minimum: 0
     contains:
       name: contains
-      description: der string wird case-insensitiv gematcht mit jedem verfügbaren Feld gematcht. Der vollständige String muss enthalten sein.
+      description: der string wird case-insensitiv gematcht. Der vollständige String muss enthalten sein.
+      in: query
+      required: false
+      schema:
+        type: string
+    equals:
+      name: equals
+      description: der string wird case-sensitiv auf gleichheit gematcht.
       in: query
       required: false
       schema:
