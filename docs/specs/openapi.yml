@@ -648,16 +648,19 @@ components:
           format: "date-time"
           description: "Plenarprotokoll für die Sitzung am 7.3., erstellt am 8.3. modifiziert am 9.3."
           example: "2024-03-09T00:00:00+00:00"
+          pattern: "^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d((\+\d\d:\d\d)|Z)"
         zp_referenz:
           type: "string"
           format: "date-time"
           description: "Plenarprotokoll für die Sitzung am 7.3., erstellt am 8.3. modifiziert am 9.3."
           example: "2024-03-07T00:00:00+00:00"
+          pattern: "^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d((\+\d\d:\d\d)|Z)"
         zp_erstellt:
           type: "string"
           format: "date-time"
           description: "Plenarprotokoll für die Sitzung am 7.3., erstellt am 8.3. modifiziert am 9.3."
           example: "2024-03-08T00:00:00+00:00"
+          pattern: "^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d((\+\d\d:\d\d)|Z)"
         link:
           type: "string"
           format: "uri"
@@ -706,11 +709,13 @@ components:
           format: "date-time"
           description: "Datum an dem die erste Aktion dieser Station erstellt wurde, z.B. Erstes Sitzungsdatum des Ausschusses"
           example: "2024-01-01T00:00:00+00:00"
+          pattern: "^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d((\+\d\d:\d\d)|Z)"
         zp_modifiziert:
           type: "string"
           format: "date-time"
           description: "Letztes relevantes Datum an dem die Station angefasst wurde z.B.: letzte sitzung oder nächste geplante sitzung"
           example: "2024-01-01T00:00:00+00:00"
+          pattern: "^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d((\+\d\d:\d\d)|Z)"
         gremium:
           $ref: "#/components/schemas/gremium"
         gremium_federf:
@@ -867,6 +872,7 @@ components:
         termin:
           type: "string"
           format: "date-time"
+          pattern: "^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d((\+\d\d:\d\d)|Z)"
         gremium:
           $ref: "#/components/schemas/gremium"
         nummer:
