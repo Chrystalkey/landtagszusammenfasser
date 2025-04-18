@@ -120,8 +120,6 @@ paths:
       responses:
         "201":
           description: "Success"
-        "400": 
-          description: "Bad Request"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
         "409": 
@@ -279,8 +277,10 @@ paths:
       responses:
         200:
           $ref: "#/components/responses/SGetResponse"
+        204:
+          description: "No Content found for the specified parameters"
         304:
-          description: not Modified
+          description: "Not Modified"
         404:
           description: Not found
     put:
