@@ -1,40 +1,70 @@
 openapi: 3.0.0
 info:
   title: "Specification for the Landtagszusammenfasser Project"
-  version: "0.1.0"
+  version: "0.1.1"
   description: "Beschreibung der API des LTZF Projekts. Alle Listen, die vom Server kommen sind sortiert in\n  1. datum der letzten modifikation, absteigend\n  2. lexikographisch des titels falls nicht vorhanden"
+  x-api-limits:
+    maxBodySize: 16GB
+    rateLimit: 256
+    rateLimitPeriod: "second"
+tags:
+  - name: Vorgänge
+    description: Endpoints related to legislative processes
+  - name: Sitzungen
+    description: Endpoints related to parliamentary sessions
+  - name: Kalender
+    description: Endpoints related to calendar functionality
+  - name: Dokumente
+    description: Endpoints related to documents
+  - name: Adminschnittstellen
+    description: Endpoints used for administrative purposes
+  - name: Collector-Schnittstellen
+    description: Endpoints used for collecting data
+  - name: Keyadder-Schnittstellen
+    description: Endpoints used for adding API keys
+  - name: Unauthorisiert
+    description: Endpoints that do not require authentication
+  - name: Authentication
+    description: Endpoints related to API key management
 paths:
   /api/v1/vorgang/{vorgang_id}:
     get:
+      tags:
+        - Vorgänge
+        - Unauthoriziert
       operationId: "vorgang_get_by_id"
-      description: "Gibt den Vorgang mit der angegebenen ID zurück"
+      description: "Retrieves a specific legislative process by its unique identifier. Returns comprehensive details about the process including all its stations, associated documents, and metadata."
       parameters:
         - name: "vorgang_id"
           in: "path"
           required: true
+          description: "Unique identifier (UUID) of the legislative process to retrieve"
           schema:
             type: "string"
             format: "uuid"
         - $ref: "#/components/parameters/if-mod-since"
       responses:
-        "200":
-          description: "successful operation"
+        200:
+          description: "success"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/vorgang"
-        "304":
+        304:
           description: "No new changes"
-        "404":
-          description: "Content not found"
+        404:
+          $ref: "#/components/responses/NotFoundError"
     put:
+      tags:
+        - Vorgänge
+        - Adminschnittstellen
       operationId: "vorgang_id_put"
-      description: Adminschnittstelle zum direkten Set/Replace eines Vorgangs ohne Merge oder Matching
+      description: "Administrative endpoint to directly set or replace a legislative process without merging or matching. Replaces the entire process data if it exists, or creates a new one if it doesn't."
       parameters:
         - name: "vorgang_id"
           in: "path"
           required: true
-          description: Die ID des betreffenden Vorgangs
+          description: "Unique identifier (UUID) of the legislative process to create or update"
           schema:
             type: string
             format: uuid
@@ -51,43 +81,52 @@ paths:
           description: "Content Unchanged"
         401:
           $ref: "#/components/responses/UnauthorizedError"
+        403:
+          description: Forbidden
       security:
         - apiKey: [] 
     delete:
+      tags:
+        - Vorgänge
+        - Adminschnittstellen
       operationId: vorgang_delete
-      description: Adminschnittstelle zum Löschen eines Vorgangs
+      description: "Administrative endpoint to completely remove a legislative process from the system. This operation cannot be undone."
       parameters:
         - name: "vorgang_id"
           in: "path"
           required: true
-          description: Die ID des zu löschenden Vorgangs
+          description: "Unique identifier (UUID) of the legislative process to delete"
           schema:
             type: "string"
             format: "uuid"
       responses:
+        204:
+          description: "success"
         401:
           $ref: "#/components/responses/UnauthorizedError"
-        204:
-          description: "Deleted Successfully"
+        403:
+          description: Forbidden
         404:
-          description: "No Element with this ID"
+          $ref: "#/components/responses/NotFoundError"
       security:
         - apiKey: [] 
   /api/v1/vorgang:
     get:
+      tags:
+        - Vorgänge
+        - Unauthorisiert
       operationId: "vorgang_get"
-      description: Gibt eine filterbare Liste von Vorgängen zurück, maximal 64 Vorgänge pro Anfrage
+      description: "Retrieves a filterable list of legislative processes. Returns up to 64 processes per request, which can be filtered by various criteria including time range, parliament, and electoral period."
       responses:
-        "200":
+        200:
           $ref: "#/components/responses/VorgangGetResponse"
-        "204":
-          description: "No Content found for the specified parameters"
-        "304":
-          description: "No new changes"
-        "416":
-          description: "Request Range not satisfiable. Dates before the existence of the BRD or in the future are excluded for example"
-        "400":
-          description: "Bad Request"
+        204:
+          description: "No Content"
+        304:
+          description: "No new changes. Used in combination with the If-Modified-Since header"
+        416:
+          $ref: "#/components/responses/RangeNotSatisfiableError"
+
 
       parameters:
         - $ref: "#/components/parameters/if-mod-since"
@@ -102,10 +141,14 @@ paths:
         - $ref: "#/components/parameters/autor-organisation" # für initiatoren
         - $ref: "#/components/parameters/vgtyp"
     put:
+      tags:
+        - Vorgänge
+        - Collector-Schnittstellen
       operationId: "vorgang_put"
-      description: Collector-Schnittstelle zum Einfügen eines neuen Vorgangs. Die Vorgänge werden automatisch mit dem Datensatz dedupliziert und ggf. Vereint
+      description: "Collector interface for inserting a new legislative process. Processes are automatically deduplicated against existing data and merged if necessary. Used by data collection services to add new legislative processes to the system."
       requestBody:
         required: true
+        description: "Complete representation of the legislative process to insert"
         content:
           application/json:
             schema:
@@ -114,58 +157,73 @@ paths:
         - name: "collector"
           in: query
           required: true
+          description: "Unique identifier of the collector service submitting this data"
           schema:
             type: "string"
             format: "uuid"
       responses:
-        "201":
+        201:
           description: "Success"
-        "401":
+        401:
           $ref: "#/components/responses/UnauthorizedError"
-        "409": 
-          description: "Conflict. This Vorgang-ID already exists"
+        409: 
+          $ref: "#/components/responses/ConflictError"
       security:
         - apiKey: []
   /api/v1/auth:
     delete:
+      tags:
+        - Authentication
+        - Keyadder-Schnittstellen
       operationId: "auth_delete"
-      description: Keyadder-Schnittstelle. Löscht eine API-Key aus der Datenbank.
+      description: "Key adder interface for removing API keys from the system. Allows administrators and key management services to revoke access by deleting an existing API key."
       parameters:
         - name: "api-key-delete"
           in: "header"
           required: true
-          description: Der zu löschende API-Key
+          description: "The API key to be deleted from the system. Must be provided exactly as it was created."
           schema:
             type: "string"
       responses:
-        "204":
+        204:
           description: "Success"
-        "401":
+        401:
           $ref: "#/components/responses/UnauthorizedError"
-        "404":
-          description: "API Key not found"
+        403:
+          description: Forbidden
+        404:
+          description: "Not found"
       security:
         - apiKey: [] 
     post:
+      tags:
+        - Authentication
+        - Keyadder-Schnittstellen
       operationId: "auth_post"
-      description: Keyadder-Schnittstelle. Fügt eine neue API-Key zur Datenbank hinzu.
+      description: "Key adder interface for creating new API keys. Allows administrators to generate new access keys for collectors, administrative tools, or other key adders."
       requestBody:
         required: true
+        description: "Details about the new API key to be created, including its scope and optional expiration date"
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/create_api_key"
       responses:
-        "201":
+        201:
           $ref: "#/components/responses/ApiKeyCreated"
-        "401":
+        401:
           $ref: "#/components/responses/UnauthorizedError"
+        403:
+          description: Forbidden
       security:
         - apiKey: [] 
   /api/v1/sitzung:
     get:
+      tags:
+        - Sitzungen
+        - Unauthorisiert
       operationId: "s_get"
-      description: Gibt eine Liste gefilterter Sitzungen zurück. Maximal 64 Sitzungen pro Anfrage
+      description: "Retrieves a filterable list of parliamentary sessions. Returns up to 64 sessions per request, which can be filtered by various criteria including time frame, parliament, and electoral period."
       parameters:
         - $ref: "#/components/parameters/if-mod-since"
         - $ref: "#/components/parameters/updated-since"
@@ -178,52 +236,58 @@ paths:
         - $ref: "#/components/parameters/vgtyp"
 
       responses:
-        "200":
+        200:
           $ref: "#/components/responses/SGetResponse"
-        "204":
-          description: "No Content found for the specified parameters"
-        "304":
-          description: "No new changes"
-        "416":
-          description: "Request Range not satisfiable. Dates before the existence of the BRP or in the future are excluded for example"
-        "400":
-          description: "Bad Request"
+        204:
+          description: "No Content"
+        304:
+          description: "No new changes. Used in combination with the If-Modified-Since header"
+        416:
+          $ref: "#/components/responses/RangeNotSatisfiableError"
   /api/v1/sitzung/{sid}:
     get:
+      tags:
+        - Sitzungen
+        - Unauthorisiert
       operationId: "s_get_by_id"
-      description: "Gibt Sitzung mit dieser ID zurück"
+      description: "Retrieves detailed information about a specific parliamentary session by its unique identifier. Returns complete session data including agenda items, documents, and metadata."
       parameters:
         - name: "sid"
           in: "path"
           required: true
+          description: "Unique identifier (UUID) of the session to retrieve"
           schema:
             type: "string"
             format: "uuid"
         - $ref: "#/components/parameters/if-mod-since"
       responses:
-        "200":
-          description: "successful operation"
+        200:
+          description: "success"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/sitzung"
-        "304":
-          description: "Not Modified"
-        "404":
-          description: "Content not found"
+        304:
+          description: "No new changes. Used in combination with the If-Modified-Since header"
+        404:
+          $ref: "#/components/responses/NotFoundError"
     put:
+      tags:
+        - Sitzungen
+        - Adminschnittstellen
       operationId: "sid_put"
-      description: Adminschnittstelle zum direkten Set/Replace einer Sitzung ohne Merge oder Matching
+      description: "Administrative endpoint to directly set or replace a parliamentary session without merging or matching. Replaces the entire session data if it exists, or creates a new one if it doesn't."
       parameters:
         - name: "sid"
           in: "path"
           required: true
-          description: Die ID der betreffenden Sitzung
+          description: "Unique identifier (UUID) of the session to create or update"
           schema:
             type: string
             format: uuid
       requestBody:
         required: true
+        description: "Complete representation of the parliamentary session to create or update"
         content:
           application/json:
             schema:
@@ -235,16 +299,21 @@ paths:
           description: "Not Modified"
         401:
           $ref: "#/components/responses/UnauthorizedError"
+        403:
+          description: Forbidden
       security:
         - apiKey: [] 
     delete:
+      tags:
+        - Sitzungen
+        - Adminschnittstellen
       operationId: sitzung_delete
-      description: Adminschnittstelle zum Löschen einer Sitzung
+      description: "Administrative endpoint to completely remove a parliamentary session from the system. This operation cannot be undone."
       parameters:
         - name: "sid"
           in: "path"
           required: true
-          description: Die ID der zu löschenden Sitzung
+          description: "Unique identifier (UUID) of the session to delete"
           schema:
             type: "string"
             format: "uuid"
@@ -252,54 +321,70 @@ paths:
         401:
           $ref: "#/components/responses/UnauthorizedError"
         204:
-          description: "Deleted Successfully"
+          description: "Success"
         404:
-          description: "No Element with this ID"
+          $ref: "#/components/responses/NotFoundError"
       security:
         - apiKey: [] 
   /api/v1/kalender/{parlament}/{datum}:
     get:
+      tags:
+        - Kalender
+        - Sitzungen
+        - Unauthorisiert
       operationId: kal_date_get
-      description: Gibt eine Liste der Sitzungen im gegebenen Tag und Parlament zurück.
+      description: "Retrieves a list of parliamentary sessions for a specific date and parliament. Provides all sessions scheduled for the given day in the specified parliamentary body."
       parameters:
         - name: parlament
           in: path
           required: true
+          description: "Code of the parliament to query sessions for (e.g., 'BT' for Bundestag)"
           schema:
             $ref: "#/components/schemas/parlament"
         - name: datum
           in: path
           required: true
+          description: "Date to retrieve sessions for, in ISO 8601 format (YYYY-MM-DD)"
           schema:
             type: string
             format: date
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
         - $ref: "#/components/parameters/if-mod-since"
       responses:
         200:
           $ref: "#/components/responses/SGetResponse"
         204:
-          description: "No Content found for the specified parameters"
+          description: "No Content"
         304:
-          description: "Not Modified"
+          description: "No new changes. Used in combination with the If-Modified-Since header"
         404:
-          description: Not found
+          $ref: "#/components/responses/NotFoundError"
     put:
+      tags:
+        - Kalender
+        - Sitzungen
+        - Adminschnittstellen
+        - Collector-Schnittstellen
       operationId: kal_date_put
-      description: Collector-Schnittstelle zum Einfügen neuer Sitzungen in einen bestimmten Tag und Parlament. Die Daten werden vollständig überschrieben, sofern das Datum nicht länger als einen Tag zurückliegt. Diese Beschränkung existiert nicht, falls der verwendete API-Key Admin-Befugnisse hat.
+      description: "Collector interface for adding or updating sessions for a specific date and parliament. Completely replaces all sessions for the given date, with restrictions based on how far in the past the date is. Admin API keys can override the time restriction."
       parameters:
         - name: parlament
           in: path
           required: true
+          description: "Code of the parliament to add sessions for (e.g., 'BT' for Bundestag)"
           schema:
             $ref: "#/components/schemas/parlament"
         - name: datum
           in: path
           required: true
+          description: "Date to add sessions for, in ISO 8601 format (YYYY-MM-DD)"
           schema:
             type: string
             format: date
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
       requestBody:
         required: true
+        description: "Array of parliamentary sessions to set for the specified date"
         content:
           application/json:
             schema:
@@ -315,19 +400,21 @@ paths:
         - apiKey: [] 
   /api/v1/kalender:
     get:
+      tags:
+        - Kalender
+        - Sitzungen
+        - Unauthorisiert
       operationId: kal_get
-      description: Gibt eine filterbare Liste der Sitzungen zurück. Maximal 64 Sitzungen pro Anfrage.
+      description: "Retrieves a filterable list of parliamentary sessions for calendar display. Returns up to 64 sessions per request, which can be filtered by various criteria including year, month, day, parliament, and committee."
       responses:
-        "200":
+        200:
           $ref: "#/components/responses/SGetResponse"
-        "204":
-          description: "No Content found for the specified parameters"
-        "304":
-          description: "No recent changes"
-        "416":
-          description: "Request Range not satisfiable. Dates before the existence of the BRD or in the future are excluded for example"
-        "400":
-          description: "Bad Request"
+        204:
+          description: "No Content"
+        304:
+          description: "No new changes. Used in combination with the If-Modified-Since header"
+        416:
+          $ref: "#/components/responses/RangeNotSatisfiableError"
       parameters:
         - $ref: "#/components/parameters/if-mod-since"
         - $ref: "#/components/parameters/updated-since"
@@ -342,34 +429,49 @@ paths:
         - $ref: "#/components/parameters/day-of-month"
   /api/v1/dokument/{api_id}:
     get:
+      tags:
+        - Dokumente
+        - Unauthorisiert
       operationId: "dokument_get_by_id"
-      description: "Endpunkt um ein Dokument einzeln abzurufen"
+      description: "Retrieves a specific document by its unique identifier. Returns complete document data including title, full text, metadata, and author information."
       parameters:
         - name: api_id
           required: true
           in: path
+          description: "Unique identifier (UUID) of the document to retrieve"
           schema:
             type: string
             format: uuid
       responses:
         200:
-          description: OK
+          description: Success
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/dokument"
         404:
-          description: Not found
+          $ref: "#/components/responses/NotFoundError"
     put:
+      tags:
+        - Dokumente
+        - Adminschnittstellen
       operationId: "dokument_put_id"
-      description: Endpunkt um Dokumente für spätere Referenz upzuloaden
+      description: "Administrative endpoint to upload or update documents for future reference. Creates a new document with the specified ID or replaces an existing one."
       parameters:
         - name: api_id
           required: true
           in: path
+          description: "Unique identifier (UUID) to assign to the document or of the existing document to update"
           schema:
             type: string
             format: uuid
+      requestBody:
+        required: true
+        description: "Complete representation of the document to create or update"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/dokument"
       responses:
         201:
           description: "Created successfully"
@@ -377,15 +479,21 @@ paths:
           description: "Not Modified"
         401:
           $ref: "#/components/responses/UnauthorizedError"
+        403:
+          description: Forbidden
       security:
         - apiKey: []
     delete:
+      tags:
+        - Dokumente
+        - Adminschnittstellen
       operationId: "dokument_delete_id"
-      description: "Convenience Endpoint"
+      description: "Administrative endpoint to remove a document from the system. This operation cannot be undone and may affect other resources referencing this document."
       parameters:
         - name: api_id
           required: true
           in: path
+          description: "Unique identifier (UUID) of the document to delete"
           schema:
             type: string
             format: uuid
@@ -394,18 +502,24 @@ paths:
           description: "Success"
         401:
           $ref: "#/components/responses/UnauthorizedError"
+        403:
+          description: Forbidden
       security:
         - apiKey: []
   /api/v1/gremien:
     get:
+      tags:
+        - Gremien
+        - Unauthorisiert
       operationId: "gremien_get"
+      description: "Retrieves a list of committees filtered by optional parameters. Returns committees matching the specified criteria from parliament bodies and electoral periods."
       parameters:
         - $ref: "#/components/parameters/gremium-like"
         - $ref: "#/components/parameters/parlament"
         - $ref: "#/components/parameters/wahlperiode"
       responses:
         200:
-          description: "OK"
+          description: "Success"
           content:
             application/json:
               schema:
@@ -413,11 +527,16 @@ paths:
                 items:
                   $ref: "#/components/schemas/gremium"
         204:
-          description: No Content
-        
+          description: "No Content"
     put:
+      tags:
+        - Gremien
+        - Adminschnittstellen
       operationId: "gremien_put"
+      description: "Administrative endpoint to add or update multiple committees at once. Creates new committees or replaces existing ones based on matching parliament, electoral period, and name."
       requestBody:
+        required: true
+        description: "Array of committees to create or update"
         content:
           application/json:
             schema:
@@ -426,35 +545,46 @@ paths:
                 $ref: "#/components/schemas/gremium"
       responses:
         201:
-          description: Success
+          description: "Success"
         401:
           $ref: "#/components/responses/UnauthorizedError"
+        403:
+          description: Forbidden
       security:
         - apiKey: [] 
-
     delete:
+      tags:
+        - Gremien
+        - Adminschnittstellen
       operationId: "gremien_delete_by_param"
+      description: "Administrative endpoint to delete committees matching the specified criteria. Removes all committees that match the filter parameters."
       parameters:
         - $ref: "#/components/parameters/gremium-like"
         - $ref: "#/components/parameters/parlament"
         - $ref: "#/components/parameters/wahlperiode"
       responses:
         204:
-          description: Success
+          description: "Success"
         401:
           $ref: "#/components/responses/UnauthorizedError"
+        403:
+          description: Forbidden
       security:
         - apiKey: []
   /api/v1/autoren:
     get:
+      tags:
+        - Autoren
+        - Unauthorisiert
       operationId: "autoren_get"
+      description: "Retrieves a list of authors filtered by optional parameters. Returns authors matching the specified criteria including name fragments, professional field, and organization."
       parameters:
         - $ref: "#/components/parameters/autor-contains"
         - $ref: "#/components/parameters/autor-fachgebiet"
         - $ref: "#/components/parameters/autor-organisation"
       responses:
         200:
-          description: "OK"
+          description: "Success"
           content:
             application/json:
               schema:
@@ -462,11 +592,16 @@ paths:
                 items:
                   $ref: "#/components/schemas/autor"
         204:
-          description: No Content
-        
+          description: "No Content"
     put:
+      tags:
+        - Autoren
+        - Adminschnittstellen
       operationId: "autoren_put"
+      description: "Administrative endpoint to add or update multiple authors at once. Creates new authors or replaces existing ones based on matching names and organizations."
       requestBody:
+        required: true
+        description: "Array of authors to create or update"
         content:
           application/json:
             schema:
@@ -478,11 +613,16 @@ paths:
           description: Success
         401:
           $ref: "#/components/responses/UnauthorizedError"
+        403:
+          description: Forbidden
       security:
         - apiKey: [] 
-
     delete:
+      tags:
+        - Autoren
+        - Adminschnittstellen
       operationId: "autoren_delete_by_param"
+      description: "Administrative endpoint to delete authors matching the specified criteria. Removes all authors that match the filter parameters."
       parameters:
         - $ref: "#/components/parameters/autor-contains"
         - $ref: "#/components/parameters/autor-fachgebiet"
@@ -492,22 +632,29 @@ paths:
           description: Success
         401:
           $ref: "#/components/responses/UnauthorizedError"
+        403:
+          description: Forbidden
       security:
         - apiKey: []
   /api/v1/enumeration/{name}:
     get:
+      tags:
+        - Enumerations
+        - Unauthorisiert
       operationId: "enum_get"
+      description: "Retrieves values from a specified enumeration type. Returns a list of valid values that can be used in other API operations, optionally filtered by a substring."
       parameters:
         - $ref: "#/components/parameters/contains"
         - name: "name"
           in: path
           required: true
+          description: "Name of the enumeration type to retrieve values from"
           schema:
             type: string
             enum: ["schlagworte", "stationstypen", "vorgangstypen", "parlamente", "vgidtypen", "dokumententypen"]
       responses:
         200:
-          description: "OK"
+          description: "Success"
           content:
             application/json:
               schema:
@@ -516,10 +663,15 @@ paths:
                   type: string
         204:
           description: No Content
-
     put:
+      tags:
+        - Enumerations
+        - Adminschnittstellen
       operationId: "enum_put"
+      description: "Administrative endpoint to add or update values in a specified enumeration type. Replaces the entire set of values for the enumeration."
       requestBody:
+        required: true
+        description: "Array of string values to set for the enumeration type"
         content:
           application/json:
             schema:
@@ -530,6 +682,7 @@ paths:
         - name: "name"
           in: path
           required: true
+          description: "Name of the enumeration type to update values for"
           schema:
             type: string
             enum: ["schlagworte", "stationstypen", "vorgangstypen", "parlamente", "vgidtypen", "dokumententypen"]
@@ -537,24 +690,31 @@ paths:
         201:
           description: Success
         304:
-          description: Unchanged
+          description: "Not Modified"
         401:
           $ref: "#/components/responses/UnauthorizedError"
+        403:
+          description: Forbidden
       security:
         - apiKey: [] 
   /api/v1/enumeration/{name}/{item}:
     delete:
+      tags:
+        - Enumerations
+        - Adminschnittstellen
       operationId: "enum_delete"
-      description: "Item wird case-sensitiv gematcht und dementsprechend gelöscht"
+      description: "Administrative endpoint to remove a specific value from an enumeration type. Performs case-sensitive matching to identify and delete the exact value."
       parameters:
         - name: "item"
           in: path
           required: true
+          description: "The exact value to remove from the enumeration (case-sensitive)"
           schema:
             type: string
         - name: "name"
           in: path
           required: true
+          description: "Name of the enumeration type to remove a value from"
           schema:
             type: string
             enum: ["schlagworte", "stationstypen", "vorgangstypen", "parlamente", "vgidtypen", "dokumententypen"]
@@ -563,16 +723,19 @@ paths:
           description: Success
         401:
           $ref: "#/components/responses/UnauthorizedError"
+        403:
+          description: Forbidden
       security:
         - apiKey: []
 
 components:
+## TODO: add pagination headers
   parameters:
     year: 
       name: "y"
       in: query
       required: false
-      description: "year in question"
+      description: "The year to filter results by (1945 or later)"
       schema:
         type: integer
         minimum: 1945
@@ -580,7 +743,7 @@ components:
       name: "m"
       in: query
       required: false
-      description: month in question
+      description: "The month to filter results by (1-12)"
       schema:
         type: integer
         minimum: 1
@@ -589,7 +752,7 @@ components:
       name: "dom"
       in: query
       required: false
-      description: Day of Month in question
+      description: "The day of month to filter results by (1-31)"
       schema:
         type: integer
         minimum: 1
@@ -597,37 +760,41 @@ components:
     gremium-like:
       name: "gr"
       in: query
-      description: "A snippet of gremium. Is used in conjuction with parlament"
+      description: "Filter by committee name substring. Returns committees whose names contain this string (case-insensitive). Used in conjunction with parlament parameter."
       required: false
       schema:
         type: string
     if-mod-since:
       name: "If-Modified-Since"
       in: "header"
-      description: "Returns all elements that were updated after the specified time stamp"
+      description: "Return only elements that were modified after the specified timestamp. If nothing was modified, returns 304 Not Modified."
       required: false
       schema:
         type: string
         format: date-time
+        example: "2024-01-01T00:00:00+00:00"
     updated-since:
       name: "since"
       in: "query"
-      description: "inclusive range"
+      description: "Filter results to include only items updated on or after this timestamp (inclusive lower bound)"
       required: false
       schema:
         type: string
         format: date-time
+        example: "2024-01-01T00:00:00+00:00"
     updated-until:
       name: "until"
       in: "query"
-      description: "inclusive range"
+      description: "Filter results to include only items updated on or before this timestamp (inclusive upper bound)"
       required: false
       schema:
         type: string
         format: date-time
+        example: "2024-12-31T23:59:59+00:00"
     wahlperiode:
       name: "wp"
       in: "query"
+      description: "Filter by electoral period number. Returns only items from the specified electoral period."
       required: false
       schema:
         type: integer
@@ -635,6 +802,7 @@ components:
     limit:
       name: "limit"
       in: "query"
+      description: "Maximum number of items to return in a single request. Defaults to the server-defined value if not specified. Cannot exceed 64."
       required: false
       schema:
         type: integer
@@ -643,20 +811,21 @@ components:
     offset:
       name: "offset"
       in: "query"
+      description: "Number of items to skip before starting to return results. Used for pagination in conjunction with limit."
       required: false
       schema:
         type: integer
         minimum: 0
     contains:
       name: contains
-      description: der string wird case-insensitiv gematcht. Der vollständige String muss enthalten sein.
+      description: "Filter by substring match. Returns items containing this string (case-insensitive)."
       in: query
       required: false
       schema:
         type: string
     equals:
       name: equals
-      description: der string wird case-sensitiv auf gleichheit gematcht.
+      description: "Filter by exact match. Returns items exactly matching this string (case-sensitive)."
       in: query
       required: false
       schema:
@@ -664,30 +833,35 @@ components:
     vgtyp:
       name: "vgtyp"
       in: "query"
+      description: "Filter by legislative process type. Returns only items of the specified process type."
       required: false
       schema:
         $ref: "#/components/schemas/vorgangstyp"
     parlament:
       name: "p"
       in: "query"
+      description: "Filter by parliament code. Returns only items related to the specified parliament (e.g., 'BT' for Bundestag)."
       required: false
       schema:
         $ref: "#/components/schemas/parlament"
     autor-contains:
       name: "inipsn"
       in: "query"
+      description: "Filter by author name substring. Returns items where an author's name contains this string (case-insensitive)."
       required: false
       schema:
         type: string
     autor-organisation:
       name: iniorg
       in: query
+      description: "Filter by author organization. Returns items where an author belongs to the specified organization."
       required: false
       schema:
         type: string
     autor-fachgebiet:
       name: inifch
       in: query
+      description: "Filter by author's professional field. Returns items where an author has the specified professional expertise."
       required: false
       schema:
         type: string
@@ -695,19 +869,25 @@ components:
       name: "vgid"
       in: "query"
       required: false
-      description: "Assoziierter Vorgang"
+      description: "Filter by associated legislative process ID. Returns only items related to the specified process."
       schema:
         type: string
         format: uuid
   securitySchemes:
     apiKey:
-      description: API key of the Collector
+      description: |
+        API key of the Collector.
+        - Expires based on 'expires_at' field when created (if not specified, defaults to 1 year)
+        - Subject to rate limiting of 256 requests per second across all endpoints
+        - Subject to body size limit of 16 GB
+        - Tokens can be revoked at any time by administrators
+        - Failed authentication attempts may result in temporary IP blocks
       type: apiKey
       name: X-API-Key
       in: header
   responses:
     UnauthorizedError:
-      description: API key is missing or invalid
+      description: "Authentication failed. The API key is missing, expired, or does not have sufficient permissions for this operation."
     ApiKeyCreated:
       description: "API Key was created successfully"
       content:
@@ -716,7 +896,7 @@ components:
             type: string
             description: "The API Key that was created"
     VorgangGetResponse:
-      description: "Antwort auf eine gefilterte Anfrage zu Vorgang"
+      description: "Successful response containing a list of legislative processes matching the query filters. The list is sorted by last modification date (descending) and then lexicographically by title."
       content:
         application/json:
           schema:
@@ -724,13 +904,19 @@ components:
             items:
               $ref: "#/components/schemas/vorgang"
     SGetResponse:
-      description: "Antwort auf eine gefilterte Anfrage zu sitzungen"
+      description: "Successful response containing a list of parliamentary sessions matching the query filters. The list is sorted by last modification date (descending) and then lexicographically by title."
       content:
         application/json:
           schema:
             type: "array"
             items:
               $ref: "#/components/schemas/sitzung"
+    NotFoundError:
+      description: Not Found
+    RangeNotSatisfiableError:
+      description: Request Range not Satisfiable
+    ConflictError:
+      description: Conflict
   schemas:
     create_api_key:
       type: "object"
@@ -748,6 +934,7 @@ components:
           type: "string"
           format: "date-time"
           description: "The expiration date of the API Key"
+          example: "2024-12-31T23:59:59+00:00"
     parlament:
       type: "string"
       description: "Enumeration der Parlamentsähnlichen Entscheidungscorpi in Deutschland"
@@ -828,10 +1015,7 @@ components:
     gremium:
       type: "object"
       description: "Ein Gremium in dem Entscheidungen getroffen werden können. z.B: Ausschüsse, Plenum, Kabinett, Volk, ..."
-      required:
-        - "parlament"
-        - "name"
-        - "wahlperiode"
+      required: [parlament, name, wahlperiode]
       properties:
         parlament:
           $ref: "#/components/schemas/parlament"
@@ -840,7 +1024,7 @@ components:
           minimum: 0
         link:
           type: "string"
-          format: "url"
+          format: "uri"
         name:
           description: "Name des betreffenden Gremiums. 'plenum', 'regierung', 'volk' sind reservierte namen"
           example: "Ausschuss für Inneres und Gemüseauflauf"
@@ -849,15 +1033,7 @@ components:
     dokument:
       type: "object"
       description: "Ein Dokument, das in einem Vorgang beteiligt ist. Kann z.B. ein Protokoll, eine Drucksache oder ein anderes Dokument sein. Man beachte, dass für verschiedene Typen verschiedene Felder nur formal optional sind. So ist zum Beispiel für jede Stellungnahme eine Meinung gefragt und für jeden Gesetzesentwurf ein Vorwort"
-      required:
-        - "titel"
-        - "volltext"
-        - "hash"
-        - "typ"
-        - "zp_modifiziert"
-        - "zp_referenz"
-        - "link"
-        - "autoren"
+      required: [titel, volltext, hash, typ, zp_modifiziert, zp_referenz, link, autoren, dc_type]
       properties:
         api_id:
           type: "string"
@@ -865,6 +1041,10 @@ components:
           description: "optional, here for future references. Is generated by the server."
         drucksnr:
           type: "string"
+        dc_type:
+          type: string
+          default: "dokument"
+          enum: [dokument]
         typ:
           $ref: "#/components/schemas/doktyp"
         titel:
@@ -915,19 +1095,60 @@ components:
           type: "array"
           items:
             $ref: "#/components/schemas/autor"
+      example:
+        api_id: "a1b2c3d4-e5f6-7890-abcd-1234567890ab"
+        dc_type: "dokument"
+        typ: "entwurf"
+        titel: "Entwurf eines Gesetzes zur Änderung des Bundeswahlgesetzes"
+        kurztitel: "Änderung des Bundeswahlgesetzes"
+        vorwort: "Mit dem vorliegenden Entwurf soll das Bundeswahlgesetz an die aktuellen Anforderungen angepasst werden."
+        volltext: "Der Bundestag hat mit Zustimmung des Bundesrates das folgende Gesetz beschlossen:\n\nArtikel 1\nÄnderung des Bundeswahlgesetzes\n\nDas Bundeswahlgesetz in der Fassung der Bekanntmachung vom 23. Juli 1993 (BGBl. I S. 1288, 1594) wird wie folgt geändert:\n\n1. § 1 Absatz 1 wird wie folgt gefasst: [...]"
+        zusammenfassung: "Änderung des Bundeswahlgesetzes zur Anpassung an aktuelle Anforderungen."
+        zp_modifiziert: "2024-03-15T14:30:00+01:00"
+        zp_referenz: "2024-03-01T00:00:00+01:00" 
+        zp_erstellt: "2024-03-10T09:15:00+01:00"
+        link: "https://dip.bundestag.de/dokument/12345"
+        hash: "a1b2c3d4e5f6g7h8i9j0"
+        meinung: 4
+        schlagworte: ["wahlrecht", "bundestagswahl", "reform"]
+        autoren: [
+          {
+            "person": "Dr. Maria Schmidt",
+            "organisation": "Bundesministerium des Innern",
+            "fachgebiet": "Wahlrecht"
+          }
+        ]
+        drucksnr: "BT-Drs. 20/12345"
+    string_ref:
+      type: object
+      required: [dc_type, value]
+      properties:
+        dc_type:
+          type: string
+          default: "reference"
+          enum: [reference]
+        value:
+          type: string
+      example:
+        dc_type: "reference"
+        value: "a1b2c3d4-e5f6-7890-abcd-1234567890ab"
     dok_ref:
       description: Wrapper um ein Dokument oder eine API-ID von einem zuvor hochgeladenen Dokuments. Optimierung, da hier nicht jedes Mal der Volltext eines Dokuments hochgeladen werden muss.
       oneOf:
         - $ref: "#/components/schemas/dokument"
-        - type: "string"
-          description: "Schon vorher hochgeladenes Dokument"
+        - $ref: "#/components/schemas/string_ref"
+      discriminator:
+        propertyName: dc_type
+        mapping:
+          dokument: "#/components/schemas/dokument"
+          reference: "#/components/schemas/string_ref"
+
     station:
       type: "object"
       description: "Station ist in vielerlei hinsicht das Kernstück der API der Vorgänge. Jeder Vorgang besteht aus Stationen und die Stationen haben nur wenige verpflichtende Datenfelder.\
                     Für weitere Details, siehe die docs"
       required:
         - "typ"
-        - "datum"
         - "dokumente"
         - "zp_start"
         - "parlament"
@@ -987,6 +1208,31 @@ components:
           type: "array"
           items: 
             $ref: "#/components/schemas/dokument"
+      example:
+        api_id: "f1e2d3c4-b5a6-7890-abcd-1234567890cd"
+        titel: "Erste Lesung im Bundestag"
+        zp_start: "2024-04-15T10:00:00+02:00"
+        zp_modifiziert: "2024-04-15T13:45:00+02:00"
+        gremium: {
+          "parlament": "BT",
+          "wahlperiode": 20,
+          "name": "plenum"
+        }
+        gremium_federf: false
+        link: "https://www.bundestag.de/dokumente/textarchiv/2024/erste-lesung-wahlrechtsreform"
+        parlament: "BT"
+        typ: "parl-vollvlsgn"
+        trojanergefahr: 2
+        schlagworte: ["wahlrecht", "reform", "bundestag"]
+        dokumente: [
+          {
+            "dc_type": "reference",
+            "value": "a1b2c3d4-e5f6-7890-abcd-1234567890ab"
+          }
+        ]
+        additional_links: [
+          "https://www.bundestag.de/mediathek/parlamentsfernsehen/aufzeichnungen/123456-123456"
+        ]
     lobbyregeintrag:
       type: object
       description: "Eintrag im Bundestagslobbyregister zu einem bestimmten Vorgang"
@@ -1007,13 +1253,22 @@ components:
           description: "Lobbyregistereintrag zu dem  Was und Warum man auf den Vorgang Einfluss nehmen will"
         link:
           type: string
-          format: url
+          format: uri
           description: "Direktlink zum Lobbyregistereintrag"
         betroffene_drucksachen:
           type: array
           description: "Stringarray mit betroffenen Drucksachennummern. Wird in der Datenbank _nicht_ integriert und nur flach aufgelegt"
           items:
             type: string
+      example:
+        organisation: {
+          "organisation": "Bundesverband der Deutschen Industrie e.V.",
+          "lobbyregister": "https://www.lobbyregister.bundestag.de/suche/experte/12345"
+        }
+        interne_id: "LR-ID-12345678"
+        intention: "Stellungnahme zu Auswirkungen der Gesetzesänderung auf die deutsche Wirtschaft und Vorschläge zur Anpassung in § 15 des Gesetzesentwurfs."
+        link: "https://www.lobbyregister.bundestag.de/eintragung/12345678"
+        betroffene_drucksachen: ["BT-Drs. 20/12345", "BT-Drs. 20/12346"]
     vorgang:
       type: "object"
       description: "'Master-Objekt' der API. Der Wrapper um Stationen, die den Beratungsverlauf tatsächlich beschreiben. Ein Vorgang kann dabei nicht nur ein Gesetz, sondern auch ein parlamentarischer Antrag sein."
@@ -1064,6 +1319,65 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/lobbyregeintrag"
+      example:
+        api_id: "123e4567-e89b-12d3-a456-426614174000"
+        titel: "Gesetz zur Änderung des Bundeswahlgesetzes und anderer Gesetze"
+        kurztitel: "Wahlrechtsreform"
+        wahlperiode: 20
+        verfassungsaendernd: false
+        typ: "gg-einspruch"
+        ids: [
+          {
+            "id": "20/12345",
+            "typ": "initdrucks"
+          },
+          {
+            "id": "WR-2024-01",
+            "typ": "vorgnr"
+          }
+        ]
+        links: [
+          "https://www.bundestag.de/dokumente/textarchiv/2024/wahlrechtsreform",
+          "https://dip.bundestag.de/vorgang/123456"
+        ]
+        initiatoren: [
+          {
+            "person": "Dr. Friedrich Merz",
+            "organisation": "CDU/CSU-Fraktion",
+            "fachgebiet": "Innenpolitik"
+          },
+          {
+            "organisation": "SPD-Fraktion"
+          }
+        ]
+        stationen: [
+          {
+            "api_id": "f1e2d3c4-b5a6-7890-abcd-1234567890cd",
+            "titel": "Erste Lesung im Bundestag",
+            "zp_start": "2024-04-15T10:00:00+02:00",
+            "zp_modifiziert": "2024-04-15T13:45:00+02:00",
+            "parlament": "BT",
+            "typ": "parl-vollvlsgn",
+            "dokumente": [
+              {
+                "dc_type": "reference",
+                "value": "a1b2c3d4-e5f6-7890-abcd-1234567890ab"
+              }
+            ]
+          }
+        ]
+        lobbyregister: [
+          {
+            "organisation": {
+              "organisation": "Bundesverband der Deutschen Industrie e.V.",
+              "person": "Dr. Johannes Weber"
+            },
+            "interne_id": "LR-ID-12345678",
+            "intention": "Stellungnahme zu Auswirkungen der Gesetzesänderung auf die deutsche Wirtschaft.",
+            "link": "https://www.lobbyregister.bundestag.de/eintragung/12345678",
+            "betroffene_drucksachen": ["BT-Drs. 20/12345"]
+          }
+        ]
     vg_ident:
       type: "object"
       description: "Eindeutiger Identifikator für einen Vorgang innerhalb eines Parlaments+Wahlperiode. Kann z.B. eine Initiativdrucksache oder eine Vorgansnummer im Parlament sein."
@@ -1076,7 +1390,9 @@ components:
           example: "123e4567-e"
         typ:
           $ref: "#/components/schemas/vg_ident_typ"
-
+      example:
+        id: "20/12345"
+        typ: "initdrucks"
     top:
       type: "object"
       description: "Ein Tagesordnungspunkt. Muss Nummer und Titel enthalten, für den Rest siehe unten."
@@ -1101,6 +1417,15 @@ components:
           description: "Die Dokumente, die in diesem TOP besprochen werden sollen"
           items:
             $ref: "#/components/schemas/dok_ref"
+      example:
+        nummer: 3
+        titel: "Erste Beratung des von den Fraktionen SPD, BÜNDNIS 90/DIE GRÜNEN und FDP eingebrachten Entwurfs eines Gesetzes zur Änderung des Bundeswahlgesetzes"
+        dokumente: [
+          {
+            "dc_type": "reference",
+            "value": "a1b2c3d4-e5f6-7890-abcd-1234567890ab"
+          }
+        ]
     autor:
       type: "object"
       description: "Eine Person oder Organisation, die eine bestimmte Funktion übernommen hat. Z.B: Autor einer Stellungnahme, Experte bei einer Anhörung, Initiator eines Vorgangs."
@@ -1116,6 +1441,11 @@ components:
         lobbyregister: 
           type: string
           format: uri
+      example:
+        person: "Prof. Dr. Susanne Meyer"
+        organisation: "Universität Heidelberg"
+        fachgebiet: "Verfassungsrecht"
+        lobbyregister: "https://www.lobbyregister.bundestag.de/suche/experte/12345"
     sitzung:
       type: "object"
       description: "Sitzung oder Anhörung. Eine Anhörung wird es, wenn Experten geladen werden. Abstrahiert und kann daher sowohl Plenarsitzung als auch Ausschusssitzung sein."
@@ -1136,6 +1466,7 @@ components:
         termin:
           type: "string"
           format: "date-time"
+          example: "2024-03-15T10:00:00+00:00"
         gremium:
           $ref: "#/components/schemas/gremium"
         nummer:
@@ -1145,7 +1476,7 @@ components:
           type: "boolean"
         link:
           type: "string"
-          format: "url"
+          format: "uri"
         tops:
           type: "array"
           items:
@@ -1160,3 +1491,50 @@ components:
           description: "Optional: Liste von geladenen Experten. (macht aus der Sitzung eine Anhörung)"
           items:
             $ref: "#/components/schemas/autor"
+      example:
+        api_id: "b1a2c3d4-e5f6-7890-fedc-1234567890ab"
+        titel: "143. Sitzung des Deutschen Bundestages"
+        termin: "2024-05-20T09:00:00+02:00"
+        gremium: {
+          "parlament": "BT",
+          "wahlperiode": 20,
+          "name": "plenum"
+        }
+        nummer: 143
+        public: true
+        link: "https://www.bundestag.de/sitzung/20240520"
+        tops: [
+          {
+            "nummer": 1,
+            "titel": "Eröffnung der Sitzung"
+          },
+          {
+            "nummer": 3,
+            "titel": "Erste Beratung des von den Fraktionen SPD, BÜNDNIS 90/DIE GRÜNEN und FDP eingebrachten Entwurfs eines Gesetzes zur Änderung des Bundeswahlgesetzes",
+            "vorgang_id": ["123e4567-e89b-12d3-a456-426614174000"],
+            "dokumente": [
+              {
+                "dc_type": "reference",
+                "value": "a1b2c3d4-e5f6-7890-abcd-1234567890ab"
+              }
+            ]
+          }
+        ]
+        dokumente: [
+          {
+            "api_id": "c1d2e3f4-a5b6-7890-cdef-1234567890gh",
+            "dc_type": "dokument",
+            "typ": "tops",
+            "titel": "Tagesordnung der 143. Sitzung des Deutschen Bundestages",
+            "volltext": "TOP 1: Eröffnung der Sitzung\nTOP 2: Fragestunde\nTOP 3: Erste Beratung des Gesetzentwurfs zur Änderung des Bundeswahlgesetzes\n...",
+            "hash": "a1b2c3d4e5f6g7h8i9j0",
+            "zp_modifiziert": "2024-05-15T14:30:00+02:00",
+            "zp_referenz": "2024-05-20T09:00:00+02:00",
+            "link": "https://www.bundestag.de/tagesordnung/20240520",
+            "autoren": [
+              {
+                "organisation": "Deutscher Bundestag"
+              }
+            ]
+          }
+        ]
