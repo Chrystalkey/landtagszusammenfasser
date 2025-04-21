@@ -84,7 +84,7 @@ paths:
         403:
           description: Forbidden
       security:
-        - apiKey: [] 
+        - apiKey: []
     delete:
       tags:
         - Vorgänge
@@ -109,7 +109,7 @@ paths:
         404:
           $ref: "#/components/responses/NotFoundError"
       security:
-        - apiKey: [] 
+        - apiKey: []
   /api/v1/vorgang:
     get:
       tags:
@@ -127,7 +127,6 @@ paths:
         416:
           $ref: "#/components/responses/RangeNotSatisfiableError"
 
-
       parameters:
         - $ref: "#/components/parameters/if-mod-since"
         - $ref: "#/components/parameters/updated-since"
@@ -136,8 +135,8 @@ paths:
         - $ref: "#/components/parameters/wahlperiode"
         - $ref: "#/components/parameters/limit"
         - $ref: "#/components/parameters/offset"
-        - $ref: "#/components/parameters/autor-contains"     # für initiatoren
-        - $ref: "#/components/parameters/autor-fachgebiet"   # für initiatoren
+        - $ref: "#/components/parameters/autor-contains" # für initiatoren
+        - $ref: "#/components/parameters/autor-fachgebiet" # für initiatoren
         - $ref: "#/components/parameters/autor-organisation" # für initiatoren
         - $ref: "#/components/parameters/vgtyp"
     put:
@@ -166,7 +165,7 @@ paths:
           description: "Success"
         401:
           $ref: "#/components/responses/UnauthorizedError"
-        409: 
+        409:
           $ref: "#/components/responses/ConflictError"
       security:
         - apiKey: []
@@ -194,7 +193,7 @@ paths:
         404:
           description: "Not found"
       security:
-        - apiKey: [] 
+        - apiKey: []
     post:
       tags:
         - Authentication
@@ -216,7 +215,7 @@ paths:
         403:
           description: Forbidden
       security:
-        - apiKey: [] 
+        - apiKey: []
   /api/v1/sitzung:
     get:
       tags:
@@ -302,7 +301,7 @@ paths:
         403:
           description: Forbidden
       security:
-        - apiKey: [] 
+        - apiKey: []
     delete:
       tags:
         - Sitzungen
@@ -325,7 +324,7 @@ paths:
         404:
           $ref: "#/components/responses/NotFoundError"
       security:
-        - apiKey: [] 
+        - apiKey: []
   /api/v1/kalender/{parlament}/{datum}:
     get:
       tags:
@@ -397,7 +396,7 @@ paths:
         401:
           $ref: "#/components/responses/UnauthorizedError"
       security:
-        - apiKey: [] 
+        - apiKey: []
   /api/v1/kalender:
     get:
       tags:
@@ -551,7 +550,7 @@ paths:
         403:
           description: Forbidden
       security:
-        - apiKey: [] 
+        - apiKey: []
     delete:
       tags:
         - Gremien
@@ -616,7 +615,7 @@ paths:
         403:
           description: Forbidden
       security:
-        - apiKey: [] 
+        - apiKey: []
     delete:
       tags:
         - Autoren
@@ -651,7 +650,15 @@ paths:
           description: "Name of the enumeration type to retrieve values from"
           schema:
             type: string
-            enum: ["schlagworte", "stationstypen", "vorgangstypen", "parlamente", "vgidtypen", "dokumententypen"]
+            enum:
+              [
+                "schlagworte",
+                "stationstypen",
+                "vorgangstypen",
+                "parlamente",
+                "vgidtypen",
+                "dokumententypen",
+              ]
       responses:
         200:
           description: "Success"
@@ -685,7 +692,15 @@ paths:
           description: "Name of the enumeration type to update values for"
           schema:
             type: string
-            enum: ["schlagworte", "stationstypen", "vorgangstypen", "parlamente", "vgidtypen", "dokumententypen"]
+            enum:
+              [
+                "schlagworte",
+                "stationstypen",
+                "vorgangstypen",
+                "parlamente",
+                "vgidtypen",
+                "dokumententypen",
+              ]
       responses:
         201:
           description: Success
@@ -696,7 +711,7 @@ paths:
         403:
           description: Forbidden
       security:
-        - apiKey: [] 
+        - apiKey: []
   /api/v1/enumeration/{name}/{item}:
     delete:
       tags:
@@ -717,7 +732,15 @@ paths:
           description: "Name of the enumeration type to remove a value from"
           schema:
             type: string
-            enum: ["schlagworte", "stationstypen", "vorgangstypen", "parlamente", "vgidtypen", "dokumententypen"]
+            enum:
+              [
+                "schlagworte",
+                "stationstypen",
+                "vorgangstypen",
+                "parlamente",
+                "vgidtypen",
+                "dokumententypen",
+              ]
       responses:
         204:
           description: Success
@@ -729,9 +752,9 @@ paths:
         - apiKey: []
 
 components:
-## TODO: add pagination headers
+  ## TODO: add pagination headers
   parameters:
-    year: 
+    year:
       name: "y"
       in: query
       required: false
@@ -964,12 +987,12 @@ components:
       type: "string"
       description: "Der Gesetzgebungstrack auf dem wir uns befinden. Zum Beispiel: gesetzgebung - Einspruchsgesetz. Legt fest, welche Stationen im Vorgang möglich sind zusammen mit den Parlamenten in den Stationen"
       enum:
-        - "gg-einspruch"      # Bundesgesetz Einspruch
-        - "gg-zustimmung"     # Bundesgesetz Zustimmungspflich
-        - "gg-land-parl"      # Landesgesetz, normal
-        - "gg-land-volk"      # Landesgesetz, Volksgesetzgebung
-        - "bw-einsatz"        # Bundeswehreinsatz
-        - "sonstig"           # other, email me
+        - "gg-einspruch" # Bundesgesetz Einspruch
+        - "gg-zustimmung" # Bundesgesetz Zustimmungspflich
+        - "gg-land-parl" # Landesgesetz, normal
+        - "gg-land-volk" # Landesgesetz, Volksgesetzgebung
+        - "bw-einsatz" # Bundeswehreinsatz
+        - "sonstig" # other, email me
     stationstyp:
       description: "Stationen, die ein Gesetz o.Ä. Vorgang in verschiedenen Ausformungen durchlaufen kann. Im Prinzip ist die Festlegung auf Prä / Postparlamentarisch arbiträr."
       type: "string"
@@ -989,7 +1012,7 @@ components:
         - "postparl-vesne" # Volksentscheid nach Parlamentsbeschluss & Ablehnung
         - "postparl-gsblt" # Veröffentlichung im Gesetzesblatt
         - "postparl-kraft" # In Kraft getreten
-        - "sonstig"        # other, email me
+        - "sonstig" # other, email me
     vg_ident_typ:
       description: "Typ von Identifikatoren für einen gesamten Vorgang"
       type: "string"
@@ -997,21 +1020,21 @@ components:
     doktyp:
       description: "Typ eines Dokuments. Beschreibt explizit nicht den Kontext, sondern nur den Typ des Inhalts. (z.B. 'tops' kann sowohl für Plenarsitzungen als auch für Ausschusssitzungen relevant sein)"
       type: "string"
-      enum: 
-        - "preparl-entwurf"  # Vorparlamentarischer Entwurf
-        - "entwurf"          # Gesetzesentwurf auf einer Drucksache
-        - "antrag"           # Antrag
-        - "anfrage"          # Große oder kleine Anfragen
-        - "antwort"          # Antworten auf Anfragen
-        - "mitteilung"       # Mitteilung über z.B. Rücknahme
-        - "beschlussempf"    # Beschlussempfehlung von Ausschüssen
-        - "stellungnahme"    # Stellungnahme von Personen oder Organisationen
-        - "gutachten"        # Gutachten die im Auftrag des Parlaments erstellt werden
-        - "redeprotokoll"    # Ausschuss- oder Plenarprotokoll
-        - "tops"             # Sitzungs-TOPs
-        - "tops-aend"        # Sitzungs-TOPs Änderung
-        - "tops-ergz"        # Sitzungs-TOPs Ergänzung
-        - "sonstig"          # Sonstiges
+      enum:
+        - "preparl-entwurf" # Vorparlamentarischer Entwurf
+        - "entwurf" # Gesetzesentwurf auf einer Drucksache
+        - "antrag" # Antrag
+        - "anfrage" # Große oder kleine Anfragen
+        - "antwort" # Antworten auf Anfragen
+        - "mitteilung" # Mitteilung über z.B. Rücknahme
+        - "beschlussempf" # Beschlussempfehlung von Ausschüssen
+        - "stellungnahme" # Stellungnahme von Personen oder Organisationen
+        - "gutachten" # Gutachten die im Auftrag des Parlaments erstellt werden
+        - "redeprotokoll" # Ausschuss- oder Plenarprotokoll
+        - "tops" # Sitzungs-TOPs
+        - "tops-aend" # Sitzungs-TOPs Änderung
+        - "tops-ergz" # Sitzungs-TOPs Ergänzung
+        - "sonstig" # Sonstiges
     gremium:
       type: "object"
       description: "Ein Gremium in dem Entscheidungen getroffen werden können. z.B: Ausschüsse, Plenum, Kabinett, Volk, ..."
@@ -1033,7 +1056,18 @@ components:
     dokument:
       type: "object"
       description: "Ein Dokument, das in einem Vorgang beteiligt ist. Kann z.B. ein Protokoll, eine Drucksache oder ein anderes Dokument sein. Man beachte, dass für verschiedene Typen verschiedene Felder nur formal optional sind. So ist zum Beispiel für jede Stellungnahme eine Meinung gefragt und für jeden Gesetzesentwurf ein Vorwort"
-      required: [titel, volltext, hash, typ, zp_modifiziert, zp_referenz, link, autoren, dc_type]
+      required:
+        [
+          titel,
+          volltext,
+          hash,
+          typ,
+          zp_modifiziert,
+          zp_referenz,
+          link,
+          autoren,
+          dc_type,
+        ]
       properties:
         api_id:
           type: "string"
@@ -1081,7 +1115,7 @@ components:
           format: "uri"
         hash:
           type: "string"
-        meinung: 
+        meinung:
           type: integer
           minimum: 1
           maximum: 5
@@ -1105,19 +1139,20 @@ components:
         volltext: "Der Bundestag hat mit Zustimmung des Bundesrates das folgende Gesetz beschlossen:\n\nArtikel 1\nÄnderung des Bundeswahlgesetzes\n\nDas Bundeswahlgesetz in der Fassung der Bekanntmachung vom 23. Juli 1993 (BGBl. I S. 1288, 1594) wird wie folgt geändert:\n\n1. § 1 Absatz 1 wird wie folgt gefasst: [...]"
         zusammenfassung: "Änderung des Bundeswahlgesetzes zur Anpassung an aktuelle Anforderungen."
         zp_modifiziert: "2024-03-15T14:30:00+01:00"
-        zp_referenz: "2024-03-01T00:00:00+01:00" 
+        zp_referenz: "2024-03-01T00:00:00+01:00"
         zp_erstellt: "2024-03-10T09:15:00+01:00"
         link: "https://dip.bundestag.de/dokument/12345"
         hash: "a1b2c3d4e5f6g7h8i9j0"
         meinung: 4
         schlagworte: ["wahlrecht", "bundestagswahl", "reform"]
-        autoren: [
-          {
-            "person": "Dr. Maria Schmidt",
-            "organisation": "Bundesministerium des Innern",
-            "fachgebiet": "Wahlrecht"
-          }
-        ]
+        autoren:
+          [
+            {
+              "person": "Dr. Maria Schmidt",
+              "organisation": "Bundesministerium des Innern",
+              "fachgebiet": "Wahlrecht",
+            },
+          ]
         drucksnr: "BT-Drs. 20/12345"
     string_ref:
       type: object
@@ -1145,8 +1180,9 @@ components:
 
     station:
       type: "object"
-      description: "Station ist in vielerlei hinsicht das Kernstück der API der Vorgänge. Jeder Vorgang besteht aus Stationen und die Stationen haben nur wenige verpflichtende Datenfelder.\
-                    Für weitere Details, siehe die docs"
+      description:
+        "Station ist in vielerlei hinsicht das Kernstück der API der Vorgänge. Jeder Vorgang besteht aus Stationen und die Stationen haben nur wenige verpflichtende Datenfelder.\
+        Für weitere Details, siehe die docs"
       required:
         - "typ"
         - "dokumente"
@@ -1206,33 +1242,31 @@ components:
             example: "Link zu einem Videomitschnitt der Plenarsitzung"
         stellungnahmen:
           type: "array"
-          items: 
+          items:
             $ref: "#/components/schemas/dokument"
       example:
         api_id: "f1e2d3c4-b5a6-7890-abcd-1234567890cd"
         titel: "Erste Lesung im Bundestag"
         zp_start: "2024-04-15T10:00:00+02:00"
         zp_modifiziert: "2024-04-15T13:45:00+02:00"
-        gremium: {
-          "parlament": "BT",
-          "wahlperiode": 20,
-          "name": "plenum"
-        }
+        gremium: { "parlament": "BT", "wahlperiode": 20, "name": "plenum" }
         gremium_federf: false
         link: "https://www.bundestag.de/dokumente/textarchiv/2024/erste-lesung-wahlrechtsreform"
         parlament: "BT"
         typ: "parl-vollvlsgn"
         trojanergefahr: 2
         schlagworte: ["wahlrecht", "reform", "bundestag"]
-        dokumente: [
-          {
-            "dc_type": "reference",
-            "value": "a1b2c3d4-e5f6-7890-abcd-1234567890ab"
-          }
-        ]
-        additional_links: [
-          "https://www.bundestag.de/mediathek/parlamentsfernsehen/aufzeichnungen/123456-123456"
-        ]
+        dokumente:
+          [
+            {
+              "dc_type": "reference",
+              "value": "a1b2c3d4-e5f6-7890-abcd-1234567890ab",
+            },
+          ]
+        additional_links:
+          [
+            "https://www.bundestag.de/mediathek/parlamentsfernsehen/aufzeichnungen/123456-123456",
+          ]
     lobbyregeintrag:
       type: object
       description: "Eintrag im Bundestagslobbyregister zu einem bestimmten Vorgang"
@@ -1261,10 +1295,11 @@ components:
           items:
             type: string
       example:
-        organisation: {
-          "organisation": "Bundesverband der Deutschen Industrie e.V.",
-          "lobbyregister": "https://www.lobbyregister.bundestag.de/suche/experte/12345"
-        }
+        organisation:
+          {
+            "organisation": "Bundesverband der Deutschen Industrie e.V.",
+            "lobbyregister": "https://www.lobbyregister.bundestag.de/suche/experte/12345",
+          }
         interne_id: "LR-ID-12345678"
         intention: "Stellungnahme zu Auswirkungen der Gesetzesänderung auf die deutsche Wirtschaft und Vorschläge zur Anpassung in § 15 des Gesetzesentwurfs."
         link: "https://www.lobbyregister.bundestag.de/eintragung/12345678"
@@ -1326,58 +1361,57 @@ components:
         wahlperiode: 20
         verfassungsaendernd: false
         typ: "gg-einspruch"
-        ids: [
-          {
-            "id": "20/12345",
-            "typ": "initdrucks"
-          },
-          {
-            "id": "WR-2024-01",
-            "typ": "vorgnr"
-          }
-        ]
-        links: [
-          "https://www.bundestag.de/dokumente/textarchiv/2024/wahlrechtsreform",
-          "https://dip.bundestag.de/vorgang/123456"
-        ]
-        initiatoren: [
-          {
-            "person": "Dr. Friedrich Merz",
-            "organisation": "CDU/CSU-Fraktion",
-            "fachgebiet": "Innenpolitik"
-          },
-          {
-            "organisation": "SPD-Fraktion"
-          }
-        ]
-        stationen: [
-          {
-            "api_id": "f1e2d3c4-b5a6-7890-abcd-1234567890cd",
-            "titel": "Erste Lesung im Bundestag",
-            "zp_start": "2024-04-15T10:00:00+02:00",
-            "zp_modifiziert": "2024-04-15T13:45:00+02:00",
-            "parlament": "BT",
-            "typ": "parl-vollvlsgn",
-            "dokumente": [
-              {
-                "dc_type": "reference",
-                "value": "a1b2c3d4-e5f6-7890-abcd-1234567890ab"
-              }
-            ]
-          }
-        ]
-        lobbyregister: [
-          {
-            "organisation": {
-              "organisation": "Bundesverband der Deutschen Industrie e.V.",
-              "person": "Dr. Johannes Weber"
+        ids:
+          [
+            { "id": "20/12345", "typ": "initdrucks" },
+            { "id": "WR-2024-01", "typ": "vorgnr" },
+          ]
+        links:
+          [
+            "https://www.bundestag.de/dokumente/textarchiv/2024/wahlrechtsreform",
+            "https://dip.bundestag.de/vorgang/123456",
+          ]
+        initiatoren:
+          [
+            {
+              "person": "Dr. Friedrich Merz",
+              "organisation": "CDU/CSU-Fraktion",
+              "fachgebiet": "Innenpolitik",
             },
-            "interne_id": "LR-ID-12345678",
-            "intention": "Stellungnahme zu Auswirkungen der Gesetzesänderung auf die deutsche Wirtschaft.",
-            "link": "https://www.lobbyregister.bundestag.de/eintragung/12345678",
-            "betroffene_drucksachen": ["BT-Drs. 20/12345"]
-          }
-        ]
+            { "organisation": "SPD-Fraktion" },
+          ]
+        stationen:
+          [
+            {
+              "api_id": "f1e2d3c4-b5a6-7890-abcd-1234567890cd",
+              "titel": "Erste Lesung im Bundestag",
+              "zp_start": "2024-04-15T10:00:00+02:00",
+              "zp_modifiziert": "2024-04-15T13:45:00+02:00",
+              "parlament": "BT",
+              "typ": "parl-vollvlsgn",
+              "dokumente":
+                [
+                  {
+                    "dc_type": "reference",
+                    "value": "a1b2c3d4-e5f6-7890-abcd-1234567890ab",
+                  },
+                ],
+            },
+          ]
+        lobbyregister:
+          [
+            {
+              "organisation":
+                {
+                  "organisation": "Bundesverband der Deutschen Industrie e.V.",
+                  "person": "Dr. Johannes Weber",
+                },
+              "interne_id": "LR-ID-12345678",
+              "intention": "Stellungnahme zu Auswirkungen der Gesetzesänderung auf die deutsche Wirtschaft.",
+              "link": "https://www.lobbyregister.bundestag.de/eintragung/12345678",
+              "betroffene_drucksachen": ["BT-Drs. 20/12345"],
+            },
+          ]
     vg_ident:
       type: "object"
       description: "Eindeutiger Identifikator für einen Vorgang innerhalb eines Parlaments+Wahlperiode. Kann z.B. eine Initiativdrucksache oder eine Vorgansnummer im Parlament sein."
@@ -1385,7 +1419,7 @@ components:
         - "id"
         - "typ"
       properties:
-        id: 
+        id:
           type: "string"
           example: "123e4567-e"
         typ:
@@ -1396,7 +1430,7 @@ components:
     top:
       type: "object"
       description: "Ein Tagesordnungspunkt. Muss Nummer und Titel enthalten, für den Rest siehe unten."
-      required: 
+      required:
         - "nummer"
         - "titel"
       properties:
@@ -1420,12 +1454,13 @@ components:
       example:
         nummer: 3
         titel: "Erste Beratung des von den Fraktionen SPD, BÜNDNIS 90/DIE GRÜNEN und FDP eingebrachten Entwurfs eines Gesetzes zur Änderung des Bundeswahlgesetzes"
-        dokumente: [
-          {
-            "dc_type": "reference",
-            "value": "a1b2c3d4-e5f6-7890-abcd-1234567890ab"
-          }
-        ]
+        dokumente:
+          [
+            {
+              "dc_type": "reference",
+              "value": "a1b2c3d4-e5f6-7890-abcd-1234567890ab",
+            },
+          ]
     autor:
       type: "object"
       description: "Eine Person oder Organisation, die eine bestimmte Funktion übernommen hat. Z.B: Autor einer Stellungnahme, Experte bei einer Anhörung, Initiator eines Vorgangs."
@@ -1438,7 +1473,7 @@ components:
           type: string
         fachgebiet:
           type: "string"
-        lobbyregister: 
+        lobbyregister:
           type: string
           format: uri
       example:
@@ -1495,46 +1530,38 @@ components:
         api_id: "b1a2c3d4-e5f6-7890-fedc-1234567890ab"
         titel: "143. Sitzung des Deutschen Bundestages"
         termin: "2024-05-20T09:00:00+02:00"
-        gremium: {
-          "parlament": "BT",
-          "wahlperiode": 20,
-          "name": "plenum"
-        }
+        gremium: { "parlament": "BT", "wahlperiode": 20, "name": "plenum" }
         nummer: 143
         public: true
         link: "https://www.bundestag.de/sitzung/20240520"
-        tops: [
-          {
-            "nummer": 1,
-            "titel": "Eröffnung der Sitzung"
-          },
-          {
-            "nummer": 3,
-            "titel": "Erste Beratung des von den Fraktionen SPD, BÜNDNIS 90/DIE GRÜNEN und FDP eingebrachten Entwurfs eines Gesetzes zur Änderung des Bundeswahlgesetzes",
-            "vorgang_id": ["123e4567-e89b-12d3-a456-426614174000"],
-            "dokumente": [
-              {
-                "dc_type": "reference",
-                "value": "a1b2c3d4-e5f6-7890-abcd-1234567890ab"
-              }
-            ]
-          }
-        ]
-        dokumente: [
-          {
-            "api_id": "c1d2e3f4-a5b6-7890-cdef-1234567890gh",
-            "dc_type": "dokument",
-            "typ": "tops",
-            "titel": "Tagesordnung der 143. Sitzung des Deutschen Bundestages",
-            "volltext": "TOP 1: Eröffnung der Sitzung\nTOP 2: Fragestunde\nTOP 3: Erste Beratung des Gesetzentwurfs zur Änderung des Bundeswahlgesetzes\n...",
-            "hash": "a1b2c3d4e5f6g7h8i9j0",
-            "zp_modifiziert": "2024-05-15T14:30:00+02:00",
-            "zp_referenz": "2024-05-20T09:00:00+02:00",
-            "link": "https://www.bundestag.de/tagesordnung/20240520",
-            "autoren": [
-              {
-                "organisation": "Deutscher Bundestag"
-              }
-            ]
-          }
-        ]
+        tops:
+          [
+            { "nummer": 1, "titel": "Eröffnung der Sitzung" },
+            {
+              "nummer": 3,
+              "titel": "Erste Beratung des von den Fraktionen SPD, BÜNDNIS 90/DIE GRÜNEN und FDP eingebrachten Entwurfs eines Gesetzes zur Änderung des Bundeswahlgesetzes",
+              "vorgang_id": ["123e4567-e89b-12d3-a456-426614174000"],
+              "dokumente":
+                [
+                  {
+                    "dc_type": "reference",
+                    "value": "a1b2c3d4-e5f6-7890-abcd-1234567890ab",
+                  },
+                ],
+            },
+          ]
+        dokumente:
+          [
+            {
+              "api_id": "c1d2e3f4-a5b6-7890-cdef-1234567890gh",
+              "dc_type": "dokument",
+              "typ": "tops",
+              "titel": "Tagesordnung der 143. Sitzung des Deutschen Bundestages",
+              "volltext": "TOP 1: Eröffnung der Sitzung\nTOP 2: Fragestunde\nTOP 3: Erste Beratung des Gesetzentwurfs zur Änderung des Bundeswahlgesetzes\n...",
+              "hash": "a1b2c3d4e5f6g7h8i9j0",
+              "zp_modifiziert": "2024-05-15T14:30:00+02:00",
+              "zp_referenz": "2024-05-20T09:00:00+02:00",
+              "link": "https://www.bundestag.de/tagesordnung/20240520",
+              "autoren": [{ "organisation": "Deutscher Bundestag" }],
+            },
+          ]
