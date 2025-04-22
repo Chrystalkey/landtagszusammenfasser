@@ -120,6 +120,17 @@ paths:
       responses:
         200:
           $ref: "#/components/responses/VorgangGetResponse"
+          headers:
+            X-Total-Count:
+              $ref: "#/components/headers/X-Total-Count"
+            X-Total-Pages:
+              $ref: "#/components/headers/X-Total-Pages"
+            X-Page:
+              $ref: "#/components/headers/X-Page"
+            X-Per-Page:
+              $ref: "#/components/headers/X-Per-Page"
+            Link:
+              $ref: "#/components/headers/Link"
         204:
           description: "No Content"
         304:
@@ -133,12 +144,12 @@ paths:
         - $ref: "#/components/parameters/updated-until"
         - $ref: "#/components/parameters/parlament"
         - $ref: "#/components/parameters/wahlperiode"
-        - $ref: "#/components/parameters/limit"
-        - $ref: "#/components/parameters/offset"
         - $ref: "#/components/parameters/autor-contains" # für initiatoren
         - $ref: "#/components/parameters/autor-fachgebiet" # für initiatoren
         - $ref: "#/components/parameters/autor-organisation" # für initiatoren
         - $ref: "#/components/parameters/vgtyp"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/per_page"
     put:
       tags:
         - Vorgänge
@@ -229,10 +240,10 @@ paths:
         - $ref: "#/components/parameters/updated-until"
         - $ref: "#/components/parameters/parlament"
         - $ref: "#/components/parameters/wahlperiode"
-        - $ref: "#/components/parameters/limit"
-        - $ref: "#/components/parameters/offset"
         - $ref: "#/components/parameters/vorgang-id"
         - $ref: "#/components/parameters/vgtyp"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/per_page"
 
       responses:
         200:
@@ -349,6 +360,8 @@ paths:
             format: date
             pattern: "^\\d{4}-\\d{2}-\\d{2}$"
         - $ref: "#/components/parameters/if-mod-since"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/per_page"
       responses:
         200:
           $ref: "#/components/responses/SGetResponse"
@@ -420,12 +433,12 @@ paths:
         - $ref: "#/components/parameters/updated-until"
         - $ref: "#/components/parameters/parlament"
         - $ref: "#/components/parameters/wahlperiode"
-        - $ref: "#/components/parameters/limit"
-        - $ref: "#/components/parameters/offset"
         - $ref: "#/components/parameters/gremium-like"
         - $ref: "#/components/parameters/year"
         - $ref: "#/components/parameters/month"
         - $ref: "#/components/parameters/day-of-month"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/per_page"
   /api/v1/dokument/{api_id}:
     get:
       tags:
@@ -516,9 +529,22 @@ paths:
         - $ref: "#/components/parameters/gremium-like"
         - $ref: "#/components/parameters/parlament"
         - $ref: "#/components/parameters/wahlperiode"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/per_page"
       responses:
         200:
           description: "Success"
+          headers:
+            X-Total-Count:
+              $ref: "#/components/headers/X-Total-Count"
+            X-Total-Pages:
+              $ref: "#/components/headers/X-Total-Pages"
+            X-Page:
+              $ref: "#/components/headers/X-Page"
+            X-Per-Page:
+              $ref: "#/components/headers/X-Per-Page"
+            Link:
+              $ref: "#/components/headers/Link"
           content:
             application/json:
               schema:
@@ -581,9 +607,22 @@ paths:
         - $ref: "#/components/parameters/autor-contains"
         - $ref: "#/components/parameters/autor-fachgebiet"
         - $ref: "#/components/parameters/autor-organisation"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/per_page"
       responses:
         200:
           description: "Success"
+          headers:
+            X-Total-Count:
+              $ref: "#/components/headers/X-Total-Count"
+            X-Total-Pages:
+              $ref: "#/components/headers/X-Total-Pages"
+            X-Page:
+              $ref: "#/components/headers/X-Page"
+            X-Per-Page:
+              $ref: "#/components/headers/X-Per-Page"
+            Link:
+              $ref: "#/components/headers/Link"
           content:
             application/json:
               schema:
@@ -659,9 +698,22 @@ paths:
                 "vgidtypen",
                 "dokumententypen",
               ]
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/per_page"
       responses:
         200:
           description: "Success"
+          headers:
+            X-Total-Count:
+              $ref: "#/components/headers/X-Total-Count"
+            X-Total-Pages:
+              $ref: "#/components/headers/X-Total-Pages"
+            X-Page:
+              $ref: "#/components/headers/X-Page"
+            X-Per-Page:
+              $ref: "#/components/headers/X-Per-Page"
+            Link:
+              $ref: "#/components/headers/Link"
           content:
             application/json:
               schema:
@@ -780,6 +832,25 @@ components:
         type: integer
         minimum: 1
         maximum: 31
+    page:
+      name: "page"
+      in: query
+      description: "Page number for paginated results. Starts at 1."
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    per_page:
+      name: "per_page"
+      in: query
+      description: "Number of items to return per page. Maximum value is capped at server-defined limit."
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 128
+        default: 32
     gremium-like:
       name: "gr"
       in: query
@@ -818,23 +889,6 @@ components:
       name: "wp"
       in: "query"
       description: "Filter by electoral period number. Returns only items from the specified electoral period."
-      required: false
-      schema:
-        type: integer
-        minimum: 0
-    limit:
-      name: "limit"
-      in: "query"
-      description: "Maximum number of items to return in a single request. Defaults to the server-defined value if not specified. Cannot exceed 64."
-      required: false
-      schema:
-        type: integer
-        minimum: 0
-        maximum: 64
-    offset:
-      name: "offset"
-      in: "query"
-      description: "Number of items to skip before starting to return results. Used for pagination in conjunction with limit."
       required: false
       schema:
         type: integer
@@ -908,6 +962,64 @@ components:
       type: apiKey
       name: X-API-Key
       in: header
+  headers: # meaning response headers
+    Link:
+      description: |
+        Used for pagination. Contains links to the first, previous, next, and last pages of results.
+        Format follows RFC 5988 Web Linking standard.
+        Example: <https://api.example.com/resources?page=3&per_page=20>; rel="next", <https://api.example.com/resources?page=5&per_page=20>; rel="last", <https://api.example.com/resources?page=1&per_page=20>; rel="first", <https://api.example.com/resources?page=1&per_page=20>; rel="prev"
+      schema:
+        type: string
+    X-Total-Count:
+      description: |
+        Total number of items available.
+        Example: 1000
+      schema:
+        type: integer
+        minimum: 1
+    X-Total-Pages:
+      description: |
+        Total number of pages available.
+        Example: 50
+      schema:
+        type: integer
+        minimum: 1
+    X-Page:
+      description: |
+        Current page number.
+        Example: 3
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    X-Per-Page:
+      description: |
+        Number of items per page.
+        Example: 32
+      schema:
+        type: integer
+        minimum: 1
+    X-RateLimit-Limit:
+      description: |
+        Maximum number of requests allowed per second.
+        Example: 256
+      schema:
+        type: integer
+        minimum: 0
+    X-RateLimit-Remaining:
+      description: |
+        Number of requests remaining in the current rate limit period.
+        Example: 128
+      schema:
+        type: integer
+        minimum: 0
+    X-RateLimit-Reset:
+      description: Timestamp when the rate limit will be reset.
+      schema:
+        type: string
+        format: date-time
+        example: "2024-01-01T00:00:00+00:00"
+
   responses:
     UnauthorizedError:
       description: "Authentication failed. The API key is missing, expired, or does not have sufficient permissions for this operation."
@@ -920,6 +1032,17 @@ components:
             description: "The API Key that was created"
     VorgangGetResponse:
       description: "Successful response containing a list of legislative processes matching the query filters. The list is sorted by last modification date (descending) and then lexicographically by title."
+      headers:
+        X-Total-Count:
+          $ref: "#/components/headers/X-Total-Count"
+        X-Total-Pages:
+          $ref: "#/components/headers/X-Total-Pages"
+        X-Page:
+          $ref: "#/components/headers/X-Page"
+        X-Per-Page:
+          $ref: "#/components/headers/X-Per-Page"
+        Link:
+          $ref: "#/components/headers/Link"
       content:
         application/json:
           schema:
@@ -928,6 +1051,17 @@ components:
               $ref: "#/components/schemas/vorgang"
     SGetResponse:
       description: "Successful response containing a list of parliamentary sessions matching the query filters. The list is sorted by last modification date (descending) and then lexicographically by title."
+      headers:
+        X-Total-Count:
+          $ref: "#/components/headers/X-Total-Count"
+        X-Total-Pages:
+          $ref: "#/components/headers/X-Total-Pages"
+        X-Page:
+          $ref: "#/components/headers/X-Page"
+        X-Per-Page:
+          $ref: "#/components/headers/X-Per-Page"
+        Link:
+          $ref: "#/components/headers/Link"
       content:
         application/json:
           schema:
