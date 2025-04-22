@@ -214,13 +214,7 @@ paths:
             schema:
               $ref: "#/components/schemas/vorgang"
       parameters:
-        - name: "collector"
-          in: query
-          required: true
-          description: "Unique identifier of the collector service submitting this data"
-          schema:
-            type: "string"
-            format: "uuid"
+        - $ref: "#/components/parameters/scraper-id"
       responses:
         201:
           $ref: "#/components/responses/201Created"
@@ -477,6 +471,7 @@ paths:
       operationId: kal_date_put
       description: "Collector interface for adding or updating sessions for a specific date and parliament. Completely replaces all sessions for the given date, with restrictions based on how far in the past the date is. Admin API keys can override the time restriction."
       parameters:
+        - $ref: "#/components/parameters/scraper-id"
         - name: parlament
           in: path
           required: true
@@ -910,6 +905,14 @@ paths:
 
 components:
   parameters:
+    scraper-id:
+      name: "X-Scraper-Id"
+      in: header
+      required: true
+      description: "The Scraper ID to use for the request. Used to identify the scraper that submitted the request."
+      schema:
+        type: string
+        format: uuid
     year:
       name: "y"
       in: query
