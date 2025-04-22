@@ -169,6 +169,12 @@ paths:
               $ref: "#/components/headers/X-Per-Page"
             Link:
               $ref: "#/components/headers/Link"
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
           content:
             application/json:
               schema:
