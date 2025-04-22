@@ -27,11 +27,46 @@ tags:
   - name: Authentication
     description: Endpoints related to API key management
 paths:
+  /ping:
+    get:
+      tags:
+        - Unauthorisiert
+      operationId: "ping"
+      description: "Just does a round trip with minimal response"
+      responses:
+        200:
+          description: "Pong"
+  /status:
+    get:
+      tags:
+        - Unauthorisiert
+      operationId: "status"
+      description: "Retrieves the current status of the API"
+      responses:
+        200:
+          description: "API is running"
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
+        500:
+          description: "API is not running"
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
+
   /api/v1/vorgang/{vorgang_id}:
     get:
       tags:
         - Vorgänge
-        - Unauthoriziert
+        - Unauthorisiert
       operationId: "vorgang_get_by_id"
       description: "Retrieves a specific legislative process by its unique identifier. Returns comprehensive details about the process including all its stations, associated documents, and metadata."
       parameters:
@@ -237,6 +272,48 @@ paths:
           $ref: "#/components/responses/403Forbidden"
       security:
         - apiKey: []
+  /api/v1/auth/rotate:
+    post:
+      tags:
+        - Authentication
+        - Keyadder-Schnittstellen
+      operationId: "auth_rotate"
+      description: "Key rotation endpoint for creating a new API key while maintaining the existing one for a transition period. The old key remains valid until the specified rotation_complete_date, after which it is automatically revoked."
+      requestBody:
+        required: true
+        description: "The Key to rotate"
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        201:
+          description: "New API Key was created successfully while preserving the old one for the transition period"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rotation_response"
+        403:
+          $ref: "#/components/responses/403Forbidden"
+      security:
+        - apiKey: []
+  /api/v1/auth/status:
+    get:
+      tags:
+        - Authentication
+      operationId: "auth_status"
+      description: "Retrieves information about the currently used API key including expiration date, rotation status, and key health."
+      responses:
+        200:
+          description: "Successfully retrieved API key status"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/api_key_status"
+        403:
+          $ref: "#/components/responses/403Forbidden"
+      security:
+        - apiKey: []
   /api/v1/sitzung:
     get:
       tags:
@@ -373,7 +450,6 @@ paths:
           schema:
             type: string
             format: date
-            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
         - $ref: "#/components/parameters/if-mod-since"
         - $ref: "#/components/parameters/page"
         - $ref: "#/components/parameters/per_page"
@@ -408,7 +484,6 @@ paths:
           schema:
             type: string
             format: date
-            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
       requestBody:
         required: true
         description: "Array of parliamentary sessions to set for the specified date"
@@ -981,7 +1056,13 @@ components:
         - Subject to rate limiting of 256 requests per second across all endpoints
         - Subject to body size limit of 16 GB
         - Tokens can be revoked at any time by administrators
-        - Failed authentication attempts may result in temporary IP blocks
+
+        API Key Rotation Policy:
+        - Keys should be rotated at least every 90 days (recommended)
+        - A transition period of 1 hour is supported during rotation where both old and new keys are valid
+        - When rotating keys, use the /api/v1/auth/rotate endpoint rather than creating and deleting keys separately
+        - During rotation, both keys remain valid until the rotation_complete_date is reached
+        - After the rotation_complete_date, the old key is automatically invalidated
       type: apiKey
       name: X-API-Key
       in: header
@@ -1090,7 +1171,7 @@ components:
           $ref: "#/components/headers/X-RateLimit-Remaining"
         X-RateLimit-Reset:
           $ref: "#/components/headers/X-RateLimit-Reset"
-    
+
     204NoContent:
       description: No Content
       headers:
@@ -1109,7 +1190,7 @@ components:
           $ref: "#/components/headers/X-RateLimit-Remaining"
         X-RateLimit-Reset:
           $ref: "#/components/headers/X-RateLimit-Reset"
-    
+
     SGetResponse:
       description: "Successful response containing a list of parliamentary sessions matching the query filters. The list is sorted by last modification date (descending) and then lexicographically by title."
       headers:
@@ -1153,6 +1234,40 @@ components:
           format: "date-time"
           description: "The expiration date of the API Key"
           example: "2024-12-31T23:59:59+00:00"
+    rotation_response:
+      type: "object"
+      description: "Response from a successful key rotation request"
+      required: [new_api_key, rotation_complete_date]
+      properties:
+        new_api_key:
+          type: "string"
+          description: "The newly created API key (shown only once)"
+        rotation_complete_date:
+          type: "string"
+          format: "date-time"
+          description: "Confirmed date when the old key will be invalidated"
+    api_key_status:
+      type: "object"
+      description: "Status information about the API key used in the current request"
+      required: [scope, expires_at, is_being_rotated, rotation_complete_date]
+      properties:
+        scope:
+          type: "string"
+          enum:
+            - "admin"
+            - "collector"
+            - "keyadder"
+        expires_at:
+          type: "string"
+          format: "date-time"
+          description: "When this key will expire"
+        is_being_rotated:
+          type: "boolean"
+          description: "Whether this key is currently in a transition process"
+        rotation_complete_date:
+          type: "string"
+          format: "date-time"
+          description: "If being rotated, the date when this key will be invalidated"
     parlament:
       type: "string"
       description: "Enumeration der Parlamentsähnlichen Entscheidungscorpi in Deutschland"
@@ -1169,7 +1284,7 @@ components:
         - "HE" # Hessen
         - "MV" # Mecklenburg-Vorpommern
         - "NI" # Niedersachsen
-        - "NW" # Nordrhein-Westfahlen
+        - "NW" # Nordrhein-Westfalen
         - "RP" # Rheinland-Pfalz
         - "SL" # Saarland
         - "SN" # Sachsen
