@@ -844,7 +844,10 @@ paths:
             schema:
               type: array
               items:
-                type: string
+                type: object
+                properties:
+                  entry:
+                    type: string
       parameters:
         - name: "name"
           in: path
