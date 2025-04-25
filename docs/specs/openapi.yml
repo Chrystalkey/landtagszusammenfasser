@@ -167,6 +167,8 @@ paths:
               $ref: "#/components/headers/X-Page"
             X-Per-Page:
               $ref: "#/components/headers/X-Per-Page"
+            Link:
+              $ref: "#/components/headers/Link"
             X-RateLimit-Limit:
               $ref: "#/components/headers/X-RateLimit-Limit"
             X-RateLimit-Remaining:
@@ -645,6 +647,8 @@ paths:
               $ref: "#/components/headers/X-Page"
             X-Per-Page:
               $ref: "#/components/headers/X-Per-Page"
+            Link:
+              $ref: "#/components/headers/Link"
           content:
             application/json:
               schema:
@@ -723,6 +727,8 @@ paths:
               $ref: "#/components/headers/X-Page"
             X-Per-Page:
               $ref: "#/components/headers/X-Per-Page"
+            Link:
+              $ref: "#/components/headers/Link"
           content:
             application/json:
               schema:
@@ -814,6 +820,8 @@ paths:
               $ref: "#/components/headers/X-Page"
             X-Per-Page:
               $ref: "#/components/headers/X-Per-Page"
+            Link:
+              $ref: "#/components/headers/Link"
           content:
             application/json:
               schema:
@@ -1075,13 +1083,13 @@ components:
       name: X-API-Key
       in: header
   headers: # meaning response headers
-    # Link:
-    #   description: |
-    #     Used for pagination. Contains links to the first, previous, next, and last pages of results.
-    #     Format follows RFC 5988 Web Linking standard.
-    #     Example: <https://api.example.com/resources?page=3&per_page=20>; rel="next", <https://api.example.com/resources?page=5&per_page=20>; rel="last", <https://api.example.com/resources?page=1&per_page=20>; rel="first", <https://api.example.com/resources?page=1&per_page=20>; rel="prev"
-    #   schema:
-    #     type: string
+    Link:
+      description: |
+        Used for pagination. Contains links to the first, previous, next, and last pages of results.
+        Format follows RFC 5988 Web Linking standard.
+        Example: <https://api.example.com/resources?page=3&per_page=20>; rel="next", <https://api.example.com/resources?page=5&per_page=20>; rel="last", <https://api.example.com/resources?page=1&per_page=20>; rel="first", <https://api.example.com/resources?page=1&per_page=20>; rel="prev"
+      schema:
+        type: string
     X-Total-Count:
       description: |
         Total number of items available.
@@ -1216,6 +1224,8 @@ components:
           $ref: "#/components/headers/X-Page"
         X-Per-Page:
           $ref: "#/components/headers/X-Per-Page"
+        Link:
+          $ref: "#/components/headers/Link"
       content:
         application/json:
           schema:
