@@ -1208,7 +1208,7 @@ components:
           $ref: "#/components/headers/X-RateLimit-Reset"
 
     SGetResponse:
-      description: "Successful response containing a list of parliamentary sessions matching the query filters. The list is sorted by last modification date (descending) and then lexicographically by title."
+      description: "Successful response. Containing a list of parliamentary sessions matching the query filters. The list is sorted by last modification date (descending) and then lexicographically by title."
       headers:
         X-RateLimit-Limit:
           $ref: "#/components/headers/X-RateLimit-Limit"
