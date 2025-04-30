@@ -157,7 +157,7 @@ paths:
       description: "Retrieves a filterable list of legislative processes. Returns up to 64 processes per request, which can be filtered by various criteria including time range, parliament, and electoral period."
       responses:
         200:
-          description: "Successful response containing a list of legislative processes matching the query filters. The list is sorted by last modification date (descending) and then lexicographically by title."
+          description: "Successful. Response containing a list of legislative processes matching the query filters. The list is sorted by last modification date (descending) and then lexicographically by title."
           headers:
             X-Total-Count:
               $ref: "#/components/headers/X-Total-Count"
@@ -1142,7 +1142,7 @@ components:
 
   responses:
     403Forbidden:
-      description: "Authentication failed. The API key does not have sufficient permissions for this operation."
+      description: "Forbidden. The API key does not have sufficient permissions for this operation."
       headers:
         X-RateLimit-Limit:
           $ref: "#/components/headers/X-RateLimit-Limit"
