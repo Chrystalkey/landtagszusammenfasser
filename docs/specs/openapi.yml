@@ -665,9 +665,8 @@ components:
           type: "string"
         meinung: 
           type: integer
-          minimum: 1
-          maximum: 5
-          description: "Meinungsbild des Dokuments bei Stln / Beschlempf: 1=schlecht, 5=gut bzw. 1=ablehnung empf.,2-4=zust in geänderter Fassung, 5=zustimmung empf."
+          example: 1
+          description: "Meinungsbild des Dokuments bei Stln / Beschlempf: 1=schlecht, 5=gut bzw. 1=ablehnung empf.,2-4=zust in geänderter Fassung, 5=zustimmung empf. Keine Festen Bounds weil rust-axum das nicht schmeckt."
         schlagworte:
           type: "array"
           items:
