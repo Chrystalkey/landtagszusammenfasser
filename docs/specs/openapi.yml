@@ -1494,6 +1494,33 @@ components:
             },
           ]
         drucksnr: "BT-Drs. 20/12345"
+<<<<<<< HEAD
+=======
+    string_ref:
+      type: object
+      required: [dc_type, value]
+      properties:
+        dc_type:
+          type: string
+          default: "reference"
+          enum: [reference]
+        value:
+          type: string
+      example:
+        dc_type: "reference"
+        value: "a1b2c3d4-e5f6-7890-abcd-1234567890ab"
+    dok_ref:
+      description: Wrapper um ein Dokument oder eine API-ID von einem zuvor hochgeladenen Dokuments. Optimierung, da hier nicht jedes Mal der Volltext eines Dokuments hochgeladen werden muss.
+      oneOf:
+        - $ref: "#/components/schemas/dokument"
+        - $ref: "#/components/schemas/string_ref"
+      discriminator:
+        propertyName: dc_type
+        mapping:
+          dokument: "#/components/schemas/dokument"
+          reference: "#/components/schemas/string_ref"
+
+>>>>>>> refs/remotes/origin/dev-specchange
     station:
       type: "object"
       description:
@@ -1761,10 +1788,14 @@ components:
           type: "array"
           description: "Die Dokumente, die in diesem TOP besprochen werden sollen"
           items:
+<<<<<<< HEAD
             oneOf:
               - $ref: "#/components/schemas/dokument"
               - type: string
                 description: Dokument API ID (uuid)
+=======
+            $ref: "#/components/schemas/dok_ref"
+>>>>>>> refs/remotes/origin/dev-specchange
       example:
         nummer: 3
         titel: "Erste Beratung des von den Fraktionen SPD, BÜNDNIS 90/DIE GRÜNEN und FDP eingebrachten Entwurfs eines Gesetzes zur Änderung des Bundeswahlgesetzes"
