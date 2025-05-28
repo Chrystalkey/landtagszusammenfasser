@@ -1405,7 +1405,6 @@ components:
         - zp_referenz
         - link
         - autoren
-        - dc_type
       properties:
         api_id:
           type: "string"
@@ -1415,10 +1414,6 @@ components:
           $ref: "#/components/schemas/touched_by"
         drucksnr:
           type: "string"
-        dc_type:
-          type: string
-          default: "dokument"
-          enum: [dokument]
         typ:
           $ref: "#/components/schemas/doktyp"
         titel:
@@ -1471,7 +1466,6 @@ components:
             $ref: "#/components/schemas/autor"
       example:
         api_id: "a1b2c3d4-e5f6-7890-abcd-1234567890ab"
-        dc_type: "dokument"
         typ: "entwurf"
         titel: "Entwurf eines Gesetzes zur Änderung des Bundeswahlgesetzes"
         kurztitel: "Änderung des Bundeswahlgesetzes"
@@ -1574,12 +1568,7 @@ components:
         trojanergefahr: 2
         schlagworte: ["wahlrecht", "reform", "bundestag"]
         dokumente:
-          [
-            {
-              "dc_type": "reference",
-              "value": "a1b2c3d4-e5f6-7890-abcd-1234567890ab",
-            },
-          ]
+          []
         additional_links:
           [
             "https://www.bundestag.de/mediathek/parlamentsfernsehen/aufzeichnungen/123456-123456",
@@ -1705,12 +1694,7 @@ components:
               "parlament": "BT",
               "typ": "parl-vollvlsgn",
               "dokumente":
-                [
-                  {
-                    "dc_type": "reference",
-                    "value": "a1b2c3d4-e5f6-7890-abcd-1234567890ab",
-                  },
-                ],
+                [               ],
             },
           ]
         lobbyregister:
@@ -1770,10 +1754,6 @@ components:
         titel: "Erste Beratung des von den Fraktionen SPD, BÜNDNIS 90/DIE GRÜNEN und FDP eingebrachten Entwurfs eines Gesetzes zur Änderung des Bundeswahlgesetzes"
         dokumente:
           [
-            {
-              "dc_type": "reference",
-              "value": "a1b2c3d4-e5f6-7890-abcd-1234567890ab",
-            },
           ]
     autor:
       type: "object"
@@ -1853,10 +1833,6 @@ components:
               "vorgang_id": ["123e4567-e89b-12d3-a456-426614174000"],
               "dokumente":
                 [
-                  {
-                    "dc_type": "reference",
-                    "value": "a1b2c3d4-e5f6-7890-abcd-1234567890ab",
-                  },
                 ],
             },
           ]
@@ -1864,7 +1840,6 @@ components:
           [
             {
               "api_id": "c1d2e3f4-a5b6-7890-cdef-1234567890gh",
-              "dc_type": "dokument",
               "typ": "tops",
               "titel": "Tagesordnung der 143. Sitzung des Deutschen Bundestages",
               "volltext": "TOP 1: Eröffnung der Sitzung\nTOP 2: Fragestunde\nTOP 3: Erste Beratung des Gesetzentwurfs zur Änderung des Bundeswahlgesetzes\n...",
