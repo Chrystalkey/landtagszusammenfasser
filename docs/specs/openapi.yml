@@ -286,10 +286,12 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - old_key_hash
               properties:
-                old_key:
+                old_key_hash:
                   type: string
-                  description: "The old key to be rotated for a new one"
+                  description: "The old key hash to be rotated for a new key"
       responses:
         201:
           description: "New API Key was created successfully while preserving the old one for the transition period"
