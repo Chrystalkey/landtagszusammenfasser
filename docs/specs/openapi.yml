@@ -318,8 +318,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/api_key_status"
-        403:
-          $ref: "#/components/responses/403Forbidden"
       security:
         - apiKey: []
   /api/v1/sitzung:
