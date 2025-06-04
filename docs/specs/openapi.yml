@@ -1278,14 +1278,10 @@ components:
         expires_at:
           type: "string"
           format: "date-time"
-          description: "When this key will expire"
+          description: "When this key will expire. If is_being_rotated is true, this is the date the rotation is complete."
         is_being_rotated:
           type: "boolean"
           description: "Whether this key is currently in a transition process"
-        rotation_complete_date:
-          type: "string"
-          format: "date-time"
-          description: "If being rotated, the date when this key will be invalidated"
     parlament:
       type: "string"
       description: "Enumeration der Parlamentsähnlichen Entscheidungscorpi in Deutschland"
