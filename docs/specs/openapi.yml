@@ -301,6 +301,8 @@ paths:
                 $ref: "#/components/schemas/rotation_response"
         403:
           $ref: "#/components/responses/403Forbidden"
+        404:
+          $ref: "#/components/responses/404NotFound"
       security:
         - apiKey: []
   /api/v1/auth/status:
