@@ -8,24 +8,20 @@ info:
     rateLimit: 256
     rateLimitPeriod: "second"
 tags:
-  - name: Vorgänge
+  - name: Vorgang
     description: Endpoints related to legislative processes
-  - name: Sitzungen
+  - name: Sitzung
     description: Endpoints related to parliamentary sessions
-  - name: Kalender
-    description: Endpoints related to calendar functionality
-  - name: Dokumente
-    description: Endpoints related to documents
-  - name: Adminschnittstellen
-    description: Endpoints used for administrative purposes
+  - name: Data-Administration
+    description: Endpoints used for data administrative purposes
   - name: Collector-Schnittstellen
-    description: Endpoints used for collecting data
-  - name: Keyadder-Schnittstellen
-    description: Endpoints used for adding API keys
+    description: Endpoints to be used by collectors
   - name: Unauthorisiert
     description: Endpoints that do not require authentication
-  - name: Authentication
+  - name: Authentifizierung
     description: Endpoints related to API key management
+  - name: Miscellaneous
+    description: Endpoints managing objects which cannot exist without a more higher-up object (Documents, Enumeration values etc)
 paths:
   /ping:
     get:
@@ -65,7 +61,7 @@ paths:
   /api/v1/vorgang/{vorgang_id}:
     get:
       tags:
-        - Vorgänge
+        - Vorgang
         - Unauthorisiert
       operationId: "vorgang_get_by_id"
       description: "Retrieves a specific legislative process by its unique identifier. Returns comprehensive details about the process including all its stations, associated documents, and metadata."
@@ -98,8 +94,8 @@ paths:
           $ref: "#/components/responses/404NotFound"
     put:
       tags:
-        - Vorgänge
-        - Adminschnittstellen
+        - Vorgang
+        - Data-Administration
       operationId: "vorgang_id_put"
       description: "Administrative endpoint to directly set or replace a legislative process without merging or matching. Replaces the entire process data if it exists, or creates a new one if it doesn't."
       parameters:
@@ -127,8 +123,8 @@ paths:
         - apiKey: []
     delete:
       tags:
-        - Vorgänge
-        - Adminschnittstellen
+        - Vorgang
+        - Data-Administration
       operationId: vorgang_delete
       description: "Administrative endpoint to completely remove a legislative process from the system. This operation cannot be undone."
       parameters:
@@ -151,7 +147,7 @@ paths:
   /api/v1/vorgang:
     get:
       tags:
-        - Vorgänge
+        - Vorgang
         - Unauthorisiert
       operationId: "vorgang_get"
       description: "Retrieves a filterable list of legislative processes. Returns up to 64 processes per request, which can be filtered by various criteria including time range, parliament, and electoral period."
@@ -202,7 +198,7 @@ paths:
         - $ref: "#/components/parameters/per_page"
     put:
       tags:
-        - Vorgänge
+        - Vorgang
         - Collector-Schnittstellen
       operationId: "vorgang_put"
       description: "Collector interface for inserting a new legislative process. Processes are automatically deduplicated against existing data and merged if necessary. Used by data collection services to add new legislative processes to the system."
@@ -227,7 +223,7 @@ paths:
   /api/v1/auth:
     delete:
       tags:
-        - Authentication
+        - Authentifizierung
         - Keyadder-Schnittstellen
       operationId: "auth_delete"
       description: "Key adder interface for removing API keys from the system. Allows administrators and key management services to revoke access by deleting an existing API key."
@@ -249,7 +245,7 @@ paths:
         - apiKey: []
     post:
       tags:
-        - Authentication
+        - Authentifizierung
         - Keyadder-Schnittstellen
       operationId: "auth_post"
       description: "Key adder interface for creating new API keys. Allows administrators to generate new access keys for collectors, administrative tools, or other key adders."
@@ -275,10 +271,10 @@ paths:
   /api/v1/auth/rotate:
     post:
       tags:
-        - Authentication
+        - Authentifizierung
         - Keyadder-Schnittstellen
       operationId: "auth_rotate"
-      description: "Key rotation endpoint for creating a new API key while maintaining the existing one for a transition period. The old key remains valid until the specified rotation_complete_date, after which it is automatically revoked."
+      description: "Key rotation endpoint for creating a new API key while maintaining the existing one for a transition period of one day. The old key remains valid until the specified rotation_complete_date, after which it is automatically revoked."
       requestBody:
         required: true
         description: "The Key to rotate"
@@ -308,7 +304,7 @@ paths:
   /api/v1/auth/status:
     get:
       tags:
-        - Authentication
+        - Authentifizierung
       operationId: "auth_status"
       description: "Retrieves information about the currently used API key including expiration date, rotation status, and key health."
       responses:
@@ -323,7 +319,7 @@ paths:
   /api/v1/sitzung:
     get:
       tags:
-        - Sitzungen
+        - Sitzung
         - Unauthorisiert
       operationId: "s_get"
       description: "Retrieves a filterable list of parliamentary sessions. Returns up to 64 sessions per request, which can be filtered by various criteria including time frame, parliament, and electoral period."
@@ -350,7 +346,7 @@ paths:
   /api/v1/sitzung/{sid}:
     get:
       tags:
-        - Sitzungen
+        - Sitzung
         - Unauthorisiert
       operationId: "s_get_by_id"
       description: "Retrieves detailed information about a specific parliamentary session by its unique identifier. Returns complete session data including agenda items, documents, and metadata."
@@ -383,8 +379,8 @@ paths:
           $ref: "#/components/responses/404NotFound"
     put:
       tags:
-        - Sitzungen
-        - Adminschnittstellen
+        - Sitzung
+        - Data-Administration
       operationId: "sid_put"
       description: "Administrative endpoint to directly set or replace a parliamentary session without merging or matching. Replaces the entire session data if it exists, or creates a new one if it doesn't."
       parameters:
@@ -413,8 +409,8 @@ paths:
         - apiKey: []
     delete:
       tags:
-        - Sitzungen
-        - Adminschnittstellen
+        - Sitzung
+        - Data-Administration
       operationId: sitzung_delete
       description: "Administrative endpoint to completely remove a parliamentary session from the system. This operation cannot be undone."
       parameters:
@@ -437,8 +433,7 @@ paths:
   /api/v1/kalender/{parlament}/{datum}:
     get:
       tags:
-        - Kalender
-        - Sitzungen
+        - Sitzung
         - Unauthorisiert
       operationId: kal_date_get
       description: "Retrieves a list of parliamentary sessions for a specific date and parliament. Provides all sessions scheduled for the given day in the specified parliamentary body."
@@ -470,9 +465,7 @@ paths:
           $ref: "#/components/responses/404NotFound"
     put:
       tags:
-        - Kalender
-        - Sitzungen
-        - Adminschnittstellen
+        - Sitzung
         - Collector-Schnittstellen
       operationId: kal_date_put
       description: "Collector interface for adding or updating sessions for a specific date and parliament. Completely replaces all sessions for the given date, with restrictions based on how far in the past the date is. Admin API keys can override the time restriction."
@@ -510,8 +503,7 @@ paths:
   /api/v1/kalender:
     get:
       tags:
-        - Kalender
-        - Sitzungen
+        - Sitzung
         - Unauthorisiert
       operationId: kal_get
       description: "Retrieves a filterable list of parliamentary sessions for calendar display. Returns up to 64 sessions per request, which can be filtered by various criteria including year, month, day, parliament, and committee."
@@ -539,7 +531,7 @@ paths:
   /api/v1/dokument/{api_id}:
     get:
       tags:
-        - Dokumente
+        - Miscellaneous
         - Unauthorisiert
       operationId: "dokument_get_by_id"
       description: "Retrieves a specific document by its unique identifier. Returns complete document data including title, full text, metadata, and author information."
@@ -569,8 +561,8 @@ paths:
           $ref: "#/components/responses/404NotFound"
     put:
       tags:
-        - Dokumente
-        - Adminschnittstellen
+        - Miscellaneous
+        - Data-Administration
       operationId: "dokument_put_id"
       description: "Administrative endpoint to upload or update documents for future reference. Creates a new document with the specified ID or replaces an existing one."
       parameters:
@@ -599,8 +591,8 @@ paths:
         - apiKey: []
     delete:
       tags:
-        - Dokumente
-        - Adminschnittstellen
+        - Miscellaneous
+        - Data-Administration
       operationId: "dokument_delete_id"
       description: "Administrative endpoint to remove a document from the system. This operation cannot be undone and may affect other resources referencing this document."
       parameters:
@@ -621,7 +613,7 @@ paths:
   /api/v1/gremien:
     get:
       tags:
-        - Gremien
+        - Miscellaneous
         - Unauthorisiert
       operationId: "gremien_get"
       description: "Retrieves a list of committees filtered by optional parameters. Returns committees matching the specified criteria from parliament bodies and electoral periods."
@@ -661,20 +653,40 @@ paths:
           $ref: "#/components/responses/204NoContent"
     put:
       tags:
-        - Gremien
-        - Adminschnittstellen
+        - Miscellaneous
+        - Data-Administration
       operationId: "gremien_put"
       description: "Administrative endpoint to add or update multiple committees at once. Creates new committees or replaces existing ones based on matching parliament, electoral period, and name."
       requestBody:
         required: true
-        description: "Array of committees to create or update"
+        description: "Committees (Gremien) to update in-place. All objects in 'objects' are inserted if not present. All objects in the 'replaced_by' array are removed if found and references to them are pointed to the objects in the first list as indicated."
         content:
           application/json:
             schema:
-              type: array
-              items:
-                $ref: "#/components/schemas/gremium"
-      responses:
+              type: object
+              required:
+                - objects
+              properties:
+                objects:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/gremium"
+                replacing:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - values
+                    properties:
+                      values:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/gremium"
+                      replaced_by:
+                        description: "This object is replaced by the object with index {} in the 'objects' list above. 0-Based indexing."
+                        type: integer
+                        minimum: 0
+      responses: # cannot produce a conflict, as this is essentially force-push
         201:
           $ref: "#/components/responses/201Created"
         403:
@@ -683,8 +695,8 @@ paths:
         - apiKey: []
     delete:
       tags:
-        - Gremien
-        - Adminschnittstellen
+        - Miscellaneous
+        - Data-Administration
       operationId: "gremien_delete_by_param"
       description: "Administrative endpoint to delete committees matching the specified criteria. Removes all committees that match the filter parameters."
       parameters:
@@ -701,7 +713,7 @@ paths:
   /api/v1/autoren:
     get:
       tags:
-        - Autoren
+        - Miscellaneous
         - Unauthorisiert
       operationId: "autoren_get"
       description: "Retrieves a list of authors filtered by optional parameters. Returns authors matching the specified criteria including name fragments, professional field, and organization."
@@ -741,8 +753,8 @@ paths:
           $ref: "#/components/responses/204NoContent"
     put:
       tags:
-        - Autoren
-        - Adminschnittstellen
+        - Miscellaneous
+        - Data-Administration
       operationId: "autoren_put"
       description: "Administrative endpoint to add or update multiple authors at once. Creates new authors or replaces existing ones based on matching names and organizations."
       requestBody:
@@ -751,9 +763,29 @@ paths:
         content:
           application/json:
             schema:
-              type: array
-              items:
-                $ref: "#/components/schemas/autor"
+              type: object
+              required:
+                - objects
+              properties:
+                objects:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/autor"
+                replacing:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - values
+                    properties:
+                      values:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/autor"
+                      replaced_by:
+                        description: "This object is replaced by the object with index {} in the 'objects' list above. 0-Based indexing."
+                        type: integer
+                        minimum: 0
       responses:
         201:
           $ref: "#/components/responses/201Created"
@@ -763,8 +795,8 @@ paths:
         - apiKey: []
     delete:
       tags:
-        - Autoren
-        - Adminschnittstellen
+        - Miscellaneous
+        - Data-Administration
       operationId: "autoren_delete_by_param"
       description: "Administrative endpoint to delete authors matching the specified criteria. Removes all authors that match the filter parameters."
       parameters:
@@ -781,7 +813,7 @@ paths:
   /api/v1/enumeration/{name}:
     get:
       tags:
-        - Enumerations
+        - Miscellaneous
         - Unauthorisiert
       operationId: "enum_get"
       description: "Retrieves values from a specified enumeration type. Returns a list of valid values that can be used in other API operations, optionally filtered by a substring."
@@ -834,8 +866,8 @@ paths:
           $ref: "#/components/responses/204NoContent"
     put:
       tags:
-        - Enumerations
-        - Adminschnittstellen
+        - Miscellaneous
+        - Data-Administration
       operationId: "enum_put"
       description: "Administrative endpoint to add or update values in a specified enumeration type. Replaces the entire set of values for the enumeration."
       requestBody:
@@ -844,12 +876,29 @@ paths:
         content:
           application/json:
             schema:
-              type: array
-              items:
-                type: object
-                properties:
-                  entry:
+              type: object
+              required:
+                - objects
+              properties:
+                objects:
+                  type: array
+                  items:
                     type: string
+                replacing:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - values
+                    properties:
+                      values:
+                        type: array
+                        items:
+                          type: string
+                      replaced_by:
+                        description: "This value is replaced by the object with index {} in the 'objects' list above. 0-Based indexing."
+                        type: integer
+                        minimum: 0
       parameters:
         - name: "name"
           in: path
@@ -878,8 +927,8 @@ paths:
   /api/v1/enumeration/{name}/{item}:
     delete:
       tags:
-        - Enumerations
-        - Adminschnittstellen
+        - Miscellaneous
+        - Data-Administration
       operationId: "enum_delete"
       description: "Administrative endpoint to remove a specific value from an enumeration type. Performs case-sensitive matching to identify and delete the exact value."
       parameters:
