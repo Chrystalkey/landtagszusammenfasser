@@ -872,6 +872,8 @@ paths:
                   type: string
         204:
           $ref: "#/components/responses/204NoContent"
+        404:
+          $ref: "#/components/responses/404NotFound"
     put:
       tags:
         - Miscellaneous
