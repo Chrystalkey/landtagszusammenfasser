@@ -689,8 +689,12 @@ paths:
       responses: # cannot produce a conflict, as this is essentially force-push
         201:
           $ref: "#/components/responses/201Created"
+        304:
+          $ref: "#/components/responses/304NotModified"
         403:
           $ref: "#/components/responses/403Forbidden"
+        404:
+          $ref: "#/components/responses/404NotFound"
       security:
         - apiKey: []
     delete:
@@ -789,8 +793,12 @@ paths:
       responses:
         201:
           $ref: "#/components/responses/201Created"
+        304:
+          $ref: "#/components/responses/304NotModified"
         403:
           $ref: "#/components/responses/403Forbidden"
+        404:
+          $ref: "#/components/responses/404NotFound"
       security:
         - apiKey: []
     delete:
@@ -922,6 +930,8 @@ paths:
           $ref: "#/components/responses/304NotModified"
         403:
           $ref: "#/components/responses/403Forbidden"
+        404:
+          $ref: "#/components/responses/404NotFound"
       security:
         - apiKey: []
   /api/v1/enumeration/{name}/{item}:
