@@ -832,16 +832,7 @@ paths:
           required: true
           description: "Name of the enumeration type to retrieve values from"
           schema:
-            type: string
-            enum:
-              [
-                "schlagworte",
-                "stationstypen",
-                "vorgangstypen",
-                "parlamente",
-                "vgidtypen",
-                "dokumententypen",
-              ]
+            $ref: "#/components/schemas/enumeration_names"
         - $ref: "#/components/parameters/page"
         - $ref: "#/components/parameters/per_page"
       responses:
@@ -915,16 +906,7 @@ paths:
           required: true
           description: "Name of the enumeration type to update values for"
           schema:
-            type: string
-            enum:
-              [
-                "schlagworte",
-                "stationstypen",
-                "vorgangstypen",
-                "parlamente",
-                "vgidtypen",
-                "dokumententypen",
-              ]
+            $ref: "#/components/schemas/enumeration_names"
       responses:
         201:
           $ref: "#/components/responses/201Created"
@@ -955,16 +937,7 @@ paths:
           required: true
           description: "Name of the enumeration type to remove a value from"
           schema:
-            type: string
-            enum:
-              [
-                "schlagworte",
-                "stationstypen",
-                "vorgangstypen",
-                "parlamente",
-                "vgidtypen",
-                "dokumententypen",
-              ]
+            $ref: "#/components/schemas/enumeration_names"
       responses:
         204:
           $ref: "#/components/responses/204NoContent"
@@ -1296,6 +1269,17 @@ components:
             items:
               $ref: "#/components/schemas/sitzung"
   schemas:
+    enumeration_names:
+      type: string
+      enum:
+        [
+          "schlagworte",
+          "stationstypen",
+          "vorgangstypen",
+          "parlamente",
+          "vgidtypen",
+          "dokumententypen",
+        ]
     create_api_key:
       type: "object"
       description: "Fragt einen neuen API-Key an. Dieser wird gehasht in der Datenbank gespeichert und wird nur einmalig in Klartext ausgegeben"
