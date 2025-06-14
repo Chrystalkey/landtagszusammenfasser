@@ -677,6 +677,7 @@ paths:
                     type: object
                     required:
                       - values
+                      - replaced_by
                     properties:
                       values:
                         type: array
@@ -693,8 +694,8 @@ paths:
           $ref: "#/components/responses/304NotModified"
         403:
           $ref: "#/components/responses/403Forbidden"
-        404:
-          $ref: "#/components/responses/404NotFound"
+        400:
+          $ref: "#/components/responses/400BadRequest"
       security:
         - apiKey: []
     delete:
@@ -781,6 +782,7 @@ paths:
                     type: object
                     required:
                       - values
+                      - replaced_by
                     properties:
                       values:
                         type: array
@@ -797,8 +799,8 @@ paths:
           $ref: "#/components/responses/304NotModified"
         403:
           $ref: "#/components/responses/403Forbidden"
-        404:
-          $ref: "#/components/responses/404NotFound"
+        400:
+          $ref: "#/components/responses/400BadRequest"
       security:
         - apiKey: []
     delete:
@@ -891,6 +893,7 @@ paths:
                     type: object
                     required:
                       - values
+                      - replaced_by
                     properties:
                       values:
                         type: array
@@ -914,8 +917,8 @@ paths:
           $ref: "#/components/responses/304NotModified"
         403:
           $ref: "#/components/responses/403Forbidden"
-        404:
-          $ref: "#/components/responses/404NotFound"
+        400:
+          $ref: "#/components/responses/400BadRequest"
       security:
         - apiKey: []
   /api/v1/enumeration/{name}/{item}:
@@ -1177,6 +1180,15 @@ components:
         example: "2024-01-01T00:00:00+00:00"
 
   responses:
+    400BadRequest:
+      description: "Bad Request. The Request cannot be satisfied"
+      headers:
+        X-RateLimit-Limit:
+          $ref: "#/components/headers/X-RateLimit-Limit"
+        X-RateLimit-Remaining:
+          $ref: "#/components/headers/X-RateLimit-Remaining"
+        X-RateLimit-Reset:
+          $ref: "#/components/headers/X-RateLimit-Reset"
     403Forbidden:
       description: "Forbidden. The API key does not have sufficient permissions for this operation."
       headers:
