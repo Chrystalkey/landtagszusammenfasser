@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: "Specification for the Landtagszusammenfasser Project"
-  version: "0.1.1"
+  version: "0.1.3"
   description: "Beschreibung der API des LTZF Projekts. Alle Listen, die vom Server kommen sind sortiert in\n  1. datum der letzten modifikation, absteigend\n  2. lexikographisch des titels falls nicht vorhanden"
   x-api-limits:
     maxBodySize: 16GB
@@ -64,7 +64,7 @@ paths:
         - Vorgang
         - Unauthorisiert
       operationId: "vorgang_get_by_id"
-      description: "Retrieves a specific legislative process by its unique identifier. Returns comprehensive details about the process including all its stations, associated documents, and metadata."
+      description: "Retrieves a specific legislative process by its unique identifier. Returns comprehensive details about the process including all its stations, associated documents, and metadata. If called by admin or higher, this returns a list of last scrapers/collectors touching the object"
       parameters:
         - name: "vorgang_id"
           in: "path"
@@ -92,6 +92,8 @@ paths:
           $ref: "#/components/responses/304NotModified"
         404:
           $ref: "#/components/responses/404NotFound"
+      security:
+        - apiKey: []
     put:
       tags:
         - Vorgang
@@ -349,7 +351,7 @@ paths:
         - Sitzung
         - Unauthorisiert
       operationId: "s_get_by_id"
-      description: "Retrieves detailed information about a specific parliamentary session by its unique identifier. Returns complete session data including agenda items, documents, and metadata."
+      description: "Retrieves detailed information about a specific parliamentary session by its unique identifier. Returns complete session data including agenda items, documents, and metadata. If called by admin or higher, this returns a list of last scrapers/collectors touching the object"
       parameters:
         - name: "sid"
           in: "path"
@@ -377,6 +379,8 @@ paths:
           $ref: "#/components/responses/304NotModified"
         404:
           $ref: "#/components/responses/404NotFound"
+      security:
+        - apiKey: []
     put:
       tags:
         - Sitzung
@@ -534,7 +538,7 @@ paths:
         - Miscellaneous
         - Unauthorisiert
       operationId: "dokument_get_by_id"
-      description: "Retrieves a specific document by its unique identifier. Returns complete document data including title, full text, metadata, and author information."
+      description: "Retrieves a specific document by its unique identifier. Returns complete document data including title, full text, metadata, and author information. If called by admin or higher, this returns a list of last scrapers/collectors touching the object"
       parameters:
         - name: api_id
           required: true
@@ -559,6 +563,8 @@ paths:
                 $ref: "#/components/schemas/dokument"
         404:
           $ref: "#/components/responses/404NotFound"
+      security:
+        - apiKey: []
     put:
       tags:
         - Miscellaneous
