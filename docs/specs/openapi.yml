@@ -292,7 +292,7 @@ paths:
                   description: "The old key hash to be rotated for a new key"
       responses:
         201:
-          description: "New API Key was created successfully while preserving the old one for the transition period"
+          description: "Rotation Successful. New API Key was created successfully while preserving the old one for the transition period"
           content:
             application/json:
               schema:
@@ -1081,21 +1081,21 @@ components:
       schema:
         $ref: "#/components/schemas/parlament"
     autor-contains:
-      name: "inipsn"
+      name: "person"
       in: "query"
       description: "Filter by author name substring. Returns items where an author's name contains this string (case-insensitive)."
       required: false
       schema:
         type: string
     autor-organisation:
-      name: iniorg
+      name: org
       in: query
       description: "Filter by author organization. Returns items where an author belongs to the specified organization."
       required: false
       schema:
         type: string
     autor-fachgebiet:
-      name: inifch
+      name: fach
       in: query
       description: "Filter by author's professional field. Returns items where an author has the specified professional expertise."
       required: false
