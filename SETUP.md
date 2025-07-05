@@ -177,6 +177,11 @@ sh oapi_gen.sh
 ### After-Setup Care
 To work with Collectors and the Database, you have to authenticate the collector with the database in some way. How you can do that in general is documented [here](docs/documentation/authentication.md), but the easiest route for development is to give the database a KEYADDER_KEY and using just that for your collector.
 
+#### Setting up a Mock Backend Application
+
+If you are developing Collectors or Website, a super simple way to setup the backend and provide the http apis to test against is to run 
+`docker compose up -d --build ltzf-db`.
+
 #### OAPI Generators
 Furthermore, the very first step after installing all required components for your development experience, you have to run `oapi_gen.sh` or `oapi_gen.ps1`, depending on your system. This will generate the appropriate libraries from the openapi.yml specification in docs/specs. All components need these generated code modules.
 Whenever you change the spec, you have to re-do this step.
