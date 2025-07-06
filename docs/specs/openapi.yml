@@ -331,6 +331,7 @@ paths:
         - $ref: "#/components/parameters/updated-until"
         - $ref: "#/components/parameters/parlament"
         - $ref: "#/components/parameters/wahlperiode"
+        - $ref: "#/components/parameters/gremium-like"
         - $ref: "#/components/parameters/vorgang-id"
         - $ref: "#/components/parameters/vgtyp"
         - $ref: "#/components/parameters/page"
