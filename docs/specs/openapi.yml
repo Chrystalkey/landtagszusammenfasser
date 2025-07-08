@@ -31,13 +31,13 @@ paths:
       description: "Just does a round trip with minimal response"
       parameters:
           - name: t
-            description: time of ping as integer of seconds since 1.1.1970
+            description: time of ping as integer of milliseconds since 1.1.1970
             in: query
             required: true
             schema:
               type: integer
-              minimum: 1970
-
+              format: u64
+              minimum: 0
       responses:
         200:
           description: "Pong"
