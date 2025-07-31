@@ -1563,7 +1563,7 @@ components:
       description:
         "Station ist in vielerlei hinsicht das Kernstück der API der Vorgänge. Jeder Vorgang besteht aus Stationen und die Stationen haben nur wenige verpflichtende Datenfelder.\
         Für weitere Details, siehe die docs"
-      required: [typ, dokumente, zp_start, parlament]
+      required: [typ, dokumente, zp_start, gremium]
       properties:
         api_id:
           type: "string"
@@ -1593,8 +1593,6 @@ components:
           type: "string"
           format: "uri"
           description: "Link zu einer Übersichtsseite zu dieser Station. _NICHT_ zu einem Dokument (PDF)"
-        parlament:
-          $ref: "#/components/schemas/parlament"
         typ:
           $ref: "#/components/schemas/stationstyp"
         trojanergefahr:
