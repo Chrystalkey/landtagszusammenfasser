@@ -1622,7 +1622,10 @@ components:
         stellungnahmen:
           type: "array"
           items:
-            $ref: "#/components/schemas/dokument"
+            oneOf:
+              - $ref: "#/components/schemas/dokument"
+              - type: string
+                description: Dokument API ID (uuid)
       example:
         api_id: "f1e2d3c4-b5a6-7890-abcd-1234567890cd"
         titel: "Erste Lesung im Bundestag"
@@ -1878,7 +1881,10 @@ components:
           type: array
           description: "Ankündigungen, TOPs und TOP änderungen bzw. Ergänzungen"
           items:
-            $ref: "#/components/schemas/dokument"
+            oneOf:
+              - $ref: "#/components/schemas/dokument"
+              - type: string
+                description: Dokument API ID (uuid)
         experten:
           type: "array"
           description: "Optional: Liste von geladenen Experten. (macht aus der Sitzung eine Anhörung)"
