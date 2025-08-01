@@ -1465,7 +1465,7 @@ components:
             description: "Key hash of the scraper that touched the object"
     dokument:
       type: "object"
-      description: "Ein Dokument, das in einem Vorgang beteiligt ist. Kann z.B. ein Protokoll, eine Drucksache oder ein anderes Dokument sein. Man beachte, dass für verschiedene Typen verschiedene Felder nur formal optional sind. So ist zum Beispiel für jede Stellungnahme eine Meinung gefragt und für jeden Gesetzesentwurf ein Vorwort"
+      description: "Ein Dokument. Kann z.B. ein Protokoll, eine Drucksache oder eine Stellungnahme sein. Man beachte, dass für verschiedene Typen verschiedene Felder nur formal optional sind. So ist zum Beispiel für jede Stellungnahme eine Meinung gefragt und für jeden Gesetzesentwurf ein Vorwort. Da Dokumente relativ große Objekte werden können (O(kB)), wird überall wo sie Teilobjekte sind (bei Stationen und Sitzungen) nur die UUID vom Server returned, und das Dokument muss in einem zweiten Request geladen werden."
       required:
         - titel
         - volltext
