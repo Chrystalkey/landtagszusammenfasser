@@ -1,0 +1,18 @@
+name: Specification Validation and Documentation
+
+on: 
+  push:
+    
+env: 
+    OPENAPI_GENERATOR_VERSION: "7.12.0"
+jobs:
+    spec-validation:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: install prerequisites
+              run: sudo apt update && sudo apt install -y --no-install-recommends maven jq curl
+            - name: install openapi generator
+              run: curl https://raw.githubusercontent.com/OpenAPITools/openapi-generator/master/bin/utils/openapi-generator-cli.sh > openapi-generator-cli && chmod u+x openapi-generator-cli
+            - name: validate
+              run: ./openapi-generator-cli validate -i docs/specs/openapi.yml
