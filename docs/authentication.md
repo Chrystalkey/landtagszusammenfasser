@@ -16,9 +16,9 @@ API Keys are split into scopes that authorize the key to be used for different o
 2. Admin
 3. Collector
 
-Scopes with a lower number include the permissions of the ones with higher numbers.
+Scopes with a lower rank include the permissions of the ones with higher rank.
 
-The _Keyadder_ scope is the most powerful one as it allows interaction with the `/.../auth` endpoint using `POST` and `DELETE`, requesting new valid api keys in doing so.
+The _Keyadder_ scope is the most powerful one as it allows interaction with the `/.../auth` endpoint using `POST` and `DELETE`, requesting new valid api keys in doing so or invalidating existing keys.
 
 The _Admin_ scope enables explicit writes and deletes of the main dataset by name. Keys with _Admin_ scope are allowed to use `PUT`, and `DELETE` on the `/.../vorgang/{vg_id}` and `/.../sitzung[{sid}]` endpoints. They are also allowed to use `PUT` on `/.../kalender/{parlament}/{datum} without date limitations.
 

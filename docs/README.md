@@ -3,36 +3,12 @@
 ## API Kurzbeschreibung
 
 Die API ist in drei Teile geteilt:
+1. Vorgangsmanagement: Management von Gesetzesvorgängen und deren semantischer Zusammenfassung.
+2. Sitzungsmanagement: Management von Ausschusssitzungen, Parlamentarischen Sitzungen und allem Anderen. Supported die Vorgänge
+2.1. Kalender-API: Sitzungen werden nicht nur einzeln gehandhabt, sondern immer in Tageweisen sätzen. Die Kalender-API bietet eben diesen Zugriff
+3. Authentifizierungsmanagement: Collectors, Admins und Super-Admins ("Keyadder") müssen sich um schreibzugriff zu bekommen authentifizieren. Das wird über diesen Abschnitt abgebildet.
 
-### 1. /api/v1/vorgang[/{vorgang_id}]
-- GET /api/v1/vorgang oder GET /api/v1/vorgang/{vorgang_id}
-  Öffentliche Schnittstelle um Vorgänge aus der Datenbank abzurufen, ohne authentifizierung
-- PUT /api/v1/vorgang
-  Schnittstelle der Collectors, die neue Vorgänge in die Datenbank einfügen ohne den internen Zustand der Datenbank zu kennen
-- PUT/DELETE /api/v1/vorgang/{vorgang_id}
-  Adminschnittstelle um den exakten Stand eines Vorganges zu setzen oder den gesamten Vorgang zu löschen.
-
-### 2. /api/v1/auth
-- POST/DELETE /api/v1/auth
-  Schnittstelle um API-Keys zu verwalten
-
-### 3. /api/v1/sitzung[/{sid}]
-- GET /api/v1/sitzung oder GET /api/v1/sitzung/{sid}
-  Öffentliche Schnittstelle um Sitzungen aus der Datenbank abzurufen, ohne Authentifizierung
-- PUT /api/v1/sitzung/{sid}
-  Adminschnittstelle um den exakten Stand einer Sitzung zu setzen
-- DELETE /api/v1/sitzung/{sid}
-  Adminschnittstelle um eine Sitzung zu löschen
-
-### 4. /api/v1/kalender[/{parlament}/{datum}]
-- GET /api/v1/kalender
-  Öffentliche Schnittstelle um Sitzungsdaten gefiltert abzurufen, ohne Authentifizierung
-- GET /api/v1/kalender/{parlament}/{datum}
-  Öffentliche Schnittstelle um Sitzungsdaten für ein bestimmtes Parlament an einem bestimmten Datum abzurufen
-- PUT /api/v1/kalender/{parlament}/{datum}
-  Adminschnittstelle um Sitzungsdaten für ein bestimmtes Parlament an einem bestimmten Datum zu setzen
-
-Für details über die Schnittstellen selbst siehe die [Spezifikation](./specs/openapi.yml)
+Für Details über die Schnittstellen selbst siehe die [Spezifikation](./specs/openapi.yml) und die daraus generierte [Dokumentation](./generated/index.html).
 
 ## Allgemeines Datenkonzept
 Das Datenkonzept hinter diesem Dienst besteht aus zwei Hauptsäulen: Dem `Vorgang` und der `Sitzung`.
@@ -78,7 +54,7 @@ API-Keys können einen von drei Scopes zugeordnet sein:
 
 Wobei höhere Scopes die berechtigungen der niedrigen Scopes einschließen.
 
-Für weitere Informationen siehe [documentation/authentication.md](documentation/authentication.md).
+Für weitere Informationen siehe [authentication.md](authentication.md).
 
 ## Grundlegende Projektstruktur
 Das Projekt besteht aus drei vollständig unabhängigen Komponenten:
@@ -92,6 +68,7 @@ Die drei Komponenten sind dabei zusammengebunden über eine geteilte Definition 
 ### Collectors
 Die Collectors sind die Hauptquelle für Daten im System. Ein collector besteht aus mehreren Scrapern, die zyklisch Daten aus diversen Quellen extrahieren.
 _Beispiel: Ein Collector, besteht aus einem Scraper für die Vorgänge im Landtag, einem für die Sitzungskalender und einem dritten der Justiz- und Wirtschaftsministerium scrapt._
+
 Die Collectors übernehmen hier die Komplexität der Daten-sanitation, aber _nicht_ die der Deduplikation. Ein Aufruf der entsprechenden Schnittstelle ist 
 Idempotent, da das Backend ein Matching vornimmt, welche Vorgänge den neuen Daten exakt entsprechen und die Daten entsprechend merged.
 _Beispiel: Ein Collector sorgt dafür, dass Autoren und Organisationsnamen einheitlich sind, das wird von niemand anderem gemacht. Er ist nicht dafür verantwortlich duplizierte Vorgänge zu eliminieren; dafür ist die Datenbank zuständig. Ein Collector könnte also zweimal denselben Vorgang in die Datenbank schreiben ohne sich um eine Gesamtübersicht der Vorgänge zu sorgen._
@@ -108,32 +85,6 @@ Der dritte Teil ist das Anzeigen des vorhandenen Datensatzes. Dafür ist eine dr
 
 Ein Beispiel wie man das Projekt aufsetzt findet sich in dem [Docker Compose File](../docker-compose.yml) im Rootverzeichnis.
 
-### Arguments for LTZF-DB
-```bash
-Usage: ltzf-db.exe [OPTIONS] --db-url <DB_URL> --keyadder-key <KEYADDER_KEY>
-
-Options:
-      --mail-server <MAIL_SERVER>
-      --mail-user <MAIL_USER>
-      --mail-password <MAIL_PASSWORD>
-      --mail-sender <MAIL_SENDER>
-      --mail-recipient <MAIL_RECIPIENT>
-      --host <HOST>
-          [default: 0.0.0.0]
-      --port <PORT>
-          [default: 80]
-  -d, --db-url <DB_URL>
-  -c, --config <CONFIG>
-
-      --keyadder-key <KEYADDER_KEY>
-          The API Key that is used to add new Keys. This is saved in the database.
-      --merge-title-similarity <MERGE_TITLE_SIMILARITY>
-          [default: 0.8]
-  -h, --help
-          Print help
-  -V, --version
-          Print version
-```
 ### Arguments for LTZF-Collector
 
 This one is configured via environment variables:
