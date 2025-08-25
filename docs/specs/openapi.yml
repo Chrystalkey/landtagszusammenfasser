@@ -66,7 +66,7 @@ paths:
             X-RateLimit-Reset:
               $ref: "#/components/headers/X-RateLimit-Reset"
 
-  /api/v1/vorgang/{vorgang_id}:
+  /api/v2/vorgang/{vorgang_id}:
     get:
       tags:
         - Vorgang
@@ -154,7 +154,7 @@ paths:
           $ref: "#/components/responses/404NotFound"
       security:
         - apiKey: []
-  /api/v1/vorgang:
+  /api/v2/vorgang:
     get:
       tags:
         - Vorgang
@@ -230,7 +230,7 @@ paths:
           $ref: "#/components/responses/409Conflict"
       security:
         - apiKey: []
-  /api/v1/auth:
+  /api/v2/auth:
     delete:
       tags:
         - Authentifizierung
@@ -278,7 +278,7 @@ paths:
           $ref: "#/components/responses/403Forbidden"
       security:
         - apiKey: []
-  /api/v1/auth/rotate:
+  /api/v2/auth/rotate:
     post:
       tags:
         - Authentifizierung
@@ -311,7 +311,7 @@ paths:
           $ref: "#/components/responses/404NotFound"
       security:
         - apiKey: []
-  /api/v1/auth/status:
+  /api/v2/auth/status:
     get:
       tags:
         - Authentifizierung
@@ -326,7 +326,7 @@ paths:
                 $ref: "#/components/schemas/api_key_status"
       security:
         - apiKey: []
-  /api/v1/sitzung:
+  /api/v2/sitzung:
     get:
       tags:
         - Sitzung
@@ -354,7 +354,7 @@ paths:
           $ref: "#/components/responses/304NotModified"
         416:
           $ref: "#/components/responses/416RangeNotSatisfiable"
-  /api/v1/sitzung/{sid}:
+  /api/v2/sitzung/{sid}:
     get:
       tags:
         - Sitzung
@@ -443,7 +443,7 @@ paths:
           $ref: "#/components/responses/404NotFound"
       security:
         - apiKey: []
-  /api/v1/kalender/{parlament}/{datum}:
+  /api/v2/kalender/{parlament}/{datum}:
     get:
       tags:
         - Sitzung
@@ -513,7 +513,7 @@ paths:
           $ref: "#/components/responses/403Forbidden"
       security:
         - apiKey: []
-  /api/v1/kalender:
+  /api/v2/kalender:
     get:
       tags:
         - Sitzung
@@ -541,7 +541,7 @@ paths:
         - $ref: "#/components/parameters/day-of-month"
         - $ref: "#/components/parameters/page"
         - $ref: "#/components/parameters/per_page"
-  /api/v1/dokument/{api_id}:
+  /api/v2/dokument/{api_id}:
     get:
       tags:
         - Miscellaneous
@@ -625,7 +625,7 @@ paths:
           $ref: "#/components/responses/403Forbidden"
       security:
         - apiKey: []
-  /api/v1/gremien:
+  /api/v2/gremien:
     get:
       tags:
         - Miscellaneous
@@ -730,7 +730,7 @@ paths:
           $ref: "#/components/responses/403Forbidden"
       security:
         - apiKey: []
-  /api/v1/autoren:
+  /api/v2/autoren:
     get:
       tags:
         - Miscellaneous
@@ -835,7 +835,7 @@ paths:
           $ref: "#/components/responses/403Forbidden"
       security:
         - apiKey: []
-  /api/v1/enumeration/{name}:
+  /api/v2/enumeration/{name}:
     get:
       tags:
         - Miscellaneous
@@ -936,7 +936,7 @@ paths:
           $ref: "#/components/responses/400BadRequest"
       security:
         - apiKey: []
-  /api/v1/enumeration/{name}/{item}:
+  /api/v2/enumeration/{name}/{item}:
     delete:
       tags:
         - Miscellaneous
@@ -1130,7 +1130,7 @@ components:
         API Key Rotation Policy:
         - Keys should be rotated at least every 90 days (recommended)
         - A transition period of 1 hour is supported during rotation where both old and new keys are valid
-        - When rotating keys, use the /api/v1/auth/rotate endpoint rather than creating and deleting keys separately
+        - When rotating keys, use the /api/v2/auth/rotate endpoint rather than creating and deleting keys separately
         - During rotation, both keys remain valid until the rotation_complete_date is reached
         - After the rotation_complete_date, the old key is automatically invalidated
       type: apiKey
