@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: "LTZF API"
-  version: "0.2.0"
+  version: "0.2.1"
   description: "Beschreibung der API des LTZF Projekts. Alle Listen, die vom Server kommen sind sortiert in\n  1. datum der letzten modifikation, absteigend\n  2. lexikographisch des titels falls nicht vorhanden"
   x-api-limits:
     maxBodySize: 16GB
@@ -241,9 +241,9 @@ paths:
         - name: "api-key-delete"
           in: "header"
           required: true
-          description: "The API key to be deleted from the system. Must be provided exactly as it was created."
+          description: "The API key to be deleted from the system. Must be provided as keytag."
           schema:
-            type: "string"
+            $ref: "#/components/schemas/key-tag"
       responses:
         204:
           $ref: "#/components/responses/204NoContent"
@@ -282,22 +282,8 @@ paths:
     post:
       tags:
         - Authentifizierung
-        - Keyadder-Schnittstellen
       operationId: "auth_rotate"
-      description: "Key rotation endpoint for creating a new API key while maintaining the existing one for a transition period of one day. The old key remains valid until the specified rotation_complete_date, after which it is automatically revoked."
-      requestBody:
-        required: true
-        description: "The Key to rotate"
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - old_key_hash
-              properties:
-                old_key_hash:
-                  type: string
-                  description: "The old key hash to be rotated for a new key"
+      description: "Key rotation endpoint for creating a new API key while maintaining the existing one for a transition period of one day. The old key remains valid until the specified rotation_complete_date, after which it is automatically revoked. Rotates only the own key if it is not invalid."
       responses:
         201:
           description: "Rotation Successful. New API Key was created successfully while preserving the old one for the transition period"
@@ -326,6 +312,97 @@ paths:
                 $ref: "#/components/schemas/api_key_status"
       security:
         - apiKey: []
+  /api/v2/auth/keys:
+    get:
+      operationId: "auth_listing"
+      description: "Retrieve a list of Keys that are currently in Use"
+      tags: 
+        - Authentifizierung
+        - Keyadder-Schnittstellen
+      parameters:
+        - $ref: "#/components/parameters/updated-since"
+        - $ref: "#/components/parameters/updated-until"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/per_page"
+      responses:
+        200:
+          description: "OK"
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
+            X-Total-Count:
+              $ref: "#/components/headers/X-Total-Count"
+            X-Total-Pages:
+              $ref: "#/components/headers/X-Total-Pages"
+            X-Page:
+              $ref: "#/components/headers/X-Page"
+            X-Per-Page:
+              $ref: "#/components/headers/X-Per-Page"
+            Link:
+              $ref: "#/components/headers/Link"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/key-tag"
+        403:
+          $ref: "#/components/responses/403Forbidden"
+      security:
+        - apiKey: []
+  /api/v2/auth/keys/{keytag}:
+    get:
+      operationId: "auth_listing_keytag"
+      description: "Retrieve a detailed overview of the objects changed by this key"
+      tags:
+        - Authentifizierung
+        - Keyadder-Schnittstellen
+      parameters:
+        - name: "keytag"
+          in: "path"
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "OK"
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dokumente:
+                    type: array
+                    items:
+                      type: string
+                  sitzungen:
+                    type: array
+                    items:
+                      type: string
+                  vorgaenge:
+                    type: array
+                    items:
+                      type: string
+                  stationen:
+                    type: array
+                    items:
+                      type: string
+        403:
+          $ref: "#/components/responses/403Forbidden"
+      security:
+        - apiKey: []
+  
   /api/v2/sitzung:
     get:
       tags:
@@ -337,13 +414,13 @@ paths:
         - $ref: "#/components/parameters/if-mod-since"
         - $ref: "#/components/parameters/updated-since"
         - $ref: "#/components/parameters/updated-until"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/per_page"
         - $ref: "#/components/parameters/parlament"
         - $ref: "#/components/parameters/wahlperiode"
         - $ref: "#/components/parameters/gremium-like"
         - $ref: "#/components/parameters/vorgang-id"
         - $ref: "#/components/parameters/vgtyp"
-        - $ref: "#/components/parameters/page"
-        - $ref: "#/components/parameters/per_page"
 
       responses:
         200:
@@ -1193,7 +1270,6 @@ components:
         type: string
         format: date-time
         example: "2024-01-01T00:00:00+00:00"
-
   responses:
     400BadRequest:
       description: "Bad Request. The Request cannot be satisfied"
@@ -1296,6 +1372,9 @@ components:
             items:
               $ref: "#/components/schemas/sitzung"
   schemas:
+    key-tag:
+      type: string
+      description: "A uniquely identifying string that is generated from key data within the database"
     enumeration_names:
       type: string
       enum:
