@@ -249,8 +249,6 @@ paths:
           $ref: "#/components/responses/204NoContent"
         403:
           $ref: "#/components/responses/403Forbidden"
-        404:
-          $ref: "#/components/responses/404NotFound"
       security:
         - apiKey: []
     post:
