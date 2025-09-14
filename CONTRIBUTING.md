@@ -10,8 +10,8 @@ Make yourself familiar with the structure!
 A quick setup instruction for development can be found in [SETUP.md](SETUP.md).
 
 ## State of the Project and the most Pressing Construction Sites
-The project is currently in a very unstable state. 
-This primarily means the API is changing in subtle ways every now and then, (although the pace of change is slowing to a halt).
+The project is currently in an unstable state. 
+This primarily means the API is changing in subtle ways every now and then, (although the pace of change is slowing).
 The reason for this is that we are still figuring out how to  represent seventeen independent legislative processes, which is an ongoing venture.
 
 If this is fine for you, then the most pressing concerns would be

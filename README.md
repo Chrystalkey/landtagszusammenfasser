@@ -32,6 +32,8 @@ Website die alle Bundesvorgänge zusammmenfasst      Website die alle Bayerische
 Die Grundlegenden Konzepte, API-Beschreibung und Projektsetup ist in [docs/README.md](docs/README.md). Geh und lies, junger Padawan!
 
 ## Contributing
+Es werden gebraucht: Scraper (Easy), Website(Mittelschwer) und Konzeptverbesserung(Schwer). Was immer du machen möchtest, es hilft.
+
 Eine grundlegende Setup-Beschreibung für die Projekte ist in [SETUP.md](SETUP.md), lies aber bitte auch [docs/README.md](docs/README.md).
 Für einen schönen Überblick zu was genau du deine Aufmerksamkeit wenden könntest, konsultiere doch [CONTRIBUTING.md](CONTRIBUTING.md), lies die Feature wishlist in den issues durch oder allgemein die issues.
 

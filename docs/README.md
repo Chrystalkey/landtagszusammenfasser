@@ -45,7 +45,7 @@ und die jeweilige Vorgangs-id ausgegeben.
 Der `Kalender` bietet eine zeitliche Übersicht über alle Sitzungen in einem oder mehreren Parlamenten. Er ermöglicht das Abrufen von Sitzungen nach Datum, Parlament, Gremium und anderen Filterkriterien.
 
 ### Authentifizierungskonzept
-Die Authentifizierung basiert auf API-Keys. Diese werden über die Datenbank vergeben und gelöscht. Dazu ist die Schnittstelle /api/v1/auth zuständig.
+Die Authentifizierung basiert auf API-Keys. Diese werden über die Datenbank vergeben und gelöscht. Dazu ist die Schnittstelle /api/v2/auth zuständig.
 API-Keys können einen von drei Scopes zugeordnet sein:
 
 - KeyAdder: Kann neue API-Keys erstellen
@@ -66,10 +66,10 @@ Diese drei haben klar getrennte Aufgabenbereiche und sind auf größtmögliche C
 Die drei Komponenten sind dabei zusammengebunden über eine geteilte Definition der [HTTP-API](specs/openapi.yml), die den Datenaustausch vereinheitlicht.  
 
 ### Collectors
-Die Collectors sind die Hauptquelle für Daten im System. Ein collector besteht aus mehreren Scrapern, die zyklisch Daten aus diversen Quellen extrahieren.
-_Beispiel: Ein Collector, besteht aus einem Scraper für die Vorgänge im Landtag, einem für die Sitzungskalender und einem dritten der Justiz- und Wirtschaftsministerium scrapt._
+Die Collectors sind die Hauptquelle für Daten im System. Ein collector besteht aus einem oder mehreren Scrapern, die zyklisch Daten aus diversen Quellen extrahieren.
+_Beispiel: Ein Collector, besteht aus einem Scraper für die Vorgänge im Landtag, einem für die Sitzungskalender und einem dritten der Justiz- und Wirtschaftsministerium scraped._
 
-Die Collectors übernehmen hier die Komplexität der Daten-sanitation, aber _nicht_ die der Deduplikation. Ein Aufruf der entsprechenden Schnittstelle ist 
+Die Collectors übernehmen hier die Komplexität der Datenaufbereitung, aber _nicht_ die der Deduplikation. Ein PUT Request zu der entsprechenden Schnittstelle ist 
 Idempotent, da das Backend ein Matching vornimmt, welche Vorgänge den neuen Daten exakt entsprechen und die Daten entsprechend merged.
 _Beispiel: Ein Collector sorgt dafür, dass Autoren und Organisationsnamen einheitlich sind, das wird von niemand anderem gemacht. Er ist nicht dafür verantwortlich duplizierte Vorgänge zu eliminieren; dafür ist die Datenbank zuständig. Ein Collector könnte also zweimal denselben Vorgang in die Datenbank schreiben ohne sich um eine Gesamtübersicht der Vorgänge zu sorgen._
 
@@ -99,8 +99,8 @@ This one is configured via environment variables:
 
 
 ### Arguments for the webserver
-| Name        | Description                       | Example   | Default or REQUIRED |
-| ---- |----  |---- | ---- |
+| Name          | Description                       | Example   | Default or REQUIRED |
+| ----          |----                               |----       | ----      |
 | LTZF_API_HOST | host of the LTZF DB               | localhost | REQUIRED  |
 | LTZF_API_PORT | port of the LTZF DB               | 80        | 80        |
 | PORT          | HTTP Port this server listenes on | 80        | 80        |
