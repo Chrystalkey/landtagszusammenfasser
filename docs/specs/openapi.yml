@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: "LTZF API"
-  version: "0.2.1"
+  version: "0.2.2"
   description: "Beschreibung der API des LTZF Projekts. Alle Listen, die vom Server kommen sind sortiert in\n  1. datum der letzten modifikation, absteigend\n  2. lexikographisch des titels falls nicht vorhanden"
   x-api-limits:
     maxBodySize: 16GB
