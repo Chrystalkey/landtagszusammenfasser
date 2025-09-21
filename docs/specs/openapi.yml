@@ -645,8 +645,6 @@ paths:
                 $ref: "#/components/schemas/dokument"
         404:
           $ref: "#/components/responses/404NotFound"
-      security:
-        - apiKey: []
     put:
       tags:
         - Miscellaneous
