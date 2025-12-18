@@ -100,8 +100,6 @@ paths:
           $ref: "#/components/responses/304NotModified"
         404:
           $ref: "#/components/responses/404NotFound"
-      security:
-        - apiKey: []
     put:
       tags:
         - Vorgang
@@ -461,8 +459,6 @@ paths:
           $ref: "#/components/responses/304NotModified"
         404:
           $ref: "#/components/responses/404NotFound"
-      security:
-        - apiKey: []
     put:
       tags:
         - Sitzung
