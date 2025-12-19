@@ -31,6 +31,7 @@ services:
   ltzf-db:
     build:
       context: ltzf-backend
+      dockerfile: Dockerfile.deploy
       network: host
     image: ltzf-db:test
     container_name: ltzf-db
