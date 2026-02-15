@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: "LTZF API"
-  version: "0.2.2"
+  version: "0.2.3"
   description: "Beschreibung der API des LTZF Projekts. Alle Listen, die vom Server kommen sind sortiert in\n  1. datum der letzten modifikation, absteigend\n  2. lexikographisch des titels falls nicht vorhanden"
   x-api-limits:
     maxBodySize: 16GB
@@ -31,7 +31,7 @@ paths:
       description: "Just does a round trip with minimal response"
       parameters:
           - name: t
-            description: time of ping as seconds since 1.1.1970
+            description: time of ping as milliseconds since 1.1.1970
             in: query
             required: false
             schema:
@@ -56,6 +56,12 @@ paths:
               $ref: "#/components/headers/X-RateLimit-Remaining"
             X-RateLimit-Reset:
               $ref: "#/components/headers/X-RateLimit-Reset"
+          content:
+            application/json:
+              schema:
+                type: "string"
+                description: "json object, but since I want to experiment with the format, not specified"
+                  
         500:
           description: "API is not running"
           headers:
@@ -1479,9 +1485,10 @@ components:
         - "postparl-kraft" # In Kraft getreten
         - "sonstig" # other, email me
     vg_ident_typ:
-      description: "Typ von Identifikatoren für einen gesamten Vorgang"
+      description: "Typ von Identifikatoren für einen gesamten Vorgang. Offen für was auch immer ein Parlament benutzt um einen Vorgang zu identifizieren. Aktuell in der Datenbank: initdrucks, vorgnr, api-id, sonstig
+      bitte keine neue Abkürzung für denselben Typ erfinden"
       type: "string"
-      enum: ["initdrucks", "vorgnr", "api-id", "sonstig"]
+      example: "initdrucks"
     doktyp:
       description: "Typ eines Dokuments. Beschreibt explizit nicht den Kontext, sondern nur den Typ des Inhalts. (z.B. 'tops' kann sowohl für Plenarsitzungen als auch für Ausschusssitzungen relevant sein)"
       type: "string"
