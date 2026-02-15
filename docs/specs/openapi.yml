@@ -1479,9 +1479,10 @@ components:
         - "postparl-kraft" # In Kraft getreten
         - "sonstig" # other, email me
     vg_ident_typ:
-      description: "Typ von Identifikatoren für einen gesamten Vorgang"
+      description: "Typ von Identifikatoren für einen gesamten Vorgang. Offen für was auch immer ein Parlament benutzt um einen Vorgang zu identifizieren. Aktuell in der Datenbank: initdrucks, vorgnr, api-id, sonstig
+      bitte keine neue Abkürzung für denselben Typ erfinden"
       type: "string"
-      enum: ["initdrucks", "vorgnr", "api-id", "sonstig"]
+      example: "initdrucks"
     doktyp:
       description: "Typ eines Dokuments. Beschreibt explizit nicht den Kontext, sondern nur den Typ des Inhalts. (z.B. 'tops' kann sowohl für Plenarsitzungen als auch für Ausschusssitzungen relevant sein)"
       type: "string"
