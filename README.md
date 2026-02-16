@@ -37,6 +37,14 @@ Es werden gebraucht: Scraper (Easy), Website(Mittelschwer) und Konzeptverbesseru
 Eine grundlegende Setup-Beschreibung für die Projekte ist in [SETUP.md](SETUP.md), lies aber bitte auch [docs/README.md](docs/README.md).
 Für einen schönen Überblick zu was genau du deine Aufmerksamkeit wenden könntest, konsultiere doch [CONTRIBUTING.md](CONTRIBUTING.md), lies die Feature wishlist in den issues durch oder allgemein die issues.
 
+## Git Krimskrams
+### How to do changes
+- change what you need in a  different branch, do a PR to main
+- on main: tag the commits so that they can be found again: `git tag
+  v<version>` for example
+- I still have to figure out releases
+- remember to add ltzf-collector and ltzf-backend
+
 ## Lizenz
 
 Do whatever you want, just please mention our names and/or link to our work :)
