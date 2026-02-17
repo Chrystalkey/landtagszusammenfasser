@@ -92,20 +92,42 @@ scoop install poetry python tesseract tesseract-languages
 git clone git@github.com:Chrystalkey/landtagszusammenfasser.git --recurse-submodules
 cd landtagszusammenfasser
 .\oapi_gen.ps1
+poetry install
 ```
 
 Linux
 ```bash
-sudo apt update && sudo apt install python3 python3-poetry curl docker docker-compose-v2 postgres tesseract-ocr pandoc
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-rustup # Now follow the default on-screen options
-cargo install sqlx-cli
-
+sudo apt update && sudo apt install python3 python3-poetry curl docker docker-compose-v2 postgres tesseract-ocr pandoc maven jq curl
 ## after all prerequisites are installed to get to a working state, do:
 git clone git@github.com:Chrystalkey/landtagszusammenfasser.git --recurse-submodules
 cd landtagszusammenfasser
 sh oapi_gen.sh
+poetry install
 ```
+
+To run: 
+Set the following environment variables (or put them in a .env file):
+```bash
+LTZF_API_KEY="tegernsee-apfelsaft-co2grenzwert"
+OPENAI_API_KEY="generate one at https://platform.openai.com"
+```
+Then to execute the collector:
+
+```bash
+# to check the configuration and where it comes from
+poetry run python3 -m collector --dump-config
+
+# then to run all available scrapers:
+# linearize does not overwhelm the oapi token limits per second
+poetry run python3 -m collector --linearize
+
+# to run a specific scraper: ( in this case the scraper for Laws in the
+# Bavarian Parliament)
+poetry run python3 -m collector --linearize --run byltsc
+
+poetry run python3 -m collector --help # helps you. hopefully.
+```
+
 
 ### Setup Shortcut if you only want to develop on ltzf-website
 Windows
