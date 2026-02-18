@@ -1106,7 +1106,7 @@ components:
       required: false
       schema:
         type: string
-        # format: date-time # NOTE: This causes issues with 'openapi-python-client'
+        format: date-time
         example: "2024-01-01T00:00:00+00:00"
     updated-since:
       name: "since"
