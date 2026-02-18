@@ -38,7 +38,7 @@ paths:
               type: number
               minimum: 0
       responses:
-        200:
+        "200":
           description: "Pong"
   /status:
     get:
@@ -47,7 +47,7 @@ paths:
       operationId: "status"
       description: "Retrieves the current status of the API"
       responses:
-        200:
+        "200":
           description: "API is running"
           headers:
             X-RateLimit-Limit:
@@ -62,7 +62,7 @@ paths:
                 type: "string"
                 description: "json object, but since I want to experiment with the format, not specified"
                   
-        500:
+        "500":
           description: "API is not running"
           headers:
             X-RateLimit-Limit:
@@ -89,7 +89,7 @@ paths:
             format: "uuid"
         - $ref: "#/components/parameters/if-mod-since"
       responses:
-        200:
+        "200":
           description: "success"
           headers:
             X-RateLimit-Limit:
@@ -102,9 +102,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/vorgang"
-        304:
+        "304":
           $ref: "#/components/responses/304NotModified"
-        404:
+        "404":
           $ref: "#/components/responses/404NotFound"
     put:
       tags:
@@ -127,11 +127,11 @@ paths:
             schema:
               $ref: "#/components/schemas/vorgang"
       responses:
-        201:
+        "201":
           $ref: "#/components/responses/201Created"
-        304:
+        "304":
           $ref: "#/components/responses/304NotModified"
-        403:
+        "403":
           $ref: "#/components/responses/403Forbidden"
       security:
         - apiKey: []
@@ -150,11 +150,11 @@ paths:
             type: "string"
             format: "uuid"
       responses:
-        204:
+        "204":
           $ref: "#/components/responses/204NoContent"
-        403:
+        "403":
           $ref: "#/components/responses/403Forbidden"
-        404:
+        "404":
           $ref: "#/components/responses/404NotFound"
       security:
         - apiKey: []
@@ -166,7 +166,7 @@ paths:
       operationId: "vorgang_get"
       description: "Retrieves a filterable list of legislative processes. Returns up to 64 processes per request, which can be filtered by various criteria including time range, parliament, and electoral period."
       responses:
-        200:
+        "200":
           description: "Successful. Response containing a list of legislative processes matching the query filters. The list is sorted by last modification date (descending) and then lexicographically by title."
           headers:
             X-Total-Count:
@@ -191,11 +191,11 @@ paths:
                 type: "array"
                 items:
                   $ref: "#/components/schemas/vorgang"
-        204:
+        "204":
           $ref: "#/components/responses/204NoContent"
-        304:
+        "304":
           $ref: "#/components/responses/304NotModified"
-        416:
+        "416":
           $ref: "#/components/responses/416RangeNotSatisfiable"
 
       parameters:
@@ -226,11 +226,11 @@ paths:
       parameters:
         - $ref: "#/components/parameters/scraper-id"
       responses:
-        201:
+        "201":
           $ref: "#/components/responses/201Created"
-        403:
+        "403":
           $ref: "#/components/responses/403Forbidden"
-        409:
+        "409":
           $ref: "#/components/responses/409Conflict"
       security:
         - apiKey: []
@@ -249,9 +249,9 @@ paths:
           schema:
             $ref: "#/components/schemas/key-tag"
       responses:
-        204:
+        "204":
           $ref: "#/components/responses/204NoContent"
-        403:
+        "403":
           $ref: "#/components/responses/403Forbidden"
       security:
         - apiKey: []
@@ -269,14 +269,14 @@ paths:
             schema:
               $ref: "#/components/schemas/create_api_key"
       responses:
-        201:
+        "201":
           description: "API Key was created successfully"
           content:
             text/plain:
               schema:
                 type: string
                 description: "The API Key that was created"
-        403:
+        "403":
           $ref: "#/components/responses/403Forbidden"
       security:
         - apiKey: []
@@ -287,13 +287,13 @@ paths:
       operationId: "auth_rotate"
       description: "Key rotation endpoint for creating a new API key while maintaining the existing one for a transition period of one day. The old key remains valid until the specified rotation_complete_date, after which it is automatically revoked. Rotates only the own key if it is not invalid."
       responses:
-        201:
+        "201":
           description: "Rotation Successful. New API Key was created successfully while preserving the old one for the transition period"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/rotation_response"
-        403:
+        "403":
           $ref: "#/components/responses/403Forbidden"
       security:
         - apiKey: []
@@ -304,7 +304,7 @@ paths:
       operationId: "auth_status"
       description: "Retrieves information about the currently used API key including expiration date, rotation status, and key health."
       responses:
-        200:
+        "200":
           description: "Successfully retrieved API key status"
           content:
             application/json:
@@ -325,7 +325,7 @@ paths:
         - $ref: "#/components/parameters/page"
         - $ref: "#/components/parameters/per_page"
       responses:
-        200:
+        "200":
           description: "OK"
           headers:
             X-RateLimit-Limit:
@@ -350,7 +350,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/key-tag"
-        403:
+        "403":
           $ref: "#/components/responses/403Forbidden"
       security:
         - apiKey: []
@@ -368,7 +368,7 @@ paths:
           schema:
             type: string
       responses:
-        200:
+        "200":
           description: "OK"
           headers:
             X-RateLimit-Limit:
@@ -398,7 +398,7 @@ paths:
                     type: array
                     items:
                       type: string
-        403:
+        "403":
           $ref: "#/components/responses/403Forbidden"
       security:
         - apiKey: []
@@ -423,13 +423,13 @@ paths:
         - $ref: "#/components/parameters/vgtyp"
 
       responses:
-        200:
+        "200":
           $ref: "#/components/responses/SGetResponse"
-        204:
+        "204":
           $ref: "#/components/responses/204NoContent"
-        304:
+        "304":
           $ref: "#/components/responses/304NotModified"
-        416:
+        "416":
           $ref: "#/components/responses/416RangeNotSatisfiable"
   /api/v2/sitzung/{sid}:
     get:
@@ -448,7 +448,7 @@ paths:
             format: "uuid"
         - $ref: "#/components/parameters/if-mod-since"
       responses:
-        200:
+        "200":
           description: "success"
           headers:
             X-RateLimit-Limit:
@@ -461,9 +461,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/sitzung"
-        304:
+        "304":
           $ref: "#/components/responses/304NotModified"
-        404:
+        "404":
           $ref: "#/components/responses/404NotFound"
     put:
       tags:
@@ -487,11 +487,11 @@ paths:
             schema:
               $ref: "#/components/schemas/sitzung"
       responses:
-        201:
+        "201":
           $ref: "#/components/responses/201Created"
-        304:
+        "304":
           $ref: "#/components/responses/304NotModified"
-        403:
+        "403":
           $ref: "#/components/responses/403Forbidden"
       security:
         - apiKey: []
@@ -510,11 +510,11 @@ paths:
             type: "string"
             format: "uuid"
       responses:
-        204:
+        "204":
           $ref: "#/components/responses/204NoContent"
-        403:
+        "403":
           $ref: "#/components/responses/403Forbidden"
-        404:
+        "404":
           $ref: "#/components/responses/404NotFound"
       security:
         - apiKey: []
@@ -543,13 +543,13 @@ paths:
         - $ref: "#/components/parameters/page"
         - $ref: "#/components/parameters/per_page"
       responses:
-        200:
+        "200":
           $ref: "#/components/responses/SGetResponse"
-        204:
+        "204":
           $ref: "#/components/responses/204NoContent"
-        304:
+        "304":
           $ref: "#/components/responses/304NotModified"
-        404:
+        "404":
           $ref: "#/components/responses/404NotFound"
     put:
       tags:
@@ -582,9 +582,9 @@ paths:
               items:
                 $ref: "#/components/schemas/sitzung"
       responses:
-        201:
+        "201":
           $ref: "#/components/responses/201Created"
-        403:
+        "403":
           $ref: "#/components/responses/403Forbidden"
       security:
         - apiKey: []
@@ -596,13 +596,13 @@ paths:
       operationId: kal_get
       description: "Retrieves a filterable list of parliamentary sessions for calendar display. Returns up to 64 sessions per request, which can be filtered by various criteria including year, month, day, parliament, and committee."
       responses:
-        200:
+        "200":
           $ref: "#/components/responses/SGetResponse"
-        204:
+        "204":
           $ref: "#/components/responses/204NoContent"
-        304:
+        "304":
           $ref: "#/components/responses/304NotModified"
-        416:
+        "416":
           $ref: "#/components/responses/416RangeNotSatisfiable"
       parameters:
         - $ref: "#/components/parameters/if-mod-since"
@@ -632,7 +632,7 @@ paths:
             type: string
             format: uuid
       responses:
-        200:
+        "200":
           description: Success
           headers:
             X-RateLimit-Limit:
@@ -645,7 +645,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/dokument"
-        404:
+        "404":
           $ref: "#/components/responses/404NotFound"
     put:
       tags:
@@ -669,11 +669,11 @@ paths:
             schema:
               $ref: "#/components/schemas/dokument"
       responses:
-        201:
+        "201":
           $ref: "#/components/responses/201Created"
-        304:
+        "304":
           $ref: "#/components/responses/304NotModified"
-        403:
+        "403":
           $ref: "#/components/responses/403Forbidden"
       security:
         - apiKey: []
@@ -692,9 +692,9 @@ paths:
             type: string
             format: uuid
       responses:
-        204:
+        "204":
           $ref: "#/components/responses/204NoContent"
-        403:
+        "403":
           $ref: "#/components/responses/403Forbidden"
       security:
         - apiKey: []
@@ -712,7 +712,7 @@ paths:
         - $ref: "#/components/parameters/page"
         - $ref: "#/components/parameters/per_page"
       responses:
-        200:
+        "200":
           description: "Success"
           headers:
             X-RateLimit-Limit:
@@ -737,7 +737,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/gremium"
-        204:
+        "204":
           $ref: "#/components/responses/204NoContent"
     put:
       tags:
@@ -776,13 +776,13 @@ paths:
                         type: integer
                         minimum: 0
       responses: # cannot produce a conflict, as this is essentially force-push
-        201:
+        "201":
           $ref: "#/components/responses/201Created"
-        304:
+        "304":
           $ref: "#/components/responses/304NotModified"
-        403:
+        "403":
           $ref: "#/components/responses/403Forbidden"
-        400:
+        "400":
           $ref: "#/components/responses/400BadRequest"
       security:
         - apiKey: []
@@ -797,9 +797,9 @@ paths:
         - $ref: "#/components/parameters/parlament"
         - $ref: "#/components/parameters/wahlperiode"
       responses:
-        204:
+        "204":
           $ref: "#/components/responses/204NoContent"
-        403:
+        "403":
           $ref: "#/components/responses/403Forbidden"
       security:
         - apiKey: []
@@ -817,7 +817,7 @@ paths:
         - $ref: "#/components/parameters/page"
         - $ref: "#/components/parameters/per_page"
       responses:
-        200:
+        "200":
           description: "Success"
           headers:
             X-RateLimit-Limit:
@@ -842,7 +842,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/autor"
-        204:
+        "204":
           $ref: "#/components/responses/204NoContent"
     put:
       tags:
@@ -881,13 +881,13 @@ paths:
                         type: integer
                         minimum: 0
       responses:
-        201:
+        "201":
           $ref: "#/components/responses/201Created"
-        304:
+        "304":
           $ref: "#/components/responses/304NotModified"
-        403:
+        "403":
           $ref: "#/components/responses/403Forbidden"
-        400:
+        "400":
           $ref: "#/components/responses/400BadRequest"
       security:
         - apiKey: []
@@ -902,9 +902,9 @@ paths:
         - $ref: "#/components/parameters/autor-fachgebiet"
         - $ref: "#/components/parameters/autor-organisation"
       responses:
-        204:
+        "204":
           $ref: "#/components/responses/204NoContent"
-        403:
+        "403":
           $ref: "#/components/responses/403Forbidden"
       security:
         - apiKey: []
@@ -926,7 +926,7 @@ paths:
         - $ref: "#/components/parameters/page"
         - $ref: "#/components/parameters/per_page"
       responses:
-        200:
+        "200":
           description: "Success"
           headers:
             X-RateLimit-Limit:
@@ -951,9 +951,9 @@ paths:
                 type: array
                 items:
                   type: string
-        204:
+        "204":
           $ref: "#/components/responses/204NoContent"
-        404:
+        "404":
           $ref: "#/components/responses/404NotFound"
     put:
       tags:
@@ -999,13 +999,13 @@ paths:
           schema:
             $ref: "#/components/schemas/enumeration_names"
       responses:
-        201:
+        "201":
           $ref: "#/components/responses/201Created"
-        304:
+        "304":
           $ref: "#/components/responses/304NotModified"
-        403:
+        "403":
           $ref: "#/components/responses/403Forbidden"
-        400:
+        "400":
           $ref: "#/components/responses/400BadRequest"
       security:
         - apiKey: []
@@ -1030,9 +1030,9 @@ paths:
           schema:
             $ref: "#/components/schemas/enumeration_names"
       responses:
-        204:
+        "204":
           $ref: "#/components/responses/204NoContent"
-        403:
+        "403":
           $ref: "#/components/responses/403Forbidden"
       security:
         - apiKey: []
@@ -1106,7 +1106,7 @@ components:
       required: false
       schema:
         type: string
-        format: date-time
+        # format: date-time # NOTE: This causes issues with 'openapi-python-client'
         example: "2024-01-01T00:00:00+00:00"
     updated-since:
       name: "since"
@@ -1485,8 +1485,7 @@ components:
         - "postparl-kraft" # In Kraft getreten
         - "sonstig" # other, email me
     vg_ident_typ:
-      description: "Typ von Identifikatoren für einen gesamten Vorgang. Offen für was auch immer ein Parlament benutzt um einen Vorgang zu identifizieren. Aktuell in der Datenbank: initdrucks, vorgnr, api-id, sonstig
-      bitte keine neue Abkürzung für denselben Typ erfinden"
+      description: "Typ von Identifikatoren für einen gesamten Vorgang. Offen für was auch immer ein Parlament benutzt um einen Vorgang zu identifizieren. Aktuell in der Datenbank: initdrucks, vorgnr, api-id, sonstig bitte keine neue Abkürzung für denselben Typ erfinden"
       type: "string"
       example: "initdrucks"
     doktyp:
