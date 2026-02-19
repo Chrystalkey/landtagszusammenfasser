@@ -1,5 +1,9 @@
 # Der Landtagszusammenfasser
+## WE HAVE MOVED
+This project is now hosted here:
+https://codeberg.org/PaZuFa/parlamentszusammenfasser
 
+And this repository is being archived.
 ## Projektübersicht
 
 Der Landtagszusammenfasser ist ein Tool, das Informationen und Zusammenfassungen von Landesgesetzen in Deutschland automatisiert sammelt, 
